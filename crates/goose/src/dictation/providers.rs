@@ -5,6 +5,7 @@ use crate::dictation::whisper::LOCAL_WHISPER_MODEL_CONFIG_KEY;
 use crate::providers::api_client::{ApiClient, AuthMethod};
 use crate::providers::openai::parse_openai_base_url;
 use anyhow::Result;
+use base64::{engine::general_purpose::STANDARD as BASE64_STD, Engine as _};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "local-inference")]
 use std::sync::Mutex;
@@ -28,6 +29,8 @@ pub enum DictationProvider {
     OpenAI,
     ElevenLabs,
     Groq,
+    #[serde(rename = "model")]
+    ModelNative,
     #[cfg(feature = "local-inference")]
     Local,
 }
@@ -88,16 +91,30 @@ pub const LOCAL_PROVIDER_DEF: DictationProviderDef = DictationProviderDef {
     settings_path: None,
 };
 
+pub const MODEL_NATIVE_PROVIDER_DEF: DictationProviderDef = DictationProviderDef {
+    provider: DictationProvider::ModelNative,
+    config_key: "",
+    default_base_url: "",
+    endpoint_path: "",
+    host_key: None,
+    description: "Uses your active chat model for transcription. Supports models with native audio input (e.g. Gemini, GPT-4o-audio, Gemma4). No separate API key needed.",
+    uses_provider_config: true,
+    settings_path: Some("Settings > Models"),
+};
+
 /// Returns all provider definitions, including Local when the `local-inference` feature is enabled.
 pub fn all_providers() -> Vec<&'static DictationProviderDef> {
     #[cfg(not(feature = "local-inference"))]
     {
-        PROVIDERS.iter().collect()
+        let mut all: Vec<&DictationProviderDef> = PROVIDERS.iter().collect();
+        all.push(&MODEL_NATIVE_PROVIDER_DEF);
+        all
     }
     #[cfg(feature = "local-inference")]
     {
         let mut all: Vec<&DictationProviderDef> = PROVIDERS.iter().collect();
         all.push(&LOCAL_PROVIDER_DEF);
+        all.push(&MODEL_NATIVE_PROVIDER_DEF);
         all
     }
 }
@@ -106,6 +123,9 @@ pub fn get_provider_def(provider: DictationProvider) -> &'static DictationProvid
     #[cfg(feature = "local-inference")]
     if provider == DictationProvider::Local {
         return &LOCAL_PROVIDER_DEF;
+    }
+    if provider == DictationProvider::ModelNative {
+        return &MODEL_NATIVE_PROVIDER_DEF;
     }
     PROVIDERS
         .iter()
@@ -124,6 +144,11 @@ pub fn is_configured(provider: DictationProvider) -> bool {
             .and_then(|v| v.as_str().map(|s| s.to_string()))
             .and_then(|id| super::whisper::get_model(&id))
             .is_some_and(|m| m.is_downloaded()),
+        DictationProvider::ModelNative => {
+            // Configured if there is an active provider with credentials
+            let active = crate::config::providers::get_active_provider(&config);
+            active.is_some()
+        }
         _ => {
             let def = get_provider_def(provider);
             config.get_secret::<String>(def.config_key).is_ok()
@@ -247,6 +272,7 @@ fn build_api_client(provider: DictationProvider) -> Result<(ApiClient, String)> 
             header_name: "xi-api-key".to_string(),
             key: api_key,
         },
+        DictationProvider::ModelNative => anyhow::bail!("ModelNative does not use the dictation API client"),
         #[cfg(feature = "local-inference")]
         DictationProvider::Local => anyhow::bail!("Local provider should not use API client"),
     };
@@ -320,6 +346,136 @@ pub async fn transcribe_with_provider(
         .to_string();
 
     Ok(text)
+}
+
+const MODEL_TRANSCRIPTION_TIMEOUT: Duration = Duration::from_secs(60);
+const TRANSCRIPTION_SYSTEM_PROMPT: &str =
+    "Transcribe the following audio exactly as spoken. Output only the transcription text, with no commentary, labels, formatting, or explanation.";
+
+pub async fn transcribe_with_model(audio_bytes: Vec<u8>, audio_format: &str) -> Result<String> {
+    let config = Config::global();
+
+    let provider_name = crate::config::providers::get_active_provider(&config)
+        .ok_or_else(|| anyhow::anyhow!("No active provider configured"))?;
+
+    let model_name = crate::config::providers::get_active_model(&config)
+        .ok_or_else(|| anyhow::anyhow!("No active model configured"))?;
+
+
+
+    let (api_key, base_url) = resolve_model_native_config(&config, &provider_name)?;
+    let audio_base64 = BASE64_STD.encode(&audio_bytes);
+
+    let request_body = serde_json::json!({
+        "model": model_name,
+        "messages": [{
+            "role": "user",
+            "content": [
+                { "type": "text", "text": TRANSCRIPTION_SYSTEM_PROMPT },
+                {
+                    "type": "input_audio",
+                    "input_audio": {
+                        "data": audio_base64,
+                        "format": audio_format
+                    }
+                }
+            ]
+        }]
+    });
+
+    let _tls = provider_tls_config_from_config(config)?;
+    let client = reqwest::Client::builder()
+        .timeout(MODEL_TRANSCRIPTION_TIMEOUT)
+        .build()
+        .map_err(|e| anyhow::anyhow!("Failed to build HTTP client: {}", e))?;
+
+    let trimmed = base_url.trim_end_matches('/');
+    let url = if trimmed.ends_with("/v1") {
+        format!("{}/chat/completions", trimmed)
+    } else {
+        format!("{}/v1/chat/completions", trimmed)
+    };
+    let mut req = client
+        .post(&url)
+        .header("Content-Type", "application/json")
+        .json(&request_body);
+
+    if !api_key.is_empty() {
+        req = req.header("Authorization", format!("Bearer {}", api_key));
+    }
+
+    let response = req.send().await.map_err(|e| {
+        tracing::error!("Model-native transcription request failed: {}", e);
+        anyhow::anyhow!("Transcription request failed: {}", e)
+    })?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        if status.as_u16() == 401 {
+            anyhow::bail!("Invalid API key");
+        }
+        anyhow::bail!("Chat completions error ({}): {}", status, body);
+    }
+
+    let data: serde_json::Value = response.json().await.map_err(|e| {
+        tracing::error!("Failed to parse chat completions response: {}", e);
+        anyhow::anyhow!(e)
+    })?;
+
+    let text = data["choices"][0]["message"]["content"]
+        .as_str()
+        .ok_or_else(|| anyhow::anyhow!("No content in chat completions response"))?
+        .to_string();
+
+    Ok(text)
+}
+
+fn resolve_model_native_config(config: &Config, provider_name: &str) -> Result<(String, String)> {
+    // Try loading the declarative/custom provider config first — this handles
+    // custom_* providers whose base_url lives in a JSON file, not in env vars.
+    if let Ok(loaded) = crate::config::declarative_providers::load_provider(provider_name) {
+        let base_url = loaded.config.base_url.clone();
+        let api_key = if loaded.config.api_key_env.is_empty() || !loaded.config.requires_auth {
+            String::new()
+        } else {
+            config
+                .get_secret::<String>(&loaded.config.api_key_env)
+                .unwrap_or_default()
+        };
+        return Ok((api_key, base_url));
+    }
+
+    // Fallback: well-known providers resolved from env vars
+    let (key_name, default_url) = match provider_name {
+        "openai" => ("OPENAI_API_KEY", "https://api.openai.com"),
+        "openrouter" => ("OPENROUTER_API_KEY", "https://openrouter.ai/api"),
+        "groq" => ("GROQ_API_KEY", "https://api.groq.com/openai"),
+        "ollama" => ("", "http://localhost:11434"),
+        "google" => ("GOOGLE_API_KEY", "https://generativelanguage.googleapis.com"),
+        other => {
+            let key = format!("{}_API_KEY", other.to_uppercase().replace('-', "_"));
+            let api_key = config.get_secret::<String>(&key).unwrap_or_default();
+            let host_key = format!("{}_HOST", other.to_uppercase().replace('-', "_"));
+            let base = config
+                .get_param::<String>(&host_key)
+                .unwrap_or_else(|_| "http://localhost:11434".to_string());
+            return Ok((api_key, base));
+        }
+    };
+
+    let api_key = if key_name.is_empty() {
+        String::new()
+    } else {
+        config.get_secret::<String>(key_name).unwrap_or_default()
+    };
+
+    let host_key = format!("{}_HOST", provider_name.to_uppercase());
+    let base_url = config
+        .get_param::<String>(&host_key)
+        .unwrap_or_else(|_| default_url.to_string());
+
+    Ok((api_key, base_url))
 }
 
 #[cfg(test)]
