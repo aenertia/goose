@@ -309,6 +309,11 @@ const PREFERENCE_DEFS: &[PreferenceDef] = &[
         config_key: "VOICE_DICTATION_PREFERRED_MIC",
         prepare: prepare_voice_dictation_preferred_mic,
     },
+    PreferenceDef {
+        key: PreferenceKey::VoiceSilenceThreshold,
+        config_key: "VOICE_SILENCE_THRESHOLD",
+        prepare: prepare_voice_silence_threshold,
+    },
 ];
 
 fn preference_def(
@@ -392,6 +397,24 @@ fn prepare_voice_dictation_preferred_mic(
     }
 
     Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_silence_threshold(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(s) = value.as_str() else {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceSilenceThreshold must be a string"));
+    };
+    let ms: u32 = s.parse().map_err(|_| {
+        agent_client_protocol::Error::invalid_params()
+            .data("voiceSilenceThreshold must be a string containing an integer")
+    })?;
+    if !(500..=3000).contains(&ms) {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceSilenceThreshold must be between 500 and 3000"));
+    }
+    Ok(serde_json::Value::String(ms.to_string()))
 }
 
 fn is_supported_voice_dictation_provider(value: &str) -> bool {

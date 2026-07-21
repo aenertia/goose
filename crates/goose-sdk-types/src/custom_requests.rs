@@ -557,6 +557,7 @@ pub enum PreferenceKey {
     VoiceAutoSubmitPhrases,
     VoiceDictationProvider,
     VoiceDictationPreferredMic,
+    VoiceSilenceThreshold,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema)]
