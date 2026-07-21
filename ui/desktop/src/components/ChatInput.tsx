@@ -510,7 +510,7 @@ export default function ChatInput({
     selectFile: (index: number) => void;
   }>(null);
 
-  const { read: configRead, upsert: configUpsert } = useConfig();
+  const { read: configRead } = useConfig();
   const { speak: speakText, stop: stopAudioPlayback, isPlaying: isSpeaking } = useAudioPlayer();
 
   // Conversation mode: read voice_mode preference
@@ -519,7 +519,7 @@ export default function ChatInput({
     const checkMode = async () => {
       try {
         const val = await configRead('voice_mode', false);
-        setVoiceModeEnabled(val === 'conversation');
+        setVoiceModeEnabled(val === 'honk' || val === 'conversation');
       } catch {
         // Default to dictation mode
       }
@@ -530,6 +530,7 @@ export default function ChatInput({
   // Ref to break circular dependency: useAudioRecorder needs conversationAutoSubmit,
   // but useConversationMode needs startRecording/stopRecording from useAudioRecorder.
   const conversationAutoSubmitRef = useRef<((text: string) => void) | undefined>(undefined);
+  const honkIsListeningRef = useRef(false);
   const prevIsLoadingRef = useRef(false);
   const conversationTurnRef = useRef(0);
 
@@ -588,7 +589,11 @@ export default function ChatInput({
         msg: message,
       });
     },
-    onSilenceAutoSubmit: voiceModeEnabled ? ((text: string) => conversationAutoSubmitRef.current?.(text)) : undefined,
+    onSilenceAutoSubmit: voiceModeEnabled ? ((text: string) => {
+      if (honkIsListeningRef.current) {
+        conversationAutoSubmitRef.current?.(text);
+      }
+    }) : undefined,
   });
   const internalTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -596,23 +601,19 @@ export default function ChatInput({
   const conversationSubmit = useCallback(
     (text: string) => {
       if (text.trim()) {
-        const spoken = text.trim();
-        conversationTurnRef.current += 1;
-
-        const msg = conversationTurnRef.current === 1
-          ? `${spoken}\n\n<voice-conversation>\n${HONK_FULL_CONTEXT}\n</voice-conversation>`
-          : `${spoken}\n\n${HONK_REINFORCEMENT}`;
-
-        handleSubmit({ msg, images: [] });
+        handleSubmit({ msg: text.trim(), images: [] });
       }
     },
     [handleSubmit]
   );
 
   const {
-    isActive: isConversationActive,
-    activate: activateConversation,
-    deactivate: deactivateConversation,
+    honkActive,
+    isListening: honkIsListening,
+    activateHonk,
+    deactivateHonk,
+    startListening: honkStartListening,
+    stopListening: honkStopListening,
     state: conversationState,
     handleAutoSubmit: conversationAutoSubmit,
     handleStreamFinish: conversationHandleStreamFinish,
@@ -623,20 +624,19 @@ export default function ChatInput({
     isRecording,
     isLoading,
   });
+  // Transition alias — remaining references use this until fully migrated
+  const isConversationActive = honkActive;
   conversationAutoSubmitRef.current = conversationAutoSubmit;
+  honkIsListeningRef.current = honkIsListening;
 
-  // Reset conversation turn counter when conversation mode deactivates.
-  // This ensures the next activation sends HONK_FULL_CONTEXT on the first message.
   useEffect(() => {
-    if (!isConversationActive) {
+    if (!honkActive) {
       conversationTurnRef.current = 0;
     }
-  }, [isConversationActive]);
+  }, [honkActive]);
 
-  // When LLM finishes responding (isLoading transitions true→false) during conversation mode,
-  // trigger the speak→listen cycle so the mic restarts after TTS completes.
   useEffect(() => {
-    if (prevIsLoadingRef.current && !isLoading && isConversationActive) {
+    if (prevIsLoadingRef.current && !isLoading && honkActive) {
       const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
       if (lastAssistant) {
         const { textContent } = getTextAndImageContent(lastAssistant);
@@ -646,7 +646,7 @@ export default function ChatInput({
       }
     }
     prevIsLoadingRef.current = isLoading;
-  }, [isLoading, isConversationActive, messages, conversationHandleStreamFinish]);
+  }, [isLoading, honkActive, messages, conversationHandleStreamFinish]);
 
   const textAreaRef = inputRef || internalTextAreaRef;
   const timeoutRefsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
@@ -1232,7 +1232,6 @@ export default function ChatInput({
       const textToSend = appendDroppedFilePaths(text ?? displayValue.trim());
 
       if (textToSend || imageData.length > 0) {
-        // Store original message in history
         if (displayValue.trim()) {
           LocalMessageStorage.addMessage(displayValue);
         } else {
@@ -1244,9 +1243,16 @@ export default function ChatInput({
           }
         }
 
-        handleSubmit({ msg: textToSend, images: imageData });
+        let finalMsg = textToSend;
+        if (honkActive && finalMsg) {
+          finalMsg = conversationTurnRef.current === 0
+            ? `${finalMsg}\n\n<voice-conversation>\n${HONK_FULL_CONTEXT}\n</voice-conversation>`
+            : `${finalMsg}\n\n${HONK_REINFORCEMENT}`;
+          conversationTurnRef.current += 1;
+        }
 
-        // Auto-resume queue after sending a NON-interruption message (if it was paused due to interruption)
+        handleSubmit({ msg: finalMsg, images: imageData });
+
         if (
           queuePausedRef.current &&
           lastInterruption &&
@@ -1270,6 +1276,7 @@ export default function ChatInput({
       displayValue,
       allDroppedFiles,
       handleSubmit,
+      honkActive,
       lastInterruption,
       clearInputState,
     ]
@@ -1905,13 +1912,11 @@ export default function ChatInput({
                 size="sm"
                 shape="round"
                 onClick={() => {
-                  if (isConversationActive) {
-                    deactivateConversation();
-                    configUpsert('voice_auto_speak', 'false', false);
+                  if (honkActive) {
+                    deactivateHonk();
                   } else {
                     stopAudioPlayback();
-                    configUpsert('voice_auto_speak', 'true', false);
-                    activateConversation();
+                    activateHonk();
                   }
                 }}
                 disabled={!isEnabled || isTranscribing}
@@ -1955,8 +1960,8 @@ export default function ChatInput({
           </Tooltip>
         )}
 
-        {/* Right: mic — hidden only when conversation is actively running */}
-        {dictationProvider && !isConversationActive && (
+        {/* Right: mic — always visible when dictation is configured */}
+        {dictationProvider && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -1966,26 +1971,32 @@ export default function ChatInput({
                 shape="round"
                 onClick={() => {
                   if (!isEnabled) return;
-                  if (isRecording) {
-                    trackVoiceDictation('stop');
-                    stopRecording();
+                  if (honkActive) {
+                    if (honkIsListening) {
+                      honkStopListening();
+                    } else {
+                      honkStartListening();
+                    }
                   } else {
-                    trackVoiceDictation('start');
-                    stopAudioPlayback();
-                    startRecording();
+                    if (isRecording) {
+                      trackVoiceDictation('stop');
+                      stopRecording();
+                    } else {
+                      trackVoiceDictation('start');
+                      stopAudioPlayback();
+                      startRecording();
+                    }
                   }
                 }}
-                // Keep the button hoverable when only !isEnabled so the
-                // "Dictation not configured" tooltip stays reachable.
-                // We still natively disable while transcribing.
                 disabled={isTranscribing}
                 aria-disabled={!isEnabled}
                 className={cn(
                   'transition-colors',
-                  isRecording
+                  (honkActive ? honkIsListening : isRecording)
                     ? 'text-red-500 hover:text-red-600'
                     : 'text-text-primary/70 hover:text-text-primary',
                   isTranscribing && 'animate-pulse',
+                  (honkActive && honkIsListening) && 'animate-pulse',
                   !isEnabled && 'opacity-50 cursor-not-allowed'
                 )}
               >
@@ -1995,6 +2006,8 @@ export default function ChatInput({
             <TooltipContent>
               {!isEnabled ? (
                 <p>Dictation not configured (Settings)</p>
+              ) : honkActive ? (
+                <p>{honkIsListening ? 'Stop listening' : 'Start listening'}</p>
               ) : (
                 <p>Voice dictation{isRecording ? '' : ' • Say "submit" to send'}</p>
               )}

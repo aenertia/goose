@@ -78,33 +78,33 @@ const i18n = defineMessages({
   autoSpeakTooltip: {
     id: 'voiceSettings.autoSpeakTooltip',
     defaultMessage:
-      'When enabled, Goose automatically reads assistant responses aloud after they finish generating.',
+      'Automatically read out AI responses using text-to-speech.',
   },
-  conversationModeTitle: {
-    id: 'voiceSettings.conversationModeTitle',
-    defaultMessage: 'Conversation Mode',
+  voiceModeTitle: {
+    id: 'voiceSettings.voiceModeTitle',
+    defaultMessage: 'Voice Mode',
   },
-  conversationModeDescription: {
-    id: 'voiceSettings.conversationModeDescription',
+  voiceModeDescription: {
+    id: 'voiceSettings.voiceModeDescription',
     defaultMessage: 'Choose how voice input behaves',
   },
-  modeDictation: {
-    id: 'voiceSettings.modeDictation',
-    defaultMessage: 'Dictation',
+  modeStandard: {
+    id: 'voiceSettings.modeStandard',
+    defaultMessage: 'Standard',
   },
-  modeDictationTooltip: {
-    id: 'voiceSettings.modeDictationTooltip',
+  modeStandardDescription: {
+    id: 'voiceSettings.modeStandardDescription',
     defaultMessage:
-      'Manual start/stop recording. Text appears in input box for review before sending.',
+      'Microphone dictation only. Text appears in input box for review before sending.',
   },
-  modeConversation: {
-    id: 'voiceSettings.modeConversation',
-    defaultMessage: 'Conversation',
+  modeHonk: {
+    id: 'voiceSettings.modeHonk',
+    defaultMessage: 'HONK! Enabled',
   },
-  modeConversationTooltip: {
-    id: 'voiceSettings.modeConversationTooltip',
+  modeHonkDescription: {
+    id: 'voiceSettings.modeHonkDescription',
     defaultMessage:
-      'Hands-free mode. Goose automatically listens after speaking, creating a conversation loop. Note: there will be a pause between your question and Goose\u2019s spoken response while the AI processes.',
+      'HONK button appears in chat when enabled. Press HONK to activate conversational style and auto-speak.',
   },
 });
 
@@ -116,7 +116,7 @@ export default function VoiceSettingsSection() {
   const [silenceThreshold, setSilenceThreshold] = useState(DEFAULT_SILENCE_THRESHOLD);
   const [splitStrategy, setSplitStrategy] = useState('punctuation');
   const [autoSpeak, setAutoSpeak] = useState(false);
-  const [voiceMode, setVoiceMode] = useState<'dictation' | 'conversation'>('dictation');
+  const [voiceMode, setVoiceMode] = useState<'standard' | 'honk'>('standard');
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -133,8 +133,11 @@ export default function VoiceSettingsSection() {
         setAutoSpeak(true);
       }
       const modeVal = await read('voice_mode', false);
-      if (modeVal === 'conversation') {
-        setVoiceMode('conversation');
+      if (modeVal === 'honk' || modeVal === 'conversation') {
+        setVoiceMode('honk');
+        if (modeVal === 'conversation') {
+          upsert('voice_mode', 'honk', false);
+        }
       }
     };
     loadSettings();
@@ -157,7 +160,7 @@ export default function VoiceSettingsSection() {
     upsert('voice_auto_speak', checked ? 'true' : 'false', false);
   };
 
-  const handleVoiceModeChange = (mode: 'dictation' | 'conversation') => {
+  const handleVoiceModeChange = (mode: 'standard' | 'honk') => {
     setVoiceMode(mode);
     upsert('voice_mode', mode, false);
   };
@@ -177,9 +180,9 @@ export default function VoiceSettingsSection() {
 
       <Card className="pb-2 rounded-lg">
         <CardHeader className="pb-0">
-          <CardTitle>{intl.formatMessage(i18n.conversationModeTitle)}</CardTitle>
+          <CardTitle>{intl.formatMessage(i18n.voiceModeTitle)}</CardTitle>
           <CardDescription>
-            {intl.formatMessage(i18n.conversationModeDescription)}
+            {intl.formatMessage(i18n.voiceModeDescription)}
           </CardDescription>
         </CardHeader>
         <CardContent className="px-4 pt-4">
@@ -188,29 +191,19 @@ export default function VoiceSettingsSection() {
               <input
                 type="radio"
                 name="voice-mode"
-                value="dictation"
-                checked={voiceMode === 'dictation'}
-                onChange={() => handleVoiceModeChange('dictation')}
+                value="standard"
+                checked={voiceMode === 'standard'}
+                onChange={() => handleVoiceModeChange('standard')}
                 className="mt-1 accent-accent-primary cursor-pointer"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">
-                    {intl.formatMessage(i18n.modeDictation)}
+                    {intl.formatMessage(i18n.modeStandard)}
                   </span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3.5 w-3.5 text-text-secondary cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>{intl.formatMessage(i18n.modeDictationTooltip)}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
                 <p className="text-xs text-text-secondary mt-0.5">
-                  {intl.formatMessage(i18n.modeDictationTooltip)}
+                  {intl.formatMessage(i18n.modeStandardDescription)}
                 </p>
               </div>
             </label>
@@ -219,29 +212,19 @@ export default function VoiceSettingsSection() {
               <input
                 type="radio"
                 name="voice-mode"
-                value="conversation"
-                checked={voiceMode === 'conversation'}
-                onChange={() => handleVoiceModeChange('conversation')}
+                value="honk"
+                checked={voiceMode === 'honk'}
+                onChange={() => handleVoiceModeChange('honk')}
                 className="mt-1 accent-accent-primary cursor-pointer"
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">
-                    {intl.formatMessage(i18n.modeConversation)}
+                    {intl.formatMessage(i18n.modeHonk)}
                   </span>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3.5 w-3.5 text-text-secondary cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p>{intl.formatMessage(i18n.modeConversationTooltip)}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
                 <p className="text-xs text-text-secondary mt-0.5">
-                  {intl.formatMessage(i18n.modeConversationTooltip)}
+                  {intl.formatMessage(i18n.modeHonkDescription)}
                 </p>
               </div>
             </label>
@@ -334,7 +317,7 @@ export default function VoiceSettingsSection() {
         </CardContent>
       </Card>
 
-      <Card className={`pb-2 rounded-lg ${voiceMode === 'conversation' ? 'ring-1 ring-accent-primary' : ''}`}>
+      <Card className={`pb-2 rounded-lg ${voiceMode === 'honk' ? 'ring-1 ring-accent-primary' : ''}`}>
         <CardHeader className="pb-0">
           <div className="flex items-center gap-2">
             <CardTitle>{intl.formatMessage(i18n.silenceTitle)}</CardTitle>

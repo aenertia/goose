@@ -133,7 +133,7 @@ export function useChatSession({
       if (!error) {
         try {
           const voiceMode = await configRead('voice_mode', false);
-          const isConversation = voiceMode === 'conversation';
+          const isConversation = voiceMode === 'honk' || voiceMode === 'conversation';
           if (!isConversation) {
             const autoSpeakEnabled = await configRead('voice_auto_speak', false);
             if (autoSpeakEnabled === 'true') {
