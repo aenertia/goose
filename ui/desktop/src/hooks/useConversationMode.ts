@@ -49,6 +49,7 @@ export function useConversationMode({
 
   const isActiveRef = useRef(false);
   const stateRef = useRef<ConversationState>('idle');
+  const pausedMediaRef = useRef<string[]>([]);
 
   // Keep refs in sync
   isActiveRef.current = isActive;
@@ -72,6 +73,10 @@ export function useConversationMode({
     isActiveRef.current = true;
     setState('listening');
     startRecordingRef.current();
+    window.electron?.voiceInhibitStart?.('Voice conversation active');
+    window.electron?.voiceMediaPause?.().then((tokens) => {
+      pausedMediaRef.current = tokens;
+    });
   }, []);
 
   const deactivate = useCallback(() => {
@@ -80,6 +85,11 @@ export function useConversationMode({
     setState('idle');
     stopRecordingRef.current();
     stopPlayback();
+    window.electron?.voiceInhibitRelease?.();
+    if (pausedMediaRef.current.length > 0) {
+      window.electron?.voiceMediaResume?.(pausedMediaRef.current);
+      pausedMediaRef.current = [];
+    }
   }, [stopPlayback]);
 
   /**
@@ -144,6 +154,10 @@ export function useConversationMode({
       setState('listening');
     }
   }, [isActive, isRecording, isPlaying, stopPlayback]);
+
+  useEffect(() => {
+    window.electron?.voiceStateChange?.({ phase: state, conversationActive: isActive });
+  }, [state, isActive]);
 
   return {
     isActive,

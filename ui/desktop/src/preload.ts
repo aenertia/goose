@@ -180,6 +180,11 @@ type ElectronAPI = {
   addRecentDir: (dir: string) => Promise<boolean>;
   listRecentDirs: () => Promise<string[]>;
   listGitWorktreeDirs: (dir: string) => Promise<string[]>;
+  voiceInhibitStart: (reason: string) => void;
+  voiceInhibitRelease: () => void;
+  voiceMediaPause: () => Promise<string[]>;
+  voiceMediaResume: (tokens: string[]) => void;
+  voiceStateChange: (state: { phase: string; conversationActive: boolean }) => void;
 };
 
 type AppConfigAPI = {
@@ -338,6 +343,11 @@ const electronAPI: ElectronAPI = {
   addRecentDir: (dir: string) => ipcRenderer.invoke('add-recent-dir', dir),
   listRecentDirs: () => ipcRenderer.invoke('list-recent-dirs'),
   listGitWorktreeDirs: (dir: string) => ipcRenderer.invoke('list-git-worktree-dirs', dir),
+  voiceInhibitStart: (reason: string) => ipcRenderer.send('voice-inhibit-start', reason),
+  voiceInhibitRelease: () => ipcRenderer.send('voice-inhibit-release'),
+  voiceMediaPause: () => ipcRenderer.invoke('voice-media-pause'),
+  voiceMediaResume: (tokens: string[]) => ipcRenderer.send('voice-media-resume', tokens),
+  voiceStateChange: (state) => ipcRenderer.send('voice-state-change', state),
 };
 
 function getAppLocale(): unknown {

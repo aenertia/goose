@@ -26,6 +26,10 @@ import os from 'node:os';
 import { execFileSync, spawn, execFile } from 'child_process';
 import 'dotenv/config';
 import { createShortcutService, type ShortcutService } from './services/globalShortcuts';
+import { createMediaInhibitService, type MediaInhibitService } from './services/mediaInhibit';
+import { createMediaControlService, type MediaControlService } from './services/mediaControl';
+import { createVoiceIndicatorService, type VoiceIndicatorService } from './services/voiceIndicator';
+import type { VoiceState } from './services/voiceIndicator/types';
 import { checkBackendStatus } from './backendStatus';
 import { startGooseServe } from './gooseServe';
 import { GooseServeLeaseRegistry, type GooseServeLease } from './gooseServeLeaseRegistry';
@@ -1577,6 +1581,11 @@ let tray: Tray | null = null;
 // Track global shortcut service instance
 let shortcutService: ShortcutService | null = null;
 
+// Track voice conversation service instances
+let mediaInhibitService: MediaInhibitService | null = null;
+let mediaControlService: MediaControlService | null = null;
+let voiceIndicatorService: VoiceIndicatorService | null = null;
+
 const destroyTray = () => {
   if (tray) {
     tray.destroy();
@@ -2465,6 +2474,26 @@ async function appMain() {
   if (settings.showMenuBarIcon) {
     createTray();
   }
+
+  mediaInhibitService = await createMediaInhibitService();
+  mediaControlService = await createMediaControlService();
+  voiceIndicatorService = createVoiceIndicatorService(tray);
+
+  ipcMain.on('voice-inhibit-start', async (_event, reason: string) => {
+    await mediaInhibitService?.inhibit(reason);
+  });
+  ipcMain.on('voice-inhibit-release', async () => {
+    await mediaInhibitService?.release();
+  });
+  ipcMain.handle('voice-media-pause', async () => {
+    return mediaControlService?.pauseAll() ?? [];
+  });
+  ipcMain.on('voice-media-resume', async (_event, tokens: string[]) => {
+    await mediaControlService?.resumePaused(tokens);
+  });
+  ipcMain.on('voice-state-change', (_event, state: { phase: string; conversationActive: boolean }) => {
+    voiceIndicatorService?.updateState(state as VoiceState);
+  });
 
   if (process.platform === 'darwin' && !settings.showDockIcon && settings.showMenuBarIcon) {
     app.dock?.hide();
