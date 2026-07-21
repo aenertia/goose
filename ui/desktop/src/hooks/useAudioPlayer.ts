@@ -12,10 +12,11 @@ function splitText(text: string, strategy: SplitStrategy): string[] {
   return text.split(/(?<=[.!?;])\s+/).filter((s) => s.trim());
 }
 
-let globalAudio: HTMLAudioElement | null = null;
+let globalSource: AudioBufferSourceNode | null = null;
+let globalCtx: AudioContext | null = null;
 let globalStopped = false;
 
-const globalCache = new Map<string, Blob>();
+const globalCache = new Map<string, ArrayBuffer>();
 const globalCacheOrder: string[] = [];
 
 let _selectedOutputDeviceId: string | null = null;
@@ -26,6 +27,14 @@ export function setAudioOutputDevice(deviceId: string | null) {
 
 export function getAudioOutputDevice(): string | null {
   return _selectedOutputDeviceId;
+}
+
+function b64ToArrayBuffer(b64: string): ArrayBuffer {
+  const raw = atob(b64);
+  const buf = new ArrayBuffer(raw.length);
+  const view = new Uint8Array(buf);
+  for (let i = 0; i < raw.length; i++) view[i] = raw.charCodeAt(i);
+  return buf;
 }
 
 interface UseAudioPlayerReturn {
@@ -41,14 +50,17 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
   const stop = useCallback(() => {
     globalStopped = true;
-    if (globalAudio) {
-      globalAudio.pause();
-      globalAudio.currentTime = 0;
-      const src = globalAudio.src;
-      if (src.startsWith('blob:')) {
-        URL.revokeObjectURL(src);
+    if (globalSource) {
+      try {
+        globalSource.stop();
+      } catch {
+        // already stopped
       }
-      globalAudio = null;
+      globalSource = null;
+    }
+    if (globalCtx) {
+      globalCtx.close().catch(() => {});
+      globalCtx = null;
     }
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -64,7 +76,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       voice: string,
       speed: number,
       profileId?: string
-    ): Promise<Blob | null> => {
+    ): Promise<ArrayBuffer | null> => {
       const cacheKey = `${profileId || provider}:${voice}:${speed}:${chunkText}`;
       const cached = globalCache.get(cacheKey);
       if (cached) {
@@ -73,29 +85,20 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
           globalCacheOrder.splice(idx, 1);
           globalCacheOrder.push(cacheKey);
         }
-        return cached;
+        return cached.slice(0);
       }
 
       try {
-        const { audio, mimeType } = await synthesizeTts(
-          chunkText,
-          provider,
-          voice,
-          speed,
-          profileId
-        );
-        const raw = atob(audio);
-        const bytes = new Uint8Array(raw.length);
-        for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-        const blob = new Blob([bytes], { type: mimeType });
+        const { audio } = await synthesizeTts(chunkText, provider, voice, speed, profileId);
+        const buf = b64ToArrayBuffer(audio);
 
         if (globalCacheOrder.length >= CACHE_MAX) {
           const oldest = globalCacheOrder.shift()!;
           globalCache.delete(oldest);
         }
-        globalCache.set(cacheKey, blob);
+        globalCache.set(cacheKey, buf);
         globalCacheOrder.push(cacheKey);
-        return blob;
+        return buf.slice(0);
       } catch (err) {
         console.error('[TTS] synthesis failed:', err);
         return null;
@@ -104,44 +107,38 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     []
   );
 
-  const playBlob = useCallback((blob: Blob): Promise<void> => {
+  const playBuffer = useCallback((arrayBuf: ArrayBuffer): Promise<void> => {
     return new Promise((resolve) => {
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      globalAudio = audio;
+      const ctx = new AudioContext();
+      globalCtx = ctx;
 
-      const cleanup = () => {
-        URL.revokeObjectURL(url);
-        if (globalAudio === audio) {
-          globalAudio = null;
-        }
-      };
+      ctx
+        .decodeAudioData(arrayBuf)
+        .then((audioBuffer) => {
+          if (globalStopped) {
+            ctx.close().catch(() => {});
+            resolve();
+            return;
+          }
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(ctx.destination);
+          globalSource = source;
 
-      audio.onended = () => {
-        cleanup();
-        resolve();
-      };
-      audio.onerror = (e) => {
-        console.error('[TTS] audio playback error:', e);
-        cleanup();
-        resolve();
-      };
+          source.onended = () => {
+            if (globalSource === source) globalSource = null;
+            if (globalCtx === ctx) globalCtx = null;
+            ctx.close().catch(() => {});
+            resolve();
+          };
 
-      const deviceId = _selectedOutputDeviceId;
-      const maybeSetSink =
-        deviceId && 'setSinkId' in audio
-          ? (audio as HTMLAudioElement & { setSinkId: (id: string) => Promise<void> })
-              .setSinkId(deviceId)
-              .catch((err: unknown) => console.warn('[TTS] setSinkId failed:', err))
-          : Promise.resolve();
-
-      maybeSetSink.then(() => {
-        audio.play().catch((err) => {
-          console.error('[TTS] audio.play() failed:', err);
-          cleanup();
+          source.start();
+        })
+        .catch((err) => {
+          console.error('[TTS] decodeAudioData failed:', err);
+          ctx.close().catch(() => {});
           resolve();
         });
-      });
     });
   }, []);
 
@@ -151,10 +148,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       globalStopped = false;
 
       const provider = ((await read('voice_tts_provider', false)) as string) || '__disabled__';
-      if (provider === '__disabled__') {
-        console.warn('[TTS] provider is disabled, skipping speak');
-        return;
-      }
+      if (provider === '__disabled__') return;
 
       const voice = ((await read('voice_tts_voice', false)) as string) || '';
       const speedStr = ((await read('voice_tts_speed', false)) as string) || '1.00';
@@ -179,8 +173,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
           playingRef.current = false;
           setIsPlaying(false);
         };
-        utterance.onerror = (e) => {
-          console.error('[TTS] speechSynthesis error:', e);
+        utterance.onerror = () => {
           playingRef.current = false;
           setIsPlaying(false);
         };
@@ -194,26 +187,26 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       playingRef.current = true;
       setIsPlaying(true);
 
-      let nextBlobPromise: Promise<Blob | null> | null = null;
+      let nextBufPromise: Promise<ArrayBuffer | null> | null = null;
 
       for (let i = 0; i < chunks.length; i++) {
         if (globalStopped) break;
 
-        const currentBlob =
+        const currentBuf =
           i === 0
             ? await synthesizeChunk(chunks[i], provider, voice, speed, profileId)
-            : await (nextBlobPromise ??
+            : await (nextBufPromise ??
                 synthesizeChunk(chunks[i], provider, voice, speed, profileId));
 
-        if (globalStopped || !currentBlob) break;
+        if (globalStopped || !currentBuf) break;
 
         if (i + 1 < chunks.length) {
-          nextBlobPromise = synthesizeChunk(chunks[i + 1], provider, voice, speed, profileId);
+          nextBufPromise = synthesizeChunk(chunks[i + 1], provider, voice, speed, profileId);
         } else {
-          nextBlobPromise = null;
+          nextBufPromise = null;
         }
 
-        await playBlob(currentBlob);
+        await playBuffer(currentBuf);
       }
 
       if (!globalStopped) {
@@ -221,7 +214,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         setIsPlaying(false);
       }
     },
-    [read, stop, synthesizeChunk, playBlob]
+    [read, stop, synthesizeChunk, playBuffer]
   );
 
   return { speak, stop, isPlaying };
