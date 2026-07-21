@@ -346,12 +346,12 @@ const PREFERENCE_DEFS: &[PreferenceDef] = &[
     },
     PreferenceDef {
         key: PreferenceKey::VoiceTtsEndpointUrl,
-        config_key: "VOICE_TTS_ENDPOINT_URL",
+        config_key: "voice_tts_endpoint_url",
         prepare: prepare_voice_tts_endpoint_url,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceTtsActiveProfile,
-        config_key: "VOICE_TTS_ACTIVE_PROFILE",
+        config_key: "voice_tts_active_profile",
         prepare: prepare_voice_tts_active_profile,
     },
 ];

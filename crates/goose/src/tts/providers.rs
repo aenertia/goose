@@ -99,7 +99,7 @@ pub fn is_tts_configured(provider: TtsProvider) -> bool {
         }
         _ => {
             let has_endpoint = config
-                .get_param::<String>("VOICE_TTS_ENDPOINT_URL")
+                .get_param::<String>("voice_tts_endpoint_url")
                 .ok()
                 .is_some_and(|u| !u.trim().is_empty());
             if has_endpoint {
@@ -134,7 +134,7 @@ const OPENAI_VOICES: &[(&str, &str)] = &[
 pub async fn list_voices(provider: TtsProvider) -> Result<Vec<VoiceInfo>> {
     let config = Config::global();
     let custom_endpoint = config
-        .get_param::<String>("VOICE_TTS_ENDPOINT_URL")
+        .get_param::<String>("voice_tts_endpoint_url")
         .ok()
         .filter(|u| !u.trim().is_empty());
 

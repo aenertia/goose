@@ -42,7 +42,7 @@ impl GooseAcpAgent {
         } else {
             let config = self.config()?;
             let endpoint_url = config
-                .get_param::<String>("VOICE_TTS_ENDPOINT_URL")
+                .get_param::<String>("voice_tts_endpoint_url")
                 .unwrap_or_default();
             let overrides = TtsSynthesizeOverrides {
                 endpoint_url,
