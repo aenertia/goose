@@ -2,7 +2,8 @@ use super::*;
 use crate::tts::profiles;
 use crate::tts::providers::{
     all_tts_providers, get_tts_provider_def, is_tts_configured, list_voices,
-    synthesize_with_model, synthesize_with_profile, synthesize_with_provider, TtsProvider,
+    synthesize_with_model, synthesize_with_profile, synthesize_with_provider_overrides,
+    TtsProvider, TtsSynthesizeOverrides,
 };
 
 impl GooseAcpAgent {
@@ -39,7 +40,16 @@ impl GooseAcpAgent {
         let (audio_bytes, mime_type) = if provider == TtsProvider::ModelNative {
             synthesize_with_model(&req.text).await
         } else {
-            synthesize_with_provider(provider, &req.text, &req.voice, speed).await
+            let config = self.config()?;
+            let endpoint_url = config
+                .get_param::<String>("VOICE_TTS_ENDPOINT_URL")
+                .unwrap_or_default();
+            let overrides = TtsSynthesizeOverrides {
+                endpoint_url,
+                api_key: String::new(),
+            };
+            synthesize_with_provider_overrides(provider, &req.text, &req.voice, speed, &overrides)
+                .await
         }
         .internal_err()?;
 

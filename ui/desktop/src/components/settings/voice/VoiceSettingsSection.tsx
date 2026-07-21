@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Info } from 'lucide-react';
+import { ChevronDown, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { DictationSettings } from '../dictation/DictationSettings';
 import { TtsSettings } from './TtsSettings';
 import { SpellcheckToggle } from '../chat/SpellcheckToggle';
 import { useConfig } from '../../ConfigContext';
+import { Button } from '../../ui/button';
 import { defineMessages, useIntl } from '../../../i18n';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/Tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '../../ui/dropdown-menu';
 
 const i18n = defineMessages({
   dictationTitle: {
@@ -138,8 +146,7 @@ export default function VoiceSettingsSection() {
     upsert('voice_silence_threshold', value, false);
   };
 
-  const handleSplitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+  const handleSplitChange = (value: string) => {
     setSplitStrategy(value);
     upsert('voice_tts_split_on', value, false);
   };
@@ -267,15 +274,36 @@ export default function VoiceSettingsSection() {
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <select
-                value={splitStrategy}
-                onChange={handleSplitChange}
-                className="rounded-md border border-border-primary bg-bg-primary px-3 py-1.5 text-sm"
-              >
-                <option value="none">{intl.formatMessage(i18n.splitNone)}</option>
-                <option value="punctuation">{intl.formatMessage(i18n.splitPunctuation)}</option>
-                <option value="paragraph">{intl.formatMessage(i18n.splitParagraph)}</option>
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="justify-between min-w-[140px] text-text-primary bg-background-primary border-border-primary"
+                  >
+                    <span>
+                      {splitStrategy === 'none'
+                        ? intl.formatMessage(i18n.splitNone)
+                        : splitStrategy === 'paragraph'
+                          ? intl.formatMessage(i18n.splitParagraph)
+                          : intl.formatMessage(i18n.splitPunctuation)}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[140px]">
+                  <DropdownMenuRadioGroup value={splitStrategy} onValueChange={handleSplitChange}>
+                    <DropdownMenuRadioItem value="none">
+                      {intl.formatMessage(i18n.splitNone)}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="punctuation">
+                      {intl.formatMessage(i18n.splitPunctuation)}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="paragraph">
+                      {intl.formatMessage(i18n.splitParagraph)}
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="flex items-center justify-between">

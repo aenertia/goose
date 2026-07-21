@@ -98,6 +98,13 @@ pub fn is_tts_configured(provider: TtsProvider) -> bool {
             }
         }
         _ => {
+            let has_endpoint = config
+                .get_param::<String>("VOICE_TTS_ENDPOINT_URL")
+                .ok()
+                .is_some_and(|u| !u.trim().is_empty());
+            if has_endpoint {
+                return true;
+            }
             let def = get_tts_provider_def(provider);
             config.get_secret::<String>(def.config_key).is_ok()
         }
@@ -270,8 +277,14 @@ async fn synthesize_openai(
 ) -> Result<(Vec<u8>, String)> {
     let config = Config::global();
 
+    let has_custom_endpoint = !overrides.endpoint_url.is_empty();
+
     let api_key: String = if !overrides.api_key.is_empty() {
         overrides.api_key.clone()
+    } else if has_custom_endpoint {
+        config
+            .get_secret::<String>("OPENAI_API_KEY")
+            .unwrap_or_default()
     } else {
         config.get_secret("OPENAI_API_KEY").map_err(|e| {
             tracing::error!("OPENAI_API_KEY not configured: {}", e);
@@ -279,7 +292,7 @@ async fn synthesize_openai(
         })?
     };
 
-    let base_url = if !overrides.endpoint_url.is_empty() {
+    let base_url = if has_custom_endpoint {
         overrides.endpoint_url.clone()
     } else {
         resolve_openai_base_url(config)
