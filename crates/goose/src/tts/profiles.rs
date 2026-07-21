@@ -98,12 +98,7 @@ pub fn save_profile(mut profile: TtsProfile) -> Result<TtsProfile> {
         profile.api_key_env = api_key_env_for_id(&profile.id);
     }
 
-    // Clamp speed.
-    if profile.speed < 0.25 {
-        profile.speed = 0.25;
-    } else if profile.speed > 4.0 {
-        profile.speed = 4.0;
-    }
+    profile.speed = profile.speed.clamp(0.25, 4.0);
 
     let dir = profiles_dir();
     fs::create_dir_all(&dir).context("Failed to create tts_profiles directory")?;
