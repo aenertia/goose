@@ -4,7 +4,6 @@ import {
   App,
   BrowserWindow,
   dialog,
-  globalShortcut,
   ipcMain,
   Menu,
   MenuItem,
@@ -26,6 +25,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync, spawn, execFile } from 'child_process';
 import 'dotenv/config';
+import { createShortcutService, type ShortcutService } from './services/globalShortcuts';
 import { checkBackendStatus } from './backendStatus';
 import { startGooseServe } from './gooseServe';
 import { GooseServeLeaseRegistry, type GooseServeLease } from './gooseServeLeaseRegistry';
@@ -1574,6 +1574,9 @@ const createLauncher = () => {
 // Track tray instance
 let tray: Tray | null = null;
 
+// Track global shortcut service instance
+let shortcutService: ShortcutService | null = null;
+
 const destroyTray = () => {
   if (tray) {
     tray.destroy();
@@ -1946,7 +1949,7 @@ ipcMain.handle('set-setting', (_event, key: SettingKey, value: unknown) => {
 
   // Re-register shortcuts if keyboard shortcuts changed
   if (key === 'keyboardShortcuts') {
-    registerGlobalShortcuts();
+    registerGlobalShortcuts().catch((e) => console.error('Failed to re-register shortcuts:', e));
   }
 
   if (key === 'disableAutoDownload') {
@@ -2373,31 +2376,33 @@ const focusWindow = () => {
   }
 };
 
-const registerGlobalShortcuts = () => {
-  globalShortcut.unregisterAll();
+const registerGlobalShortcuts = async () => {
+  if (shortcutService) await shortcutService.unregisterAll();
+  if (!shortcutService) shortcutService = await createShortcutService();
 
   const settings = getSettings();
   const shortcuts = getKeyboardShortcuts(settings);
+  const bindings: import('./services/globalShortcuts/types').ShortcutBinding[] = [];
 
   if (shortcuts.focusWindow) {
-    try {
-      globalShortcut.register(shortcuts.focusWindow, () => {
-        focusWindow();
-      });
-    } catch (e) {
-      console.error('Error registering focus window hotkey:', e);
-    }
+    bindings.push({
+      id: 'focus-window',
+      description: 'Focus Goose window',
+      accelerator: shortcuts.focusWindow,
+      callback: () => focusWindow(),
+    });
   }
 
   if (shortcuts.quickLauncher) {
-    try {
-      globalShortcut.register(shortcuts.quickLauncher, () => {
-        createLauncher();
-      });
-    } catch (e) {
-      console.error('Error registering launcher hotkey:', e);
-    }
+    bindings.push({
+      id: 'quick-launcher',
+      description: 'Quick launcher',
+      accelerator: shortcuts.quickLauncher,
+      callback: () => createLauncher(),
+    });
   }
+
+  await shortcutService.register(bindings);
 };
 
 async function appMain() {
@@ -2450,7 +2455,7 @@ async function appMain() {
   }
 
   // Register global shortcuts based on settings
-  registerGlobalShortcuts();
+  await registerGlobalShortcuts();
 
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     details.requestHeaders['Origin'] = 'http://localhost:5173';
@@ -3130,7 +3135,7 @@ app.on('will-quit', async () => {
   }
   windowPowerSaveBlockers.clear();
 
-  globalShortcut.unregisterAll();
+  shortcutService?.dispose();
 });
 
 app.on('window-all-closed', () => {
