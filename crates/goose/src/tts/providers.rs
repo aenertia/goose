@@ -230,8 +230,7 @@ async fn list_custom_endpoint_voices(endpoint: &str) -> Result<Vec<VoiceInfo>> {
                             .or_else(|| f.strip_suffix(".ogg"))
                             .or_else(|| f.strip_suffix(".flac"))
                             .unwrap_or(&f)
-                            .replace('-', " ")
-                            .replace('_', " ");
+                            .replace(['-', '_'], " ");
                         VoiceInfo {
                             id: f,
                             name,
