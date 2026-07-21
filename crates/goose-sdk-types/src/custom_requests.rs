@@ -566,6 +566,7 @@ pub enum PreferenceKey {
     VoiceMode,
     VoiceTtsEndpointUrl,
     VoiceTtsActiveProfile,
+    VoiceSttEndpoint,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema)]

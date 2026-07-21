@@ -276,6 +276,13 @@ fn build_api_client(provider: DictationProvider) -> Result<(ApiClient, String)> 
         )
     };
 
+    // voice_stt_endpoint overrides the resolved base URL when set
+    let base_url = config
+        .get_param::<String>("voice_stt_endpoint")
+        .ok()
+        .filter(|s| !s.is_empty())
+        .unwrap_or(base_url);
+
     let auth = match provider {
         DictationProvider::OpenAI => AuthMethod::BearerToken(api_key),
         DictationProvider::Groq => AuthMethod::BearerToken(api_key),
