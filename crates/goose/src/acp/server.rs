@@ -107,6 +107,7 @@ mod slash_commands;
 mod sources;
 mod tool_notifications;
 mod tools;
+mod tts;
 
 pub type AcpProviderFactory = Arc<
     dyn Fn(

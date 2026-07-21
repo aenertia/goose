@@ -843,6 +843,46 @@ impl GooseAcpAgent {
         self.on_dictation_model_select(req).await
     }
 
+    #[custom_method(TtsSynthesizeRequest)]
+    async fn dispatch_tts_synthesize(
+        &self,
+        req: TtsSynthesizeRequest,
+    ) -> Result<TtsSynthesizeResponse, agent_client_protocol::Error> {
+        self.on_tts_synthesize(req).await
+    }
+
+    #[custom_method(TtsConfigRequest)]
+    async fn dispatch_tts_config(
+        &self,
+        _req: TtsConfigRequest,
+    ) -> Result<TtsConfigResponse, agent_client_protocol::Error> {
+        self.on_tts_config(_req).await
+    }
+
+    #[custom_method(TtsVoicesRequest)]
+    async fn dispatch_tts_voices(
+        &self,
+        req: TtsVoicesRequest,
+    ) -> Result<TtsVoicesResponse, agent_client_protocol::Error> {
+        self.on_tts_voices(req).await
+    }
+
+    #[custom_method(TtsSecretSaveRequest)]
+    async fn dispatch_tts_secret_save(
+        &self,
+        req: TtsSecretSaveRequest,
+    ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        self.on_tts_secret_save(req).await
+    }
+
+    #[custom_method(TtsSecretDeleteRequest)]
+    async fn dispatch_tts_secret_delete(
+        &self,
+        req: TtsSecretDeleteRequest,
+    ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        self.on_tts_secret_delete(req).await
+    }
+
     #[custom_method(LocalInferenceModelsListRequest)]
     async fn dispatch_local_inference_models_list(
         &self,

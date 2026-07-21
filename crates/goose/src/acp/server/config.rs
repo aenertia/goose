@@ -314,6 +314,21 @@ const PREFERENCE_DEFS: &[PreferenceDef] = &[
         config_key: "VOICE_SILENCE_THRESHOLD",
         prepare: prepare_voice_silence_threshold,
     },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsProvider,
+        config_key: "VOICE_TTS_PROVIDER",
+        prepare: prepare_voice_tts_provider,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsVoice,
+        config_key: "VOICE_TTS_VOICE",
+        prepare: prepare_voice_tts_voice,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsSpeed,
+        config_key: "VOICE_TTS_SPEED",
+        prepare: prepare_voice_tts_speed,
+    },
 ];
 
 fn preference_def(
@@ -415,6 +430,53 @@ fn prepare_voice_silence_threshold(
             .data("voiceSilenceThreshold must be between 500 and 3000"));
     }
     Ok(serde_json::Value::String(ms.to_string()))
+}
+
+fn prepare_voice_tts_provider(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsProvider must be a string"));
+    };
+    if !matches!(
+        value,
+        "openai" | "elevenlabs" | "browser" | "model" | "__disabled__"
+    ) {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsProvider is not supported"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_tts_voice(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsVoice must be a string")
+        );
+    };
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_tts_speed(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(s) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsSpeed must be a string")
+        );
+    };
+    let speed: f32 = s.parse().map_err(|_| {
+        agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsSpeed must be a string containing a number")
+    })?;
+    if !(0.25..=4.0).contains(&speed) {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsSpeed must be between 0.25 and 4.0"));
+    }
+    Ok(serde_json::Value::String(format!("{:.2}", speed)))
 }
 
 fn is_supported_voice_dictation_provider(value: &str) -> bool {
