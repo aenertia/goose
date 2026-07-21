@@ -132,18 +132,118 @@ const OPENAI_VOICES: &[(&str, &str)] = &[
 ];
 
 pub async fn list_voices(provider: TtsProvider) -> Result<Vec<VoiceInfo>> {
+    let config = Config::global();
+    let custom_endpoint = config
+        .get_param::<String>("VOICE_TTS_ENDPOINT_URL")
+        .ok()
+        .filter(|u| !u.trim().is_empty());
+
     match provider {
-        TtsProvider::OpenAI => Ok(OPENAI_VOICES
-            .iter()
-            .map(|(id, name)| VoiceInfo {
-                id: id.to_string(),
-                name: name.to_string(),
-                preview_url: None,
-            })
-            .collect()),
-        TtsProvider::ElevenLabs => list_elevenlabs_voices().await,
+        TtsProvider::OpenAI => {
+            if let Some(ref endpoint) = custom_endpoint {
+                if let Ok(voices) = list_custom_endpoint_voices(endpoint).await {
+                    if !voices.is_empty() {
+                        return Ok(voices);
+                    }
+                }
+            }
+            Ok(OPENAI_VOICES
+                .iter()
+                .map(|(id, name)| VoiceInfo {
+                    id: id.to_string(),
+                    name: name.to_string(),
+                    preview_url: None,
+                })
+                .collect())
+        }
+        TtsProvider::ElevenLabs => {
+            if let Some(ref endpoint) = custom_endpoint {
+                if let Ok(voices) = list_custom_endpoint_voices(endpoint).await {
+                    if !voices.is_empty() {
+                        return Ok(voices);
+                    }
+                }
+            }
+            list_elevenlabs_voices().await
+        }
         TtsProvider::Browser | TtsProvider::ModelNative => Ok(vec![]),
     }
+}
+
+async fn list_custom_endpoint_voices(endpoint: &str) -> Result<Vec<VoiceInfo>> {
+    let base = endpoint.trim_end_matches('/');
+    let client = reqwest::Client::builder()
+        .timeout(TTS_REQUEST_TIMEOUT)
+        .build()?;
+
+    // Try /v1/audio/voices first (OpenAI-compatible)
+    if let Ok(resp) = client
+        .get(format!("{}/v1/audio/voices", base))
+        .send()
+        .await
+    {
+        if resp.status().is_success() {
+            if let Ok(data) = resp.json::<serde_json::Value>().await {
+                let voices: Vec<VoiceInfo> = data["voices"]
+                    .as_array()
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|v| {
+                                let id = v["voice_id"]
+                                    .as_str()
+                                    .or_else(|| v["id"].as_str())?
+                                    .to_string();
+                                let name = v["name"]
+                                    .as_str()
+                                    .unwrap_or_else(|| v["voice_id"].as_str().unwrap_or(&id))
+                                    .to_string();
+                                Some(VoiceInfo {
+                                    id,
+                                    name,
+                                    preview_url: v["preview_url"].as_str().map(|s| s.to_string()),
+                                })
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                if !voices.is_empty() {
+                    return Ok(voices);
+                }
+            }
+        }
+    }
+
+    // Try /get_reference_files (Chatterbox TTS)
+    if let Ok(resp) = client
+        .get(format!("{}/get_reference_files", base))
+        .send()
+        .await
+    {
+        if resp.status().is_success() {
+            if let Ok(files) = resp.json::<Vec<String>>().await {
+                let voices: Vec<VoiceInfo> = files
+                    .into_iter()
+                    .map(|f| {
+                        let name = f
+                            .strip_suffix(".wav")
+                            .or_else(|| f.strip_suffix(".mp3"))
+                            .unwrap_or(&f)
+                            .to_string();
+                        VoiceInfo {
+                            id: f,
+                            name,
+                            preview_url: None,
+                        }
+                    })
+                    .collect();
+                if !voices.is_empty() {
+                    return Ok(voices);
+                }
+            }
+        }
+    }
+
+    Ok(vec![])
 }
 
 async fn list_elevenlabs_voices() -> Result<Vec<VoiceInfo>> {
@@ -310,15 +410,21 @@ async fn synthesize_openai(
         url.query_pairs_mut().append_pair(k, v);
     }
 
-    let voice = if voice.is_empty() { "alloy" } else { voice };
+    let voice = if voice.is_empty() && !has_custom_endpoint {
+        "alloy"
+    } else {
+        voice
+    };
 
-    let body = serde_json::json!({
+    let mut body = serde_json::json!({
         "model": "tts-1",
         "input": text,
-        "voice": voice,
         "speed": speed,
         "response_format": "mp3"
     });
+    if !voice.is_empty() {
+        body["voice"] = serde_json::Value::String(voice.to_string());
+    }
 
     let tls = provider_tls_config_from_config(config)?;
     #[allow(unused_mut)]
