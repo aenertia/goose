@@ -296,52 +296,52 @@ const PREFERENCE_DEFS: &[PreferenceDef] = &[
     },
     PreferenceDef {
         key: PreferenceKey::VoiceAutoSubmitPhrases,
-        config_key: "VOICE_AUTO_SUBMIT_PHRASES",
+        config_key: "voice_auto_submit_phrases",
         prepare: prepare_voice_auto_submit_phrases,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceDictationProvider,
-        config_key: "VOICE_DICTATION_PROVIDER",
+        config_key: "voice_dictation_provider",
         prepare: prepare_voice_dictation_provider,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceDictationPreferredMic,
-        config_key: "VOICE_DICTATION_PREFERRED_MIC",
+        config_key: "voice_dictation_preferred_mic",
         prepare: prepare_voice_dictation_preferred_mic,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceSilenceThreshold,
-        config_key: "VOICE_SILENCE_THRESHOLD",
+        config_key: "voice_silence_threshold",
         prepare: prepare_voice_silence_threshold,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceTtsProvider,
-        config_key: "VOICE_TTS_PROVIDER",
+        config_key: "voice_tts_provider",
         prepare: prepare_voice_tts_provider,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceTtsVoice,
-        config_key: "VOICE_TTS_VOICE",
+        config_key: "voice_tts_voice",
         prepare: prepare_voice_tts_voice,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceTtsSpeed,
-        config_key: "VOICE_TTS_SPEED",
+        config_key: "voice_tts_speed",
         prepare: prepare_voice_tts_speed,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceTtsSplitOn,
-        config_key: "VOICE_TTS_SPLIT_ON",
+        config_key: "voice_tts_split_on",
         prepare: prepare_voice_tts_split_on,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceAutoSpeak,
-        config_key: "VOICE_AUTO_SPEAK",
+        config_key: "voice_auto_speak",
         prepare: prepare_voice_auto_speak,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceMode,
-        config_key: "VOICE_MODE",
+        config_key: "voice_mode",
         prepare: prepare_voice_mode,
     },
     PreferenceDef {

@@ -227,8 +227,11 @@ async fn list_custom_endpoint_voices(endpoint: &str) -> Result<Vec<VoiceInfo>> {
                         let name = f
                             .strip_suffix(".wav")
                             .or_else(|| f.strip_suffix(".mp3"))
+                            .or_else(|| f.strip_suffix(".ogg"))
+                            .or_else(|| f.strip_suffix(".flac"))
                             .unwrap_or(&f)
-                            .to_string();
+                            .replace('-', " ")
+                            .replace('_', " ");
                         VoiceInfo {
                             id: f,
                             name,
@@ -244,50 +247,6 @@ async fn list_custom_endpoint_voices(endpoint: &str) -> Result<Vec<VoiceInfo>> {
     }
 
     Ok(vec![])
-}
-
-async fn auto_detect_default_voice(base_url: &str) -> Option<String> {
-    let base = base_url.trim_end_matches('/');
-    let client = reqwest::Client::builder()
-        .timeout(TTS_REQUEST_TIMEOUT)
-        .build()
-        .ok()?;
-
-    if let Ok(resp) = client
-        .get(format!("{}/get_reference_files", base))
-        .send()
-        .await
-    {
-        if resp.status().is_success() {
-            if let Ok(files) = resp.json::<Vec<String>>().await {
-                if let Some(first) = files.into_iter().next() {
-                    return Some(first);
-                }
-            }
-        }
-    }
-
-    if let Ok(resp) = client
-        .get(format!("{}/v1/audio/voices", base))
-        .send()
-        .await
-    {
-        if resp.status().is_success() {
-            if let Ok(data) = resp.json::<serde_json::Value>().await {
-                if let Some(arr) = data["voices"].as_array() {
-                    if let Some(first) = arr.first() {
-                        let id = first["voice_id"]
-                            .as_str()
-                            .or_else(|| first["id"].as_str())
-                            .unwrap_or("default");
-                        return Some(id.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    None
 }
 
 async fn list_elevenlabs_voices() -> Result<Vec<VoiceInfo>> {
@@ -358,7 +317,7 @@ pub async fn synthesize_with_provider_overrides(
     overrides: &TtsSynthesizeOverrides,
 ) -> Result<(Vec<u8>, String)> {
     match provider {
-        TtsProvider::OpenAI => synthesize_openai(text, voice, speed, overrides).await,
+        TtsProvider::OpenAI => synthesize_openai_compatible(text, voice, speed, overrides).await,
         TtsProvider::ElevenLabs => synthesize_elevenlabs(text, voice, overrides).await,
         TtsProvider::Browser => {
             anyhow::bail!("Browser TTS is handled client-side via speechSynthesis")
@@ -413,7 +372,7 @@ pub async fn synthesize_with_profile(
     .await
 }
 
-async fn synthesize_openai(
+async fn synthesize_openai_compatible(
     text: &str,
     voice: &str,
     speed: f32,
@@ -457,7 +416,10 @@ async fn synthesize_openai(
     let resolved_voice: String = if !voice.is_empty() {
         voice.to_string()
     } else if has_custom_endpoint {
-        auto_detect_default_voice(&base_url).await.unwrap_or_default()
+        let config = Config::global();
+        config
+            .get_param::<String>("voice_tts_voice")
+            .unwrap_or_default()
     } else {
         "alloy".to_string()
     };

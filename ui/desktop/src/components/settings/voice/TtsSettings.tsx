@@ -93,7 +93,7 @@ export function TtsSettings() {
     }
 
     setIsTesting(true);
-    setTestStatus('Calling backend synthesize...');
+    setTestStatus('Synthesizing...');
 
     try {
       const voice = selectedVoice || '';
@@ -104,38 +104,42 @@ export function TtsSettings() {
         voice,
         spd
       );
-      const b64len = result.audio.length;
-      setTestStatus(`Synthesis OK: ${b64len} chars b64. Decoding via AudioContext...`);
 
       const raw = atob(result.audio);
       const arrayBuf = new ArrayBuffer(raw.length);
       const view = new Uint8Array(arrayBuf);
       for (let i = 0; i < raw.length; i++) view[i] = raw.charCodeAt(i);
-      const magic = Array.from(view.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ');
-      setTestStatus(`Decoded ${arrayBuf.byteLength}B, magic=[${magic}]. Creating AudioContext...`);
 
+      setTestStatus('Playing...');
       const ctx = new AudioContext();
       try {
         const audioBuffer = await ctx.decodeAudioData(arrayBuf);
-        setTestStatus(`Decoded: ${audioBuffer.duration.toFixed(1)}s, ${audioBuffer.sampleRate}Hz, ${audioBuffer.numberOfChannels}ch. Playing...`);
         const source = ctx.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(ctx.destination);
         source.onended = () => {
           setIsTesting(false);
-          setTestStatus(`Playback completed (${audioBuffer.duration.toFixed(1)}s, ${audioBuffer.sampleRate}Hz)`);
+          setTestStatus('Test passed');
           ctx.close();
         };
         source.start();
-        setTestStatus(`Playing via AudioContext (${audioBuffer.duration.toFixed(1)}s)`);
       } catch (decodeErr) {
         setIsTesting(false);
-        setTestStatus(`decodeAudioData failed: ${decodeErr}. magic=[${magic}], ${arrayBuf.byteLength}B`);
+        console.error('[TTS test] decodeAudioData failed:', decodeErr);
+        setTestStatus('Failed — audio format not supported');
         ctx.close();
       }
     } catch (synthErr) {
       setIsTesting(false);
-      setTestStatus(`Synthesis FAILED: ${synthErr}`);
+      console.error('[TTS test] synthesis failed:', synthErr);
+      const msg = String(synthErr);
+      if (msg.includes('not configured')) {
+        setTestStatus('Failed — provider not configured');
+      } else if (msg.includes('500') || msg.includes('engine failed')) {
+        setTestStatus('Failed — TTS server error');
+      } else {
+        setTestStatus('Failed — check endpoint URL and voice');
+      }
     }
   };
 
