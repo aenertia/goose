@@ -72,6 +72,73 @@ export function TtsSettings() {
     getAudioOutputDevice() || ''
   );
 
+  const runTtsTest = async () => {
+    if (!provider) {
+      setTestStatus('No TTS provider selected');
+      return;
+    }
+    if (provider === 'browser') {
+      setTestStatus('Testing browser TTS...');
+      try {
+        const utterance = new SpeechSynthesisUtterance('Hello! This is a test. Honk!');
+        utterance.onend = () => setTestStatus('Browser TTS played successfully');
+        utterance.onerror = (e) => setTestStatus(`Browser TTS error: ${e.error}`);
+        window.speechSynthesis.speak(utterance);
+        setIsTesting(true);
+        return;
+      } catch (e) {
+        setTestStatus(`Browser TTS failed: ${e}`);
+        return;
+      }
+    }
+
+    setIsTesting(true);
+    setTestStatus('Calling backend synthesize...');
+
+    try {
+      const voice = selectedVoice || '';
+      const spd = parseFloat(speed) || 1.0;
+      const result = await synthesizeTts(
+        'Hello! This is a test of the text to speech system. Honk!',
+        provider,
+        voice,
+        spd
+      );
+      const b64len = result.audio.length;
+      setTestStatus(`Synthesis OK: ${b64len} chars b64. Decoding via AudioContext...`);
+
+      const raw = atob(result.audio);
+      const arrayBuf = new ArrayBuffer(raw.length);
+      const view = new Uint8Array(arrayBuf);
+      for (let i = 0; i < raw.length; i++) view[i] = raw.charCodeAt(i);
+      const magic = Array.from(view.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+      setTestStatus(`Decoded ${arrayBuf.byteLength}B, magic=[${magic}]. Creating AudioContext...`);
+
+      const ctx = new AudioContext();
+      try {
+        const audioBuffer = await ctx.decodeAudioData(arrayBuf);
+        setTestStatus(`Decoded: ${audioBuffer.duration.toFixed(1)}s, ${audioBuffer.sampleRate}Hz, ${audioBuffer.numberOfChannels}ch. Playing...`);
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(ctx.destination);
+        source.onended = () => {
+          setIsTesting(false);
+          setTestStatus(`Playback completed (${audioBuffer.duration.toFixed(1)}s, ${audioBuffer.sampleRate}Hz)`);
+          ctx.close();
+        };
+        source.start();
+        setTestStatus(`Playing via AudioContext (${audioBuffer.duration.toFixed(1)}s)`);
+      } catch (decodeErr) {
+        setIsTesting(false);
+        setTestStatus(`decodeAudioData failed: ${decodeErr}. magic=[${magic}], ${arrayBuf.byteLength}B`);
+        ctx.close();
+      }
+    } catch (synthErr) {
+      setIsTesting(false);
+      setTestStatus(`Synthesis FAILED: ${synthErr}`);
+    }
+  };
+
   const refreshStatuses = async () => {
     try {
       const statuses = await getTtsConfig();
