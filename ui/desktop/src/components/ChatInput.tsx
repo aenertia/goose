@@ -18,6 +18,8 @@ import { useModelAndProvider } from './ModelAndProviderContext';
 import { acpListProviderDetails } from '../acp/providers';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { useConversationMode } from '../hooks/useConversationMode';
+import { useConfig } from './ConfigContext';
 import { toastError } from '../toasts';
 import MentionPopover, { DisplayItemWithMatch } from './MentionPopover';
 import { COST_TRACKING_ENABLED } from '../updates';
@@ -154,6 +156,22 @@ const i18n = defineMessages({
   viewEditRecipe: {
     id: 'chatInput.viewEditRecipe',
     defaultMessage: 'View/Edit Recipe',
+  },
+  conversationMode: {
+    id: 'chatInput.conversationMode',
+    defaultMessage: 'Conversation mode',
+  },
+  conversationListening: {
+    id: 'chatInput.conversationListening',
+    defaultMessage: 'Listening...',
+  },
+  conversationSubmitting: {
+    id: 'chatInput.conversationSubmitting',
+    defaultMessage: 'Thinking...',
+  },
+  conversationSpeaking: {
+    id: 'chatInput.conversationSpeaking',
+    defaultMessage: 'Speaking...',
   },
 });
 
@@ -460,6 +478,27 @@ export default function ChatInput({
     selectFile: (index: number) => void;
   }>(null);
 
+  const { read: configRead } = useConfig();
+  const { stop: stopAudioPlayback } = useAudioPlayer();
+
+  // Conversation mode: read voice_mode preference
+  const [voiceModeEnabled, setVoiceModeEnabled] = useState(false);
+  useEffect(() => {
+    const checkMode = async () => {
+      try {
+        const val = await configRead('voice_mode', false);
+        setVoiceModeEnabled(val === 'conversation');
+      } catch {
+        // Default to dictation mode
+      }
+    };
+    checkMode();
+  }, [configRead]);
+
+  // Ref to break circular dependency: useAudioRecorder needs conversationAutoSubmit,
+  // but useConversationMode needs startRecording/stopRecording from useAudioRecorder.
+  const conversationAutoSubmitRef = useRef<((text: string) => void) | undefined>(undefined);
+
   // Audio recorder hook for voice dictation
   const {
     isEnabled,
@@ -509,9 +548,34 @@ export default function ChatInput({
         msg: message,
       });
     },
+    onSilenceAutoSubmit: voiceModeEnabled ? ((text: string) => conversationAutoSubmitRef.current?.(text)) : undefined,
   });
   const internalTextAreaRef = useRef<HTMLTextAreaElement>(null);
-  const { stop: stopAudioPlayback } = useAudioPlayer();
+
+
+  const conversationSubmit = useCallback(
+    (text: string) => {
+      if (text.trim()) {
+        handleSubmit({ msg: text.trim(), images: [] });
+      }
+    },
+    [handleSubmit]
+  );
+
+  const {
+    isActive: isConversationActive,
+    activate: activateConversation,
+    deactivate: deactivateConversation,
+    state: conversationState,
+    handleAutoSubmit: conversationAutoSubmit,
+  } = useConversationMode({
+    submitMessage: conversationSubmit,
+    startRecording,
+    stopRecording,
+    isRecording,
+    isLoading,
+  });
+  conversationAutoSubmitRef.current = conversationAutoSubmit;
 
   const textAreaRef = inputRef || internalTextAreaRef;
   const timeoutRefsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
@@ -1758,6 +1822,61 @@ export default function ChatInput({
               <TooltipContent>Attach file</TooltipContent>
             </Tooltip>
           </>
+        )}
+
+        {/* Right: conversation mode toggle */}
+        {dictationProvider && voiceModeEnabled && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant={isConversationActive ? 'default' : 'ghost'}
+                size="sm"
+                shape="round"
+                onClick={() => {
+                  if (isConversationActive) {
+                    deactivateConversation();
+                  } else {
+                    stopAudioPlayback();
+                    activateConversation();
+                  }
+                }}
+                disabled={!isEnabled || isTranscribing}
+                className={cn(
+                  'transition-colors',
+                  isConversationActive
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'text-text-primary/70 hover:text-text-primary',
+                )}
+              >
+                {isConversationActive ? (
+                  <span className="flex items-center gap-1 text-xs">
+                    <span className={cn(
+                      'inline-block w-2 h-2 rounded-full',
+                      conversationState === 'listening' && 'bg-red-400 animate-pulse',
+                      conversationState === 'submitting' && 'bg-yellow-400 animate-pulse',
+                      conversationState === 'speaking' && 'bg-blue-400 animate-pulse',
+                      conversationState === 'idle' && 'bg-gray-400',
+                    )} />
+                    {conversationState === 'listening'
+                      ? intl.formatMessage(i18n.conversationListening)
+                      : conversationState === 'submitting'
+                        ? intl.formatMessage(i18n.conversationSubmitting)
+                        : conversationState === 'speaking'
+                          ? intl.formatMessage(i18n.conversationSpeaking)
+                          : intl.formatMessage(i18n.conversationMode)}
+                  </span>
+                ) : (
+                  <Microphone size={14} />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isConversationActive
+                ? 'Stop conversation mode'
+                : intl.formatMessage(i18n.conversationMode)}
+            </TooltipContent>
+          </Tooltip>
         )}
 
         {/* Right: mic — ghost icon, no background when idle */}

@@ -339,6 +339,11 @@ const PREFERENCE_DEFS: &[PreferenceDef] = &[
         config_key: "VOICE_AUTO_SPEAK",
         prepare: prepare_voice_auto_speak,
     },
+    PreferenceDef {
+        key: PreferenceKey::VoiceMode,
+        config_key: "VOICE_MODE",
+        prepare: prepare_voice_mode,
+    },
 ];
 
 fn preference_def(
@@ -519,6 +524,20 @@ fn prepare_voice_auto_speak(
     Ok(serde_json::Value::String(value.to_string()))
 }
 
+fn prepare_voice_mode(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceMode must be a string")
+        );
+    };
+    if !matches!(value, "dictation" | "conversation") {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceMode must be dictation or conversation"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
 fn is_supported_voice_dictation_provider(value: &str) -> bool {
     matches!(
         value,

@@ -12,7 +12,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/Tooltip';
 
 type TtsProviderOption = TtsProvider | null;
 

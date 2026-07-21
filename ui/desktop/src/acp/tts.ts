@@ -17,8 +17,8 @@ export interface TtsVoiceInfo {
 
 export async function getTtsConfig(): Promise<TtsProviders> {
   const client = await getAcpClient();
-  const response = await client.goose.ttsConfig_unstable({});
-  return response.providers ?? {};
+  const response = await client.extMethod('_goose/unstable/tts/config', {});
+  return (response.providers as TtsProviders) ?? {};
 }
 
 export async function synthesizeTts(
@@ -28,27 +28,27 @@ export async function synthesizeTts(
   speed: number
 ): Promise<{ audio: string; mimeType: string }> {
   const client = await getAcpClient();
-  const response = await client.goose.ttsSynthesize_unstable({
+  const response = await client.extMethod('_goose/unstable/tts/synthesize', {
     text,
     provider,
     voice,
     speed,
   });
-  return { audio: response.audio, mimeType: response.mimeType };
+  return { audio: response.audio as string, mimeType: response.mimeType as string };
 }
 
 export async function listTtsVoices(provider: string): Promise<TtsVoiceInfo[]> {
   const client = await getAcpClient();
-  const response = await client.goose.ttsVoices_unstable({ provider });
-  return response.voices ?? [];
+  const response = await client.extMethod('_goose/unstable/tts/voices', { provider });
+  return (response.voices as TtsVoiceInfo[]) ?? [];
 }
 
 export async function saveTtsSecret(provider: string, value: string): Promise<void> {
   const client = await getAcpClient();
-  await client.goose.ttsSecretSave_unstable({ provider, value });
+  await client.extMethod('_goose/unstable/tts/secret/save', { provider, value });
 }
 
 export async function deleteTtsSecret(provider: string): Promise<void> {
   const client = await getAcpClient();
-  await client.goose.ttsSecretDelete_unstable({ provider });
+  await client.extMethod('_goose/unstable/tts/secret/delete', { provider });
 }

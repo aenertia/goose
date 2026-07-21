@@ -6,7 +6,7 @@ import { TtsSettings } from './TtsSettings';
 import { SpellcheckToggle } from '../chat/SpellcheckToggle';
 import { useConfig } from '../../ConfigContext';
 import { defineMessages, useIntl } from '../../../i18n';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/Tooltip';
 
 const i18n = defineMessages({
   dictationTitle: {
@@ -72,6 +72,32 @@ const i18n = defineMessages({
     defaultMessage:
       'When enabled, Goose automatically reads assistant responses aloud after they finish generating.',
   },
+  conversationModeTitle: {
+    id: 'voiceSettings.conversationModeTitle',
+    defaultMessage: 'Conversation Mode',
+  },
+  conversationModeDescription: {
+    id: 'voiceSettings.conversationModeDescription',
+    defaultMessage: 'Choose how voice input behaves',
+  },
+  modeDictation: {
+    id: 'voiceSettings.modeDictation',
+    defaultMessage: 'Dictation',
+  },
+  modeDictationTooltip: {
+    id: 'voiceSettings.modeDictationTooltip',
+    defaultMessage:
+      'Manual start/stop recording. Text appears in input box for review before sending.',
+  },
+  modeConversation: {
+    id: 'voiceSettings.modeConversation',
+    defaultMessage: 'Conversation',
+  },
+  modeConversationTooltip: {
+    id: 'voiceSettings.modeConversationTooltip',
+    defaultMessage:
+      'Hands-free mode. Goose automatically listens after speaking, creating a conversation loop. Note: there will be a pause between your question and Goose\u2019s spoken response while the AI processes.',
+  },
 });
 
 const DEFAULT_SILENCE_THRESHOLD = '800';
@@ -82,6 +108,7 @@ export default function VoiceSettingsSection() {
   const [silenceThreshold, setSilenceThreshold] = useState(DEFAULT_SILENCE_THRESHOLD);
   const [splitStrategy, setSplitStrategy] = useState('punctuation');
   const [autoSpeak, setAutoSpeak] = useState(false);
+  const [voiceMode, setVoiceMode] = useState<'dictation' | 'conversation'>('dictation');
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -96,6 +123,10 @@ export default function VoiceSettingsSection() {
       const autoSpeakVal = await read('voice_auto_speak', false);
       if (autoSpeakVal === 'true') {
         setAutoSpeak(true);
+      }
+      const modeVal = await read('voice_mode', false);
+      if (modeVal === 'conversation') {
+        setVoiceMode('conversation');
       }
     };
     loadSettings();
@@ -119,6 +150,11 @@ export default function VoiceSettingsSection() {
     upsert('voice_auto_speak', checked ? 'true' : 'false', false);
   };
 
+  const handleVoiceModeChange = (mode: 'dictation' | 'conversation') => {
+    setVoiceMode(mode);
+    upsert('voice_mode', mode, false);
+  };
+
   return (
     <div className="space-y-4 pr-4 pb-8 mt-1">
       <Card className="pb-2 rounded-lg">
@@ -129,6 +165,80 @@ export default function VoiceSettingsSection() {
         <CardContent className="px-2">
           <DictationSettings />
           <SpellcheckToggle />
+        </CardContent>
+      </Card>
+
+      <Card className="pb-2 rounded-lg">
+        <CardHeader className="pb-0">
+          <CardTitle>{intl.formatMessage(i18n.conversationModeTitle)}</CardTitle>
+          <CardDescription>
+            {intl.formatMessage(i18n.conversationModeDescription)}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-4 pt-4">
+          <div className="space-y-3">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="voice-mode"
+                value="dictation"
+                checked={voiceMode === 'dictation'}
+                onChange={() => handleVoiceModeChange('dictation')}
+                className="mt-1 accent-accent-primary cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {intl.formatMessage(i18n.modeDictation)}
+                  </span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-text-secondary cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>{intl.formatMessage(i18n.modeDictationTooltip)}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  {intl.formatMessage(i18n.modeDictationTooltip)}
+                </p>
+              </div>
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="radio"
+                name="voice-mode"
+                value="conversation"
+                checked={voiceMode === 'conversation'}
+                onChange={() => handleVoiceModeChange('conversation')}
+                className="mt-1 accent-accent-primary cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {intl.formatMessage(i18n.modeConversation)}
+                  </span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-3.5 w-3.5 text-text-secondary cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>{intl.formatMessage(i18n.modeConversationTooltip)}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  {intl.formatMessage(i18n.modeConversationTooltip)}
+                </p>
+              </div>
+            </label>
+          </div>
         </CardContent>
       </Card>
 
@@ -196,7 +306,7 @@ export default function VoiceSettingsSection() {
         </CardContent>
       </Card>
 
-      <Card className="pb-2 rounded-lg">
+      <Card className={`pb-2 rounded-lg ${voiceMode === 'conversation' ? 'ring-1 ring-accent-primary' : ''}`}>
         <CardHeader className="pb-0">
           <div className="flex items-center gap-2">
             <CardTitle>{intl.formatMessage(i18n.silenceTitle)}</CardTitle>

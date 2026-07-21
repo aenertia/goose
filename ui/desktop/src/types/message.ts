@@ -202,7 +202,8 @@ export type MessageContent =
   | (FrontendToolRequest & { type: 'frontendToolRequest' })
   | (ThinkingContent & { type: 'thinking' })
   | (RedactedThinkingContent & { type: 'redactedThinking' })
-  | (SystemNotificationContent & { type: 'systemNotification' });
+  | (SystemNotificationContent & { type: 'systemNotification' })
+  | (RawAudioContent & { type: 'audio' });
 
 export type Message = {
   content: MessageContent[];

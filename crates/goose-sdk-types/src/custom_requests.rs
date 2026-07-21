@@ -563,6 +563,7 @@ pub enum PreferenceKey {
     VoiceTtsSplitOn,
     VoiceTtsSpeed,
     VoiceAutoSpeak,
+    VoiceMode,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema)]
