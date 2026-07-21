@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, Info, Plus, Trash2, Save } from 'lucide-react';
+import { ChevronDown, Info, Plus, Trash2, Save, Volume2 } from 'lucide-react';
 import {
   getTtsConfig,
   listTtsVoices,
@@ -10,6 +10,7 @@ import {
   TtsVoiceInfo,
 } from '../../../acp/tts';
 import { useConfig } from '../../ConfigContext';
+import { useAudioPlayer, setAudioOutputDevice, getAudioOutputDevice } from '../../../hooks/useAudioPlayer';
 import { Input } from '../../ui/input';
 import { Button } from '../../ui/button';
 import type { TtsProvider, TtsProfile } from '../../../types/tts';
@@ -65,6 +66,12 @@ export function TtsSettings() {
   const [profileApiKey, setProfileApiKey] = useState('');
   const [showProfileEditor, setShowProfileEditor] = useState(false);
 
+  const { speak: testSpeak, stop: testStop, isPlaying: isTesting } = useAudioPlayer();
+  const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedOutputDevice, setSelectedOutputDevice] = useState<string>(
+    getAudioOutputDevice() || ''
+  );
+
   const refreshStatuses = async () => {
     try {
       const statuses = await getTtsConfig();
@@ -87,6 +94,20 @@ export function TtsSettings() {
     refreshStatuses();
     refreshProfiles();
   }, [refreshProfiles]);
+
+  useEffect(() => {
+    const enumerateOutputs = async () => {
+      try {
+        const all = await navigator.mediaDevices.enumerateDevices();
+        setOutputDevices(all.filter((d) => d.kind === 'audiooutput'));
+      } catch {
+        console.warn('Could not enumerate audio output devices');
+      }
+    };
+    enumerateOutputs();
+    navigator.mediaDevices.addEventListener('devicechange', enumerateOutputs);
+    return () => navigator.mediaDevices.removeEventListener('devicechange', enumerateOutputs);
+  }, []);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -483,6 +504,86 @@ export function TtsSettings() {
               {parseFloat(speed).toFixed(2)}x
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Test TTS + Audio Output Device */}
+      {provider && (
+        <div className="space-y-3 pt-2 border-t border-border-primary">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h4 className="text-text-primary text-sm">Test &amp; Output</h4>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-text-secondary cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>
+                      Test your TTS configuration and select which audio output device to use for
+                      speech playback.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (isTesting) {
+                  testStop();
+                } else {
+                  testSpeak('Hello! This is a test of the text to speech system. Honk!');
+                }
+              }}
+              className={isTesting ? 'text-blue-500 animate-pulse' : ''}
+            >
+              <Volume2 className="h-3.5 w-3.5 mr-1" />
+              {isTesting ? 'Stop' : 'Test TTS'}
+            </Button>
+          </div>
+
+          {outputDevices.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-text-primary text-xs">Audio Output Device</h4>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-text-primary bg-background-primary border-border-primary"
+                  >
+                    <span className="truncate">
+                      {selectedOutputDevice
+                        ? outputDevices.find((d) => d.deviceId === selectedOutputDevice)?.label ||
+                          'Selected device'
+                        : 'System Default'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full min-w-[200px] max-h-[300px] overflow-y-auto">
+                  <DropdownMenuRadioGroup
+                    value={selectedOutputDevice || '__default__'}
+                    onValueChange={(v) => {
+                      const deviceId = v === '__default__' ? '' : v;
+                      setSelectedOutputDevice(deviceId);
+                      setAudioOutputDevice(deviceId || null);
+                    }}
+                  >
+                    <DropdownMenuRadioItem value="__default__">System Default</DropdownMenuRadioItem>
+                    {outputDevices.map((d, i) => (
+                      <DropdownMenuRadioItem key={d.deviceId} value={d.deviceId}>
+                        <span className="truncate">
+                          {d.label || `Output ${i + 1}`}
+                        </span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
       )}
 

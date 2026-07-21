@@ -1,6 +1,6 @@
 import { AppEvents } from '../constants/events';
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
-import { ArrowUp, Bug, ScrollText } from 'lucide-react';
+import { ArrowUp, Bug, ScrollText, Volume2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/Tooltip';
 import { Button } from './ui/button';
 import type { View } from '../utils/navigationUtils';
@@ -35,7 +35,7 @@ import { getInitialWorkingDir } from '../utils/workingDir';
 import { getPredefinedModelsFromEnv } from './settings/models/predefinedModelsUtils';
 import { trackFileAttached, trackVoiceDictation, trackDiagnosticsOpened } from '../utils/analytics';
 import { getNavigationShortcutText } from '../utils/keyboardShortcuts';
-import { UserInput, ImageData } from '../types/message';
+import { UserInput, ImageData, getTextAndImageContent } from '../types/message';
 import { compressImageDataUrl } from '../utils/conversionUtils';
 import { fetchCanonicalModelInfo } from '../utils/canonical';
 import { defineMessages, useIntl } from '../i18n';
@@ -479,7 +479,7 @@ export default function ChatInput({
   }>(null);
 
   const { read: configRead } = useConfig();
-  const { stop: stopAudioPlayback } = useAudioPlayer();
+  const { speak: speakText, stop: stopAudioPlayback, isPlaying: isSpeaking } = useAudioPlayer();
 
   // Conversation mode: read voice_mode preference
   const [voiceModeEnabled, setVoiceModeEnabled] = useState(false);
@@ -1879,8 +1879,8 @@ export default function ChatInput({
           </Tooltip>
         )}
 
-        {/* Right: mic — ghost icon, no background when idle */}
-        {dictationProvider && (
+        {/* Right: mic — ghost icon, no background when idle (hidden during conversation mode) */}
+        {dictationProvider && !isConversationActive && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -1922,6 +1922,45 @@ export default function ChatInput({
               ) : (
                 <p>Voice dictation{isRecording ? '' : ' • Say "submit" to send'}</p>
               )}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Right: Honk! — speak last assistant response */}
+        {messages.length > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                shape="round"
+                disabled={isLoading}
+                onClick={() => {
+                  if (isSpeaking) {
+                    stopAudioPlayback();
+                    return;
+                  }
+                  const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+                  if (lastAssistant) {
+                    const { textContent } = getTextAndImageContent(lastAssistant);
+                    if (textContent.trim()) {
+                      speakText(textContent);
+                    }
+                  }
+                }}
+                className={cn(
+                  'transition-colors',
+                  isSpeaking
+                    ? 'text-blue-500 hover:text-blue-600 animate-pulse'
+                    : 'text-text-primary/70 hover:text-text-primary',
+                )}
+              >
+                <Volume2 size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isSpeaking ? 'Stop speaking' : 'Honk! Speak last response'}
             </TooltipContent>
           </Tooltip>
         )}

@@ -9,17 +9,24 @@ type SplitStrategy = 'none' | 'punctuation' | 'paragraph';
 function splitText(text: string, strategy: SplitStrategy): string[] {
   if (strategy === 'none') return [text];
   if (strategy === 'paragraph') return text.split(/\n\n+/).filter((s) => s.trim());
-  // punctuation: split after sentence-ending punctuation followed by whitespace
   return text.split(/(?<=[.!?;])\s+/).filter((s) => s.trim());
 }
 
-// Module-level state so any hook instance can stop playback started by another
 let globalAudio: HTMLAudioElement | null = null;
 let globalStopped = false;
 
-// Shared LRU cache across all instances
 const globalCache = new Map<string, Blob>();
 const globalCacheOrder: string[] = [];
+
+let _selectedOutputDeviceId: string | null = null;
+
+export function setAudioOutputDevice(deviceId: string | null) {
+  _selectedOutputDeviceId = deviceId;
+}
+
+export function getAudioOutputDevice(): string | null {
+  return _selectedOutputDeviceId;
+}
 
 interface UseAudioPlayerReturn {
   speak: (text: string) => Promise<void>;
@@ -55,12 +62,12 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       chunkText: string,
       provider: string,
       voice: string,
-      speed: number
+      speed: number,
+      profileId?: string
     ): Promise<Blob | null> => {
-      const cacheKey = `${provider}:${voice}:${speed}:${chunkText}`;
+      const cacheKey = `${profileId || provider}:${voice}:${speed}:${chunkText}`;
       const cached = globalCache.get(cacheKey);
       if (cached) {
-        // Move to end of LRU order
         const idx = globalCacheOrder.indexOf(cacheKey);
         if (idx !== -1) {
           globalCacheOrder.splice(idx, 1);
@@ -70,13 +77,18 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       }
 
       try {
-        const { audio, mimeType } = await synthesizeTts(chunkText, provider, voice, speed);
+        const { audio, mimeType } = await synthesizeTts(
+          chunkText,
+          provider,
+          voice,
+          speed,
+          profileId
+        );
         const raw = atob(audio);
         const bytes = new Uint8Array(raw.length);
         for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
         const blob = new Blob([bytes], { type: mimeType });
 
-        // LRU eviction
         if (globalCacheOrder.length >= CACHE_MAX) {
           const oldest = globalCacheOrder.shift()!;
           globalCache.delete(oldest);
@@ -85,7 +97,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         globalCacheOrder.push(cacheKey);
         return blob;
       } catch (err) {
-        console.error('TTS synthesis failed:', err);
+        console.error('[TTS] synthesis failed:', err);
         return null;
       }
     },
@@ -109,14 +121,26 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         cleanup();
         resolve();
       };
-      audio.onerror = () => {
+      audio.onerror = (e) => {
+        console.error('[TTS] audio playback error:', e);
         cleanup();
         resolve();
       };
 
-      audio.play().catch(() => {
-        cleanup();
-        resolve();
+      const deviceId = _selectedOutputDeviceId;
+      const maybeSetSink =
+        deviceId && 'setSinkId' in audio
+          ? (audio as HTMLAudioElement & { setSinkId: (id: string) => Promise<void> })
+              .setSinkId(deviceId)
+              .catch((err: unknown) => console.warn('[TTS] setSinkId failed:', err))
+          : Promise.resolve();
+
+      maybeSetSink.then(() => {
+        audio.play().catch((err) => {
+          console.error('[TTS] audio.play() failed:', err);
+          cleanup();
+          resolve();
+        });
       });
     });
   }, []);
@@ -127,13 +151,18 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       globalStopped = false;
 
       const provider = ((await read('voice_tts_provider', false)) as string) || '__disabled__';
-      if (provider === '__disabled__') return;
+      if (provider === '__disabled__') {
+        console.warn('[TTS] provider is disabled, skipping speak');
+        return;
+      }
 
       const voice = ((await read('voice_tts_voice', false)) as string) || '';
       const speedStr = ((await read('voice_tts_speed', false)) as string) || '1.00';
       const speed = parseFloat(speedStr) || 1.0;
       const strategy =
         ((await read('voice_tts_split_on', false)) as SplitStrategy) || 'punctuation';
+      const profileId =
+        ((await read('voice_tts_active_profile', false)) as string) || undefined;
 
       if (provider === 'browser') {
         if (!window.speechSynthesis) return;
@@ -150,7 +179,8 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
           playingRef.current = false;
           setIsPlaying(false);
         };
-        utterance.onerror = () => {
+        utterance.onerror = (e) => {
+          console.error('[TTS] speechSynthesis error:', e);
           playingRef.current = false;
           setIsPlaying(false);
         };
@@ -164,28 +194,25 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       playingRef.current = true;
       setIsPlaying(true);
 
-      // Sequential playback with prefetch: synthesize chunk N+1 while playing chunk N
       let nextBlobPromise: Promise<Blob | null> | null = null;
 
       for (let i = 0; i < chunks.length; i++) {
         if (globalStopped) break;
 
-        // Get current chunk blob (either from prefetch or synthesize now)
         const currentBlob =
           i === 0
-            ? await synthesizeChunk(chunks[i], provider, voice, speed)
-            : await (nextBlobPromise ?? synthesizeChunk(chunks[i], provider, voice, speed));
+            ? await synthesizeChunk(chunks[i], provider, voice, speed, profileId)
+            : await (nextBlobPromise ??
+                synthesizeChunk(chunks[i], provider, voice, speed, profileId));
 
         if (globalStopped || !currentBlob) break;
 
-        // Start prefetching next chunk
         if (i + 1 < chunks.length) {
-          nextBlobPromise = synthesizeChunk(chunks[i + 1], provider, voice, speed);
+          nextBlobPromise = synthesizeChunk(chunks[i + 1], provider, voice, speed, profileId);
         } else {
           nextBlobPromise = null;
         }
 
-        // Play current chunk and wait for it to finish
         await playBlob(currentBlob);
       }
 
