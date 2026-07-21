@@ -467,7 +467,7 @@ async fn synthesize_openai(
         "input": text,
         "voice": if resolved_voice.is_empty() { "default" } else { &resolved_voice },
         "speed": speed,
-        "response_format": "mp3"
+        "response_format": "opus"
     });
 
     let tls = provider_tls_config_from_config(config)?;
@@ -534,7 +534,7 @@ async fn synthesize_openai(
     }
 
     let audio_bytes = response.bytes().await?.to_vec();
-    Ok((audio_bytes, "audio/mpeg".to_string()))
+    Ok((audio_bytes, "audio/ogg".to_string()))
 }
 
 async fn synthesize_elevenlabs(
@@ -600,7 +600,7 @@ async fn synthesize_elevenlabs(
     }
 
     let audio_bytes = response.bytes().await?.to_vec();
-    Ok((audio_bytes, "audio/mpeg".to_string()))
+    Ok((audio_bytes, "audio/ogg".to_string()))
 }
 
 const MODEL_TTS_TIMEOUT: Duration = Duration::from_secs(60);
@@ -699,7 +699,7 @@ pub async fn synthesize_with_model(text: &str) -> Result<(Vec<u8>, String)> {
         .decode(audio_b64)
         .map_err(|e| anyhow::anyhow!("Failed to decode audio base64: {}", e))?;
 
-    Ok((audio_bytes, "audio/mpeg".to_string()))
+    Ok((audio_bytes, "audio/ogg".to_string()))
 }
 
 fn resolve_openai_base_url(config: &Config) -> String {
