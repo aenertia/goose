@@ -4,9 +4,9 @@ use crate::mcp_utils::extract_text_from_resource;
 use crate::utils::sanitize_unicode_tags;
 use chrono::Utc;
 use rmcp::model::{
-    AnnotateAble, CallToolRequestParams, CallToolResult, Content, ElicitationAction, ImageContent,
-    JsonObject, PromptMessage, PromptMessageContent, PromptMessageRole, RawContent,
-    RawImageContent, RawTextContent, Role, TextContent,
+    AnnotateAble, AudioContent, CallToolRequestParams, CallToolResult, Content, ElicitationAction,
+    ImageContent, JsonObject, PromptMessage, PromptMessageContent, PromptMessageRole, RawContent,
+    RawAudioContent, RawImageContent, RawTextContent, Role, TextContent,
 };
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashSet;
@@ -261,6 +261,7 @@ pub struct SystemNotificationContent {
 pub enum MessageContent {
     Text(TextContent),
     Image(ImageContent),
+    Audio(AudioContent),
     ToolRequest(ToolRequest),
     ToolResponse(ToolResponse),
     ToolConfirmationRequest(ToolConfirmationRequest),
@@ -276,6 +277,7 @@ impl fmt::Display for MessageContent {
         match self {
             MessageContent::Text(t) => write!(f, "{}", t.text),
             MessageContent::Image(i) => write!(f, "[Image: {}]", i.mime_type),
+            MessageContent::Audio(a) => write!(f, "[Audio: {}]", a.mime_type),
             MessageContent::ToolRequest(r) => {
                 write!(f, "[ToolRequest: {}]", r.to_readable_string())
             }
@@ -349,6 +351,17 @@ impl MessageContent {
                     None
                 }
             }
+            MessageContent::Audio(audio) => {
+                if audio
+                    .audience()
+                    .map(|roles| roles.contains(&audience))
+                    .unwrap_or(true)
+                {
+                    Some(self.clone())
+                } else {
+                    None
+                }
+            }
             MessageContent::ToolResponse(res) => {
                 let Ok(result) = &res.tool_result else {
                     return Some(self.clone());
@@ -390,6 +403,7 @@ impl MessageContent {
         match self {
             MessageContent::Text(_)
             | MessageContent::Image(_)
+            | MessageContent::Audio(_)
             | MessageContent::ToolResponse(_) => self.filter_for_audience(Role::User),
             _ => Some(self.clone()),
         }
@@ -401,6 +415,16 @@ impl MessageContent {
                 data: data.into(),
                 mime_type: mime_type.into(),
                 meta: None,
+            }
+            .no_annotation(),
+        )
+    }
+
+    pub fn audio<S: Into<String>, T: Into<String>>(data: S, mime_type: T) -> Self {
+        MessageContent::Audio(
+            RawAudioContent {
+                data: data.into(),
+                mime_type: mime_type.into(),
             }
             .no_annotation(),
         )
@@ -625,8 +649,8 @@ impl From<Content> for MessageContent {
             RawContent::Resource(resource) => {
                 MessageContent::text(extract_text_from_resource(&resource.resource))
             }
-            RawContent::Audio(_) => {
-                MessageContent::text("[Audio content: not supported]".to_string())
+            RawContent::Audio(audio) => {
+                MessageContent::Audio(audio.optional_annotate(content.annotations))
             }
         }
     }
@@ -926,6 +950,11 @@ impl Message {
     /// Add image content to the message
     pub fn with_image<S: Into<String>, T: Into<String>>(self, data: S, mime_type: T) -> Self {
         self.with_content(MessageContent::image(data, mime_type))
+    }
+
+    /// Add audio content to the message
+    pub fn with_audio<S: Into<String>, T: Into<String>>(self, data: S, mime_type: T) -> Self {
+        self.with_content(MessageContent::audio(data, mime_type))
     }
 
     /// Add a tool request to the message

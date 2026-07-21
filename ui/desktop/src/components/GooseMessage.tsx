@@ -5,6 +5,7 @@ import MarkdownContent from './MarkdownContent';
 import ThinkingContent from './ThinkingContent';
 import ToolCallWithResponse from './ToolCallWithResponse';
 import {
+  getAudioContent,
   getTextAndImageContent,
   getThinkingContent,
   getToolRequests,
@@ -50,6 +51,7 @@ export default function GooseMessage({
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   const { textContent: displayText, imagePaths } = getTextAndImageContent(message);
+  const audioBlocks = getAudioContent(message);
   const thinkingContent = getThinkingContent(message);
 
   const timestamp = useMemo(() => formatMessageTimestamp(message.created), [message.created]);
@@ -146,6 +148,20 @@ export default function GooseMessage({
               <div className="mt-4">
                 {imagePaths.map((imagePath, index) => (
                   <ImagePreview key={index} src={imagePath} />
+                ))}
+              </div>
+            )}
+
+            {audioBlocks.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {audioBlocks.map((audio, index) => (
+                  <audio key={index} controls className="max-w-full">
+                    <source
+                      src={`data:${audio.mimeType};base64,${audio.data}`}
+                      type={audio.mimeType}
+                    />
+                    Your browser does not support audio playback.
+                  </audio>
                 ))}
               </div>
             )}

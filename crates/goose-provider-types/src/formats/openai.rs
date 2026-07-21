@@ -398,6 +398,9 @@ pub fn format_messages_with_options(
                         }));
                     }
                 }
+                MessageContent::Audio(_) => {
+                    // Skip - audio content not directly supported in chat completions
+                }
                 MessageContent::FrontendToolRequest(request) => match &request.tool_call {
                     Ok(tool_call) => {
                         let sanitized_name = sanitize_function_name(&tool_call.name);

@@ -321,6 +321,16 @@ export function getTextAndImageContent(message: Message): {
   return { textContent, imagePaths };
 }
 
+export function getAudioContent(message: Message): Array<{ data: string; mimeType: string }> {
+  const audioBlocks: Array<{ data: string; mimeType: string }> = [];
+  for (const block of message.content) {
+    if (block.type === 'audio') {
+      audioBlocks.push({ data: block.data, mimeType: block.mimeType });
+    }
+  }
+  return audioBlocks;
+}
+
 function stripToolCallMarkers(text: string): string {
   // Remove all tool call XML markers and their content
   return text

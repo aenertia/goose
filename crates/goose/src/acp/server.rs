@@ -41,7 +41,7 @@ use crate::session::{
 use crate::source_roots::SourceRoot;
 use crate::utils::sanitize_unicode_tags;
 use agent_client_protocol::schema::v1::{
-    AgentCapabilities, Annotations, AuthMethod, AuthMethodAgent, AuthenticateRequest,
+    AgentCapabilities, Annotations, AudioContent, AuthMethod, AuthMethodAgent, AuthenticateRequest,
     AuthenticateResponse, BlobResourceContents, CancelNotification, CloseSessionRequest,
     CloseSessionResponse, ConfigOptionUpdate, Content, ContentBlock, ContentChunk, Cost,
     CurrentModeUpdate, EmbeddedResource, EmbeddedResourceResource, FileSystemCapabilities,
@@ -1333,7 +1333,10 @@ impl GooseAcpAgent {
                         message = message.with_text(text);
                     }
                 }
-                ContentBlock::Audio(..) | _ => (),
+                ContentBlock::Audio(audio) => {
+                    message = message.with_audio(&audio.data, &audio.mime_type);
+                }
+                _ => (),
             }
         }
         message
@@ -1454,6 +1457,16 @@ impl GooseAcpAgent {
                     );
                 }
                 let chunk = ContentChunk::new(ContentBlock::Image(image_content))
+                    .meta(message_update_meta(message_id, message_created, steer));
+                let update = match role {
+                    Role::User => SessionUpdate::UserMessageChunk(chunk),
+                    Role::Assistant => SessionUpdate::AgentMessageChunk(chunk),
+                };
+                cx.send_notification(SessionNotification::new(session_id.clone(), update))?;
+            }
+            MessageContent::Audio(audio) => {
+                let audio_content = AudioContent::new(audio.data.clone(), audio.mime_type.clone());
+                let chunk = ContentChunk::new(ContentBlock::Audio(audio_content))
                     .meta(message_update_meta(message_id, message_created, steer));
                 let update = match role {
                     Role::User => SessionUpdate::UserMessageChunk(chunk),
@@ -2265,7 +2278,12 @@ fn build_tool_call_content(tool_result: &ToolResult<CallToolResult>) -> Vec<Tool
                         ContentBlock::Resource(EmbeddedResource::new(resource)),
                     )))
                 }
-                RawContent::Audio(_) | RawContent::ResourceLink(_) => None,
+                RawContent::Audio(audio) => {
+                    Some(ToolCallContent::Content(Content::new(ContentBlock::Audio(
+                        AudioContent::new(audio.data.clone(), audio.mime_type.clone()),
+                    ))))
+                }
+                RawContent::ResourceLink(_) => None,
             })
             .collect(),
         Err(_) => Vec::new(),
