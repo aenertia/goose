@@ -3,6 +3,7 @@ import { Recipe } from './recipe';
 import type { GooseApp } from './types/apps';
 import type { Settings, SettingKey } from './utils/settings';
 import { defaultSettings } from './utils/settings';
+import { getDisplayServer, type DisplayServer } from './utils/linuxDesktop';
 
 // Mapping from settings keys to their old localStorage keys for lazy migration
 const localStorageKeyMap: Partial<Record<SettingKey, string>> = {
@@ -99,6 +100,7 @@ export interface CreateChatWindowOptions {
 type ElectronAPI = {
   platform: string;
   arch: string;
+  displayServer: DisplayServer;
   reactReady: () => void;
   getConfig: () => Record<string, unknown>;
   hideWindow: () => void;
@@ -188,6 +190,7 @@ type AppConfigAPI = {
 const electronAPI: ElectronAPI = {
   platform: process.platform,
   arch: process.arch,
+  displayServer: getDisplayServer(),
   reactReady: () => ipcRenderer.send('react-ready'),
   getConfig: () => {
     if (!config || Object.keys(config).length === 0) {
