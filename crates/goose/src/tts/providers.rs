@@ -246,6 +246,50 @@ async fn list_custom_endpoint_voices(endpoint: &str) -> Result<Vec<VoiceInfo>> {
     Ok(vec![])
 }
 
+async fn auto_detect_default_voice(base_url: &str) -> Option<String> {
+    let base = base_url.trim_end_matches('/');
+    let client = reqwest::Client::builder()
+        .timeout(TTS_REQUEST_TIMEOUT)
+        .build()
+        .ok()?;
+
+    if let Ok(resp) = client
+        .get(format!("{}/get_reference_files", base))
+        .send()
+        .await
+    {
+        if resp.status().is_success() {
+            if let Ok(files) = resp.json::<Vec<String>>().await {
+                if let Some(first) = files.into_iter().next() {
+                    return Some(first);
+                }
+            }
+        }
+    }
+
+    if let Ok(resp) = client
+        .get(format!("{}/v1/audio/voices", base))
+        .send()
+        .await
+    {
+        if resp.status().is_success() {
+            if let Ok(data) = resp.json::<serde_json::Value>().await {
+                if let Some(arr) = data["voices"].as_array() {
+                    if let Some(first) = arr.first() {
+                        let id = first["voice_id"]
+                            .as_str()
+                            .or_else(|| first["id"].as_str())
+                            .unwrap_or("default");
+                        return Some(id.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 async fn list_elevenlabs_voices() -> Result<Vec<VoiceInfo>> {
     let config = Config::global();
     let api_key: String = config.get_secret("ELEVENLABS_API_KEY").map_err(|e| {
@@ -410,21 +454,24 @@ async fn synthesize_openai(
         url.query_pairs_mut().append_pair(k, v);
     }
 
-    let voice = if voice.is_empty() && !has_custom_endpoint {
-        "alloy"
+    let resolved_voice: String = if !voice.is_empty() {
+        voice.to_string()
+    } else if has_custom_endpoint {
+        match auto_detect_default_voice(&base_url).await {
+            Some(v) => v,
+            None => String::new(),
+        }
     } else {
-        voice
+        "alloy".to_string()
     };
 
-    let mut body = serde_json::json!({
+    let body = serde_json::json!({
         "model": "tts-1",
         "input": text,
+        "voice": if resolved_voice.is_empty() { "default" } else { &resolved_voice },
         "speed": speed,
         "response_format": "mp3"
     });
-    if !voice.is_empty() {
-        body["voice"] = serde_json::Value::String(voice.to_string());
-    }
 
     let tls = provider_tls_config_from_config(config)?;
     #[allow(unused_mut)]
