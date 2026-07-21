@@ -130,22 +130,25 @@ export function useChatSession({
         }
       }
 
-      // Auto-speak: read last assistant message aloud when stream finishes
       if (!error) {
         try {
-          const autoSpeakEnabled = await configRead('voice_auto_speak', false);
-          if (autoSpeakEnabled === 'true') {
-            const currentMessages = getCurrentSnapshot()?.messages ?? [];
-            const lastMsg = currentMessages[currentMessages.length - 1];
-            if (lastMsg?.role === 'assistant') {
-              const { textContent } = getTextAndImageContent(lastMsg);
-              if (textContent.trim()) {
-                autoSpeakSpeak(textContent);
+          const voiceMode = await configRead('voice_mode', false);
+          const isConversation = voiceMode === 'conversation';
+          if (!isConversation) {
+            const autoSpeakEnabled = await configRead('voice_auto_speak', false);
+            if (autoSpeakEnabled === 'true') {
+              const currentMessages = getCurrentSnapshot()?.messages ?? [];
+              const lastMsg = currentMessages[currentMessages.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                const { textContent } = getTextAndImageContent(lastMsg);
+                if (textContent.trim()) {
+                  autoSpeakSpeak(textContent);
+                }
               }
             }
           }
         } catch {
-          // Auto-speak is best-effort; don't block stream completion
+          // best-effort
         }
       }
 

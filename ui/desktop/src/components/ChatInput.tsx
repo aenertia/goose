@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/Tooltip';
 import { Button } from './ui/button';
 import type { View } from '../utils/navigationUtils';
 import Stop from './ui/Stop';
-import { Attach, Close, Microphone } from './icons';
+import { Attach, Close, Microphone, Goose as GooseIcon } from './icons';
 import { ChatState } from '../types/chatState';
 import debounce from 'lodash/debounce';
 import { LocalMessageStorage } from '../utils/localMessageStorage';
@@ -478,7 +478,7 @@ export default function ChatInput({
     selectFile: (index: number) => void;
   }>(null);
 
-  const { read: configRead } = useConfig();
+  const { read: configRead, upsert: configUpsert } = useConfig();
   const { speak: speakText, stop: stopAudioPlayback, isPlaying: isSpeaking } = useAudioPlayer();
 
   // Conversation mode: read voice_mode preference
@@ -1824,7 +1824,7 @@ export default function ChatInput({
           </>
         )}
 
-        {/* Right: conversation mode toggle */}
+        {/* Right: HONK! conversation mode toggle (Goose icon) */}
         {dictationProvider && voiceModeEnabled && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -1836,8 +1836,10 @@ export default function ChatInput({
                 onClick={() => {
                   if (isConversationActive) {
                     deactivateConversation();
+                    configUpsert('voice_auto_speak', 'false', false);
                   } else {
                     stopAudioPlayback();
+                    configUpsert('voice_auto_speak', 'true', false);
                     activateConversation();
                   }
                 }}
@@ -1850,7 +1852,7 @@ export default function ChatInput({
                 )}
               >
                 {isConversationActive ? (
-                  <span className="flex items-center gap-1 text-xs">
+                  <span className="flex items-center gap-0.5 text-xs">
                     <span className={cn(
                       'inline-block w-2 h-2 rounded-full',
                       conversationState === 'listening' && 'bg-red-400 animate-pulse',
@@ -1867,20 +1869,23 @@ export default function ChatInput({
                           : intl.formatMessage(i18n.conversationMode)}
                   </span>
                 ) : (
-                  <Microphone size={14} />
+                  <span className="relative inline-flex items-center">
+                    <GooseIcon className="w-4 h-4" />
+                    <span className="absolute -top-1 -right-1.5 text-[9px] font-bold leading-none text-accent-primary">!</span>
+                  </span>
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
               {isConversationActive
-                ? 'Stop conversation mode'
-                : intl.formatMessage(i18n.conversationMode)}
+                ? 'Stop HONK! mode'
+                : 'HONK! — conversation mode + auto-speak'}
             </TooltipContent>
           </Tooltip>
         )}
 
-        {/* Right: mic — ghost icon, no background when idle (hidden during conversation mode) */}
-        {dictationProvider && !isConversationActive && (
+        {/* Right: mic — hidden when conversation mode is enabled in settings */}
+        {dictationProvider && !voiceModeEnabled && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
