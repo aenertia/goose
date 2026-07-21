@@ -1884,8 +1884,8 @@ export default function ChatInput({
           </Tooltip>
         )}
 
-        {/* Right: mic — hidden when conversation mode is enabled in settings */}
-        {dictationProvider && !voiceModeEnabled && (
+        {/* Right: mic — hidden only when conversation is actively running */}
+        {dictationProvider && !isConversationActive && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
