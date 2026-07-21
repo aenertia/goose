@@ -96,6 +96,38 @@ const getContextAlertType = (totalTokens: number, tokenLimit: number): AlertType
 // Manual compact trigger message - must match backend constant
 const MANUAL_COMPACT_TRIGGER = '/compact';
 
+/**
+ * Full HONK! conversation context — injected with the first voice message
+ * in each conversation session. Derived from the honk-conversation built-in skill.
+ *
+ * SYNC: This content must match the core behavioral rules in
+ * crates/goose/src/skills/builtins/honk_conversation.md — update both when changing rules.
+ */
+const HONK_FULL_CONTEXT = `You are in HONK! voice conversation mode. The user is speaking through a microphone and your responses will be read aloud by TTS.
+
+Core rules:
+- Be concise: 2-4 sentences unless asked for detail.
+- Speak naturally: contractions, active voice, short sentences.
+- Zero formatting: no markdown, code blocks, bullets, tables, emoji, or headers.
+- Acknowledge before action: "Got it, running the build..." Never go silent.
+- If input is garbled: "I didn't catch that. Could you repeat?"
+
+Tool use safety:
+- Read-only ops (ls, git status): execute and narrate results.
+- Write ops (edit, create, commit): announce intent, wait for "go ahead."
+- Destructive ops (rm, force push, DROP): refuse unless explicitly confirmed.
+- Long-running ops: narrate progress.
+
+When reporting file paths, errors, or commands: speak them precisely. Do not paraphrase error messages.
+
+If the user asks for code: describe it verbally and offer to switch to text mode for complex code.`;
+
+/**
+ * Short reinforcement tag — appended to every voice message after the first.
+ * Prevents LLM compliance drift back to markdown formatting.
+ */
+const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, no markdown/code blocks, concise]';
+
 const i18n = defineMessages({
   dictationError: {
     id: 'chatInput.dictationError',
@@ -499,6 +531,7 @@ export default function ChatInput({
   // but useConversationMode needs startRecording/stopRecording from useAudioRecorder.
   const conversationAutoSubmitRef = useRef<((text: string) => void) | undefined>(undefined);
   const prevIsLoadingRef = useRef(false);
+  const conversationTurnRef = useRef(0);
 
   // Audio recorder hook for voice dictation
   const {
@@ -564,8 +597,13 @@ export default function ChatInput({
     (text: string) => {
       if (text.trim()) {
         const spoken = text.trim();
-        const nudge = `${spoken}\n\n<voice-conversation>\nYou are in a live voice conversation (HONK! mode). Reply as if speaking aloud:\n- Be concise and conversational — short sentences, natural phrasing\n- Avoid markdown formatting, bullet lists, code blocks, and headers\n- Do not narrate actions or describe what you would do — just answer directly\n- If explaining code or technical concepts, describe them verbally instead of writing code\n- Keep responses under 3-4 sentences unless the user asks for detail\n</voice-conversation>`;
-        handleSubmit({ msg: nudge, images: [] });
+        conversationTurnRef.current += 1;
+
+        const msg = conversationTurnRef.current === 1
+          ? `${spoken}\n\n<voice-conversation>\n${HONK_FULL_CONTEXT}\n</voice-conversation>`
+          : `${spoken}\n\n${HONK_REINFORCEMENT}`;
+
+        handleSubmit({ msg, images: [] });
       }
     },
     [handleSubmit]
@@ -586,6 +624,14 @@ export default function ChatInput({
     isLoading,
   });
   conversationAutoSubmitRef.current = conversationAutoSubmit;
+
+  // Reset conversation turn counter when conversation mode deactivates.
+  // This ensures the next activation sends HONK_FULL_CONTEXT on the first message.
+  useEffect(() => {
+    if (!isConversationActive) {
+      conversationTurnRef.current = 0;
+    }
+  }, [isConversationActive]);
 
   // When LLM finishes responding (isLoading transitions true→false) during conversation mode,
   // trigger the speak→listen cycle so the mic restarts after TTS completes.
