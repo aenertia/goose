@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { DictationSettings } from '../dictation/DictationSettings';
+import { TtsSettings } from './TtsSettings';
 import { SpellcheckToggle } from '../chat/SpellcheckToggle';
 import { useConfig } from '../../ConfigContext';
 import { defineMessages, useIntl } from '../../../i18n';
@@ -32,6 +33,14 @@ const i18n = defineMessages({
   silenceValue: {
     id: 'voiceSettings.silenceValue',
     defaultMessage: '{value}ms',
+  },
+  ttsTitle: {
+    id: 'voiceSettings.ttsTitle',
+    defaultMessage: 'Text-to-Speech',
+  },
+  ttsDescription: {
+    id: 'voiceSettings.ttsDescription',
+    defaultMessage: 'Configure how Goose speaks responses aloud',
   },
 });
 
@@ -68,6 +77,16 @@ export default function VoiceSettingsSection() {
         <CardContent className=px-2>
           <DictationSettings />
           <SpellcheckToggle />
+        </CardContent>
+      </Card>
+
+      <Card className="pb-2 rounded-lg">
+        <CardHeader className="pb-0">
+          <CardTitle>{intl.formatMessage(i18n.ttsTitle)}</CardTitle>
+          <CardDescription>{intl.formatMessage(i18n.ttsDescription)}</CardDescription>
+        </CardHeader>
+        <CardContent className="px-2">
+          <TtsSettings />
         </CardContent>
       </Card>
 
