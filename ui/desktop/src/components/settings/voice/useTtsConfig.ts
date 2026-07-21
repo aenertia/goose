@@ -10,7 +10,8 @@ import {
   TtsVoiceInfo,
 } from '../../../acp/tts';
 import { useConfig } from '../../ConfigContext';
-import { getAudioOutputDevice } from '../../../hooks/useAudioPlayer';
+import { getAudioOutputDevice, getStoredAudioOutputDevice, setAudioOutputDevice } from '../../../hooks/useAudioPlayer';
+import { createAudioDeviceResolver } from '../../../services/audioDevices';
 import type { TtsProvider, TtsProfile } from '../../../types/tts';
 
 type TtsProviderOption = TtsProvider | null;
@@ -254,6 +255,21 @@ export function useTtsConfig(): UseTtsConfigReturn {
     enumerateOutputs();
     navigator.mediaDevices.addEventListener('devicechange', enumerateOutputs);
     return () => navigator.mediaDevices.removeEventListener('devicechange', enumerateOutputs);
+  }, []);
+
+  useEffect(() => {
+    const deviceResolver = createAudioDeviceResolver();
+    const resolveDevice = async () => {
+      const stored = getStoredAudioOutputDevice();
+      if (stored) {
+        const resolved = await deviceResolver.resolveOutputDevice(stored);
+        if (resolved && resolved !== stored.deviceId) {
+          setSelectedOutputDevice(resolved);
+          void setAudioOutputDevice(resolved);
+        }
+      }
+    };
+    void resolveDevice();
   }, []);
 
   useEffect(() => {

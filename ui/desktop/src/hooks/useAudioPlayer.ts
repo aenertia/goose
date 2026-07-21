@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { synthesizeTts } from '../acp/tts';
 import { useConfig } from '../components/ConfigContext';
+import { createAudioDeviceResolver, type StoredDevice } from '../services/audioDevices';
 
 const CACHE_MAX = 50;
 
@@ -27,14 +28,23 @@ function getSharedCtx(): AudioContext {
 const globalCache = new Map<string, AudioBuffer>();
 const globalCacheOrder: string[] = [];
 
-let _selectedOutputDeviceId: string | null = null;
+const resolver = createAudioDeviceResolver();
+let audioOutputDevice: StoredDevice | null = null;
 
-export function setAudioOutputDevice(deviceId: string | null) {
-  _selectedOutputDeviceId = deviceId;
+export async function setAudioOutputDevice(deviceId: string | null): Promise<void> {
+  if (!deviceId) {
+    audioOutputDevice = null;
+    return;
+  }
+  audioOutputDevice = await resolver.storeOutputDevice(deviceId);
 }
 
 export function getAudioOutputDevice(): string | null {
-  return _selectedOutputDeviceId;
+  return audioOutputDevice?.deviceId ?? null;
+}
+
+export function getStoredAudioOutputDevice(): StoredDevice | null {
+  return audioOutputDevice;
 }
 
 function b64ToArrayBuffer(b64: string): ArrayBuffer {

@@ -175,7 +175,7 @@ export function TtsTestAndOutput({ provider, selectedVoice, speed }: TtsTestAndO
                 onValueChange={(v) => {
                   const deviceId = v === '__default__' ? '' : v;
                   setSelectedOutputDevice(deviceId);
-                  setAudioOutputDevice(deviceId || null);
+                  void setAudioOutputDevice(deviceId || null);
                 }}
               >
                 <DropdownMenuRadioItem value="__default__">System Default</DropdownMenuRadioItem>
