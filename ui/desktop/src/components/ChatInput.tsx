@@ -17,6 +17,7 @@ import { AlertType, useAlerts } from './alerts';
 import { useModelAndProvider } from './ModelAndProviderContext';
 import { acpListProviderDetails } from '../acp/providers';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { toastError } from '../toasts';
 import MentionPopover, { DisplayItemWithMatch } from './MentionPopover';
 import { COST_TRACKING_ENABLED } from '../updates';
@@ -510,6 +511,8 @@ export default function ChatInput({
     },
   });
   const internalTextAreaRef = useRef<HTMLTextAreaElement>(null);
+  const { stop: stopAudioPlayback } = useAudioPlayer();
+
   const textAreaRef = inputRef || internalTextAreaRef;
   const timeoutRefsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
@@ -727,6 +730,7 @@ export default function ChatInput({
     const val = evt.target.value;
     const cursorPosition = evt.target.selectionStart;
 
+    stopAudioPlayback();
     setDisplayValue(val);
     updateValue(val);
     setHasUserTyped(true);
@@ -1772,6 +1776,7 @@ export default function ChatInput({
                     stopRecording();
                   } else {
                     trackVoiceDictation('start');
+                    stopAudioPlayback();
                     startRecording();
                   }
                 }}

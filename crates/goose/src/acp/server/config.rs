@@ -329,6 +329,16 @@ const PREFERENCE_DEFS: &[PreferenceDef] = &[
         config_key: "VOICE_TTS_SPEED",
         prepare: prepare_voice_tts_speed,
     },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsSplitOn,
+        config_key: "VOICE_TTS_SPLIT_ON",
+        prepare: prepare_voice_tts_split_on,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceAutoSpeak,
+        config_key: "VOICE_AUTO_SPEAK",
+        prepare: prepare_voice_auto_speak,
+    },
 ];
 
 fn preference_def(
@@ -477,6 +487,36 @@ fn prepare_voice_tts_speed(
             .data("voiceTtsSpeed must be between 0.25 and 4.0"));
     }
     Ok(serde_json::Value::String(format!("{:.2}", speed)))
+}
+
+fn prepare_voice_tts_split_on(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsSplitOn must be a string")
+        );
+    };
+    if !matches!(value, "none" | "punctuation" | "paragraph") {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsSplitOn must be none, punctuation, or paragraph"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_auto_speak(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceAutoSpeak must be a string")
+        );
+    };
+    if !matches!(value, "true" | "false") {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceAutoSpeak must be true or false"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
 }
 
 fn is_supported_voice_dictation_provider(value: &str) -> bool {
