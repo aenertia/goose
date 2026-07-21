@@ -21,12 +21,14 @@ export interface TtsProviderSelectorProps {
   provider: string;
   providerStatuses: Record<string, TtsProviderStatusEntry>;
   onProviderChange: (value: string) => void;
+  browserTtsAvailable?: boolean;
 }
 
 export function TtsProviderSelector({
   provider,
   providerStatuses,
   onProviderChange,
+  browserTtsAvailable = true,
 }: TtsProviderSelectorProps) {
   const getProviderLabel = (p: string | null): string => {
     if (!p) return 'Disabled';
@@ -77,6 +79,13 @@ export function TtsProviderSelector({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {provider === 'browser' && !browserTtsAvailable && (
+        <p className="text-xs text-yellow-600 mt-1">
+          Browser TTS unavailable — speech-dispatcher not installed. Select a server-side provider
+          (OpenAI, ElevenLabs) for voice output.
+        </p>
+      )}
     </div>
   );
 }

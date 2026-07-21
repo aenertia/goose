@@ -69,6 +69,7 @@ export interface UseTtsConfigReturn {
   setOutputDevices: React.Dispatch<React.SetStateAction<MediaDeviceInfo[]>>;
   selectedOutputDevice: string;
   setSelectedOutputDevice: React.Dispatch<React.SetStateAction<string>>;
+  browserTtsAvailable: boolean;
 
   // Functions
   runTtsTest: () => Promise<void>;
@@ -128,6 +129,24 @@ export function useTtsConfig(): UseTtsConfigReturn {
   const [selectedOutputDevice, setSelectedOutputDevice] = useState<string>(
     getAudioOutputDevice() || ''
   );
+  const [browserTtsAvailable, setBrowserTtsAvailable] = useState(true);
+
+  useEffect(() => {
+    if (!window.speechSynthesis) {
+      setBrowserTtsAvailable(false);
+      return;
+    }
+    const check = () => setBrowserTtsAvailable(window.speechSynthesis.getVoices().length > 0);
+    check();
+    window.speechSynthesis.addEventListener('voiceschanged', check);
+    const fallbackTimer = window.setTimeout(() => {
+      if (window.speechSynthesis.getVoices().length === 0) setBrowserTtsAvailable(false);
+    }, 3000);
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', check);
+      window.clearTimeout(fallbackTimer);
+    };
+  }, []);
 
   const runTtsTest = async () => {
     if (!provider) {
@@ -465,6 +484,7 @@ export function useTtsConfig(): UseTtsConfigReturn {
     setOutputDevices,
     selectedOutputDevice,
     setSelectedOutputDevice,
+    browserTtsAvailable,
 
     // Functions
     runTtsTest,

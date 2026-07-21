@@ -37,6 +37,7 @@ export function TtsSettings() {
     handleEditProfile,
     handleDeleteProfile,
     refreshProfiles,
+    browserTtsAvailable,
   } = useTtsConfig();
 
   const refreshStatuses = async () => {
@@ -68,6 +69,7 @@ export function TtsSettings() {
         provider={provider || ''}
         providerStatuses={providerStatuses}
         onProviderChange={handleProviderChange}
+        browserTtsAvailable={browserTtsAvailable}
       />
 
       {provider && currentProviderConfig && (
