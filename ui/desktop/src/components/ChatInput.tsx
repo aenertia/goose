@@ -498,6 +498,7 @@ export default function ChatInput({
   // Ref to break circular dependency: useAudioRecorder needs conversationAutoSubmit,
   // but useConversationMode needs startRecording/stopRecording from useAudioRecorder.
   const conversationAutoSubmitRef = useRef<((text: string) => void) | undefined>(undefined);
+  const prevIsLoadingRef = useRef(false);
 
   // Audio recorder hook for voice dictation
   const {
@@ -514,6 +515,12 @@ export default function ChatInput({
       let filteredText = text.replace(/\([^)]*\)/g, '').trim();
 
       if (!filteredText) {
+        return;
+      }
+
+      if (isConversationActive) {
+        trackVoiceDictation('auto_submit');
+        conversationAutoSubmitRef.current?.(filteredText);
         return;
       }
 
@@ -556,7 +563,9 @@ export default function ChatInput({
   const conversationSubmit = useCallback(
     (text: string) => {
       if (text.trim()) {
-        handleSubmit({ msg: text.trim(), images: [] });
+        const spoken = text.trim();
+        const nudge = `${spoken}\n\n<voice-conversation>\nYou are in a live voice conversation (HONK! mode). Reply as if speaking aloud:\n- Be concise and conversational — short sentences, natural phrasing\n- Avoid markdown formatting, bullet lists, code blocks, and headers\n- Do not narrate actions or describe what you would do — just answer directly\n- If explaining code or technical concepts, describe them verbally instead of writing code\n- Keep responses under 3-4 sentences unless the user asks for detail\n</voice-conversation>`;
+        handleSubmit({ msg: nudge, images: [] });
       }
     },
     [handleSubmit]
@@ -568,6 +577,7 @@ export default function ChatInput({
     deactivate: deactivateConversation,
     state: conversationState,
     handleAutoSubmit: conversationAutoSubmit,
+    handleStreamFinish: conversationHandleStreamFinish,
   } = useConversationMode({
     submitMessage: conversationSubmit,
     startRecording,
@@ -576,6 +586,21 @@ export default function ChatInput({
     isLoading,
   });
   conversationAutoSubmitRef.current = conversationAutoSubmit;
+
+  // When LLM finishes responding (isLoading transitions true→false) during conversation mode,
+  // trigger the speak→listen cycle so the mic restarts after TTS completes.
+  useEffect(() => {
+    if (prevIsLoadingRef.current && !isLoading && isConversationActive) {
+      const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+      if (lastAssistant) {
+        const { textContent } = getTextAndImageContent(lastAssistant);
+        if (textContent.trim()) {
+          conversationHandleStreamFinish(textContent);
+        }
+      }
+    }
+    prevIsLoadingRef.current = isLoading;
+  }, [isLoading, isConversationActive, messages, conversationHandleStreamFinish]);
 
   const textAreaRef = inputRef || internalTextAreaRef;
   const timeoutRefsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());

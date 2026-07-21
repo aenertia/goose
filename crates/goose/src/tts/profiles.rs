@@ -108,6 +108,12 @@ pub fn save_profile(mut profile: TtsProfile) -> Result<TtsProfile> {
         .context("Failed to serialize TTS profile")?;
     fs::write(&path, json).with_context(|| format!("Failed to write TTS profile to {:?}", path))?;
 
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600));
+    }
+
     Ok(profile)
 }
 
@@ -124,11 +130,13 @@ pub fn delete_profile(id: &str) -> Result<bool> {
 }
 
 /// Derive the secret-store key name for a profile's API key.
+///
+/// Uses SHA-256 of the profile ID so that reading the profile JSON file does
+/// not reveal the keyring key name.
 pub fn api_key_env_for_id(profile_id: &str) -> String {
-    // Normalise to uppercase alphanumeric + underscores for a valid env-var style key.
-    let safe_id: String = profile_id
-        .chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_uppercase() } else { '_' })
-        .collect();
-    format!("TTS_PROFILE_{}_API_KEY", safe_id)
+    use sha2::{Digest, Sha256};
+
+    let hash = Sha256::digest(profile_id.as_bytes());
+    let hex: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
+    format!("TTS_KEY_{}", hex)
 }

@@ -13,10 +13,18 @@ function splitText(text: string, strategy: SplitStrategy): string[] {
 }
 
 let globalSource: AudioBufferSourceNode | null = null;
-let globalCtx: AudioContext | null = null;
 let globalStopped = false;
 
-const globalCache = new Map<string, ArrayBuffer>();
+let globalSharedCtx: AudioContext | null = null;
+
+function getSharedCtx(): AudioContext {
+  if (!globalSharedCtx || globalSharedCtx.state === 'closed') {
+    globalSharedCtx = new AudioContext();
+  }
+  return globalSharedCtx;
+}
+
+const globalCache = new Map<string, AudioBuffer>();
 const globalCacheOrder: string[] = [];
 
 let _selectedOutputDeviceId: string | null = null;
@@ -58,10 +66,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       }
       globalSource = null;
     }
-    if (globalCtx) {
-      globalCtx.close().catch(() => {});
-      globalCtx = null;
-    }
+
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -76,7 +81,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       voice: string,
       speed: number,
       profileId?: string
-    ): Promise<ArrayBuffer | null> => {
+    ): Promise<AudioBuffer | null> => {
       const cacheKey = `${profileId || provider}:${voice}:${speed}:${chunkText}`;
       const cached = globalCache.get(cacheKey);
       if (cached) {
@@ -85,20 +90,23 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
           globalCacheOrder.splice(idx, 1);
           globalCacheOrder.push(cacheKey);
         }
-        return cached.slice(0);
+        return cached;
       }
 
       try {
         const { audio } = await synthesizeTts(chunkText, provider, voice, speed, profileId);
-        const buf = b64ToArrayBuffer(audio);
+        const arrayBuf = b64ToArrayBuffer(audio);
+        const ctx = getSharedCtx();
+        if (ctx.state === 'suspended') await ctx.resume();
+        const audioBuffer = await ctx.decodeAudioData(arrayBuf);
 
         if (globalCacheOrder.length >= CACHE_MAX) {
           const oldest = globalCacheOrder.shift()!;
           globalCache.delete(oldest);
         }
-        globalCache.set(cacheKey, buf);
+        globalCache.set(cacheKey, audioBuffer);
         globalCacheOrder.push(cacheKey);
-        return buf.slice(0);
+        return audioBuffer;
       } catch (err) {
         console.error('[TTS] synthesis failed:', err);
         return null;
@@ -107,38 +115,28 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     []
   );
 
-  const playBuffer = useCallback((arrayBuf: ArrayBuffer): Promise<void> => {
+  const playBuffer = useCallback((audioBuffer: AudioBuffer): Promise<void> => {
     return new Promise((resolve) => {
-      const ctx = new AudioContext();
-      globalCtx = ctx;
+      const ctx = getSharedCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
 
-      ctx
-        .decodeAudioData(arrayBuf)
-        .then((audioBuffer) => {
-          if (globalStopped) {
-            ctx.close().catch(() => {});
-            resolve();
-            return;
-          }
-          const source = ctx.createBufferSource();
-          source.buffer = audioBuffer;
-          source.connect(ctx.destination);
-          globalSource = source;
+      if (globalStopped) {
+        resolve();
+        return;
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(ctx.destination);
+      globalSource = source;
 
-          source.onended = () => {
-            if (globalSource === source) globalSource = null;
-            if (globalCtx === ctx) globalCtx = null;
-            ctx.close().catch(() => {});
-            resolve();
-          };
+      source.onended = () => {
+        if (globalSource === source) globalSource = null;
+        resolve();
+      };
 
-          source.start();
-        })
-        .catch((err) => {
-          console.error('[TTS] decodeAudioData failed:', err);
-          ctx.close().catch(() => {});
-          resolve();
-        });
+      source.start();
     });
   }, []);
 
@@ -187,7 +185,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       playingRef.current = true;
       setIsPlaying(true);
 
-      let nextBufPromise: Promise<ArrayBuffer | null> | null = null;
+      let nextBufPromise: Promise<AudioBuffer | null> | null = null;
 
       for (let i = 0; i < chunks.length; i++) {
         if (globalStopped) break;

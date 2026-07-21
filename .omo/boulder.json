@@ -1,0 +1,15 @@
+{
+  "schema_version": 2,
+  "active_work_id": "honk-voice-revision",
+  "works": {
+    "honk-voice-revision": {
+      "work_id": "honk-voice-revision",
+      "active_plan": "/tmp/opencode/goose/.omo/plans/honk-voice-revision-plan.md",
+      "plan_name": "honk-voice-revision-plan",
+      "session_ids": ["opencode:ses_07cf2f6fdffekgFLudTQohWgCC"],
+      "status": "active",
+      "worktree_path": null,
+      "started_at": "2026-07-21T09:20:56.827Z"
+    }
+  }
+}
