@@ -1,4 +1,5 @@
 import { getAcpClient } from './acpConnection';
+import type { TtsProfile } from '../types/tts';
 
 export interface TtsProviderStatusEntry {
   configured: boolean;
@@ -25,15 +26,15 @@ export async function synthesizeTts(
   text: string,
   provider: string,
   voice: string,
-  speed: number
+  speed: number,
+  profileId?: string
 ): Promise<{ audio: string; mimeType: string }> {
   const client = await getAcpClient();
-  const response = await client.extMethod('_goose/unstable/tts/synthesize', {
-    text,
-    provider,
-    voice,
-    speed,
-  });
+  const params: Record<string, unknown> = { text, provider, voice, speed };
+  if (profileId) {
+    params.profileId = profileId;
+  }
+  const response = await client.extMethod('_goose/unstable/tts/synthesize', params);
   return { audio: response.audio as string, mimeType: response.mimeType as string };
 }
 
@@ -51,4 +52,34 @@ export async function saveTtsSecret(provider: string, value: string): Promise<vo
 export async function deleteTtsSecret(provider: string): Promise<void> {
   const client = await getAcpClient();
   await client.extMethod('_goose/unstable/tts/secret/delete', { provider });
+}
+
+export async function listTtsProfiles(): Promise<TtsProfile[]> {
+  const client = await getAcpClient();
+  const response = await client.extMethod('_goose/unstable/tts/profiles/list', {});
+  return (response.profiles as TtsProfile[]) ?? [];
+}
+
+export async function getTtsProfile(profileId: string): Promise<TtsProfile | null> {
+  const client = await getAcpClient();
+  const response = await client.extMethod('_goose/unstable/tts/profiles/get', { profileId });
+  return (response.profile as TtsProfile) ?? null;
+}
+
+export async function saveTtsProfile(
+  profile: TtsProfile,
+  apiKey?: string
+): Promise<TtsProfile> {
+  const client = await getAcpClient();
+  const params: Record<string, unknown> = { profile };
+  if (apiKey !== undefined) {
+    params.apiKey = apiKey;
+  }
+  const response = await client.extMethod('_goose/unstable/tts/profiles/save', params);
+  return response.profile as TtsProfile;
+}
+
+export async function deleteTtsProfile(profileId: string): Promise<void> {
+  const client = await getAcpClient();
+  await client.extMethod('_goose/unstable/tts/profiles/delete', { profileId });
 }

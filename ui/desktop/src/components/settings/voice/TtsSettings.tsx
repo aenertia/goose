@@ -1,10 +1,18 @@
-import { useState, useEffect } from 'react';
-import { ChevronDown, Info } from 'lucide-react';
-import { getTtsConfig, listTtsVoices, TtsProviderStatusEntry, TtsVoiceInfo } from '../../../acp/tts';
+import { useState, useEffect, useCallback } from 'react';
+import { ChevronDown, Info, Plus, Trash2, Save } from 'lucide-react';
+import {
+  getTtsConfig,
+  listTtsVoices,
+  listTtsProfiles,
+  saveTtsProfile,
+  deleteTtsProfile,
+  TtsProviderStatusEntry,
+  TtsVoiceInfo,
+} from '../../../acp/tts';
 import { useConfig } from '../../ConfigContext';
 import { Input } from '../../ui/input';
 import { Button } from '../../ui/button';
-import type { TtsProvider } from '../../../types/tts';
+import type { TtsProvider, TtsProfile } from '../../../types/tts';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,15 +33,37 @@ const PROVIDER_LABELS: Record<string, string> = {
 
 const DEFAULT_SPEED = '1.00';
 
+function emptyProfile(): TtsProfile {
+  return {
+    id: '',
+    name: '',
+    provider: 'openai',
+    endpointUrl: '',
+    apiKeyEnv: '',
+    voice: '',
+    speed: 1.0,
+  };
+}
+
 export function TtsSettings() {
   const { read, upsert, remove } = useConfig();
   const [provider, setProvider] = useState<TtsProviderOption>(null);
-  const [providerStatuses, setProviderStatuses] = useState<Record<string, TtsProviderStatusEntry>>({});
+  const [providerStatuses, setProviderStatuses] = useState<Record<string, TtsProviderStatusEntry>>(
+    {}
+  );
   const [voices, setVoices] = useState<TtsVoiceInfo[]>([]);
   const [selectedVoice, setSelectedVoice] = useState('');
   const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const [apiKey, setApiKey] = useState('');
   const [isEditingKey, setIsEditingKey] = useState(false);
+  const [endpointUrl, setEndpointUrl] = useState('');
+
+  // Profile state
+  const [profiles, setProfiles] = useState<TtsProfile[]>([]);
+  const [activeProfileId, setActiveProfileId] = useState('');
+  const [editingProfile, setEditingProfile] = useState<TtsProfile | null>(null);
+  const [profileApiKey, setProfileApiKey] = useState('');
+  const [showProfileEditor, setShowProfileEditor] = useState(false);
 
   const refreshStatuses = async () => {
     try {
@@ -44,9 +74,19 @@ export function TtsSettings() {
     }
   };
 
+  const refreshProfiles = useCallback(async () => {
+    try {
+      const list = await listTtsProfiles();
+      setProfiles(list);
+    } catch (err) {
+      console.error('Failed to load TTS profiles:', err);
+    }
+  }, []);
+
   useEffect(() => {
     refreshStatuses();
-  }, []);
+    refreshProfiles();
+  }, [refreshProfiles]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -61,6 +101,14 @@ export function TtsSettings() {
       const savedSpeed = await read('voice_tts_speed', false);
       if (savedSpeed && typeof savedSpeed === 'string') {
         setSpeed(savedSpeed);
+      }
+      const savedEndpoint = await read('voice_tts_endpoint_url', false);
+      if (savedEndpoint && typeof savedEndpoint === 'string') {
+        setEndpointUrl(savedEndpoint);
+      }
+      const savedProfile = await read('voice_tts_active_profile', false);
+      if (savedProfile && typeof savedProfile === 'string') {
+        setActiveProfileId(savedProfile);
       }
     };
     loadSettings();
@@ -117,6 +165,19 @@ export function TtsSettings() {
     upsert('voice_tts_speed', parseFloat(value).toFixed(2), false);
   };
 
+  const handleEndpointUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEndpointUrl(value);
+  };
+
+  const handleEndpointUrlBlur = () => {
+    if (endpointUrl.trim()) {
+      upsert('voice_tts_endpoint_url', endpointUrl.trim(), false);
+    } else {
+      remove('voice_tts_endpoint_url', false);
+    }
+  };
+
   const handleSaveKey = async () => {
     if (!provider) return;
     const providerConfig = providerStatuses[provider];
@@ -144,6 +205,61 @@ export function TtsSettings() {
     await refreshStatuses();
   };
 
+  const handleActiveProfileChange = (value: string) => {
+    if (value === '__none__') {
+      setActiveProfileId('');
+      remove('voice_tts_active_profile', false);
+    } else {
+      setActiveProfileId(value);
+      upsert('voice_tts_active_profile', value, false);
+    }
+  };
+
+  const handleNewProfile = () => {
+    setEditingProfile(emptyProfile());
+    setProfileApiKey('');
+    setShowProfileEditor(true);
+  };
+
+  const handleEditProfile = (profile: TtsProfile) => {
+    setEditingProfile({ ...profile });
+    setProfileApiKey('');
+    setShowProfileEditor(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editingProfile || !editingProfile.name.trim()) return;
+    try {
+      const saved = await saveTtsProfile(
+        editingProfile,
+        profileApiKey.trim() || undefined
+      );
+      setShowProfileEditor(false);
+      setEditingProfile(null);
+      setProfileApiKey('');
+      await refreshProfiles();
+      if (!activeProfileId) {
+        setActiveProfileId(saved.id);
+        upsert('voice_tts_active_profile', saved.id, false);
+      }
+    } catch (err) {
+      console.error('Failed to save TTS profile:', err);
+    }
+  };
+
+  const handleDeleteProfile = async (profileId: string) => {
+    try {
+      await deleteTtsProfile(profileId);
+      if (activeProfileId === profileId) {
+        setActiveProfileId('');
+        remove('voice_tts_active_profile', false);
+      }
+      await refreshProfiles();
+    } catch (err) {
+      console.error('Failed to delete TTS profile:', err);
+    }
+  };
+
   const getProviderLabel = (p: TtsProviderOption): string => {
     if (!p) return 'Disabled';
     return PROVIDER_LABELS[p] || p;
@@ -155,6 +271,8 @@ export function TtsSettings() {
     currentProviderConfig &&
     !currentProviderConfig.usesProviderConfig &&
     provider !== 'browser';
+  const showEndpointUrl =
+    provider && provider !== 'browser' && provider !== 'model';
 
   return (
     <div className="space-y-4 px-2 pt-4">
@@ -210,10 +328,41 @@ export function TtsSettings() {
       )}
 
       {/* Uses provider config notice */}
-      {provider && currentProviderConfig?.usesProviderConfig && currentProviderConfig.settingsPath && (
-        <p className="text-xs text-text-secondary">
-          ✓ Configured in {currentProviderConfig.settingsPath}
-        </p>
+      {provider &&
+        currentProviderConfig?.usesProviderConfig &&
+        currentProviderConfig.settingsPath && (
+          <p className="text-xs text-text-secondary">
+            Configured in {currentProviderConfig.settingsPath}
+          </p>
+        )}
+
+      {/* Endpoint URL */}
+      {showEndpointUrl && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h4 className="text-text-primary text-sm">Endpoint URL</h4>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-text-secondary cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>
+                    Custom TTS API endpoint. Leave empty to use the provider default. Use for
+                    self-hosted TTS (e.g. F5-TTS, Piper, or OpenAI-compatible endpoints).
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <Input
+            type="url"
+            placeholder="https://api.openai.com (default)"
+            value={endpointUrl}
+            onChange={handleEndpointUrlChange}
+            onBlur={handleEndpointUrlBlur}
+          />
+        </div>
       )}
 
       {/* API key section */}
@@ -334,6 +483,230 @@ export function TtsSettings() {
               {parseFloat(speed).toFixed(2)}x
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Voice Profiles */}
+      {provider && (
+        <div className="space-y-3 pt-2 border-t border-border-primary">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h4 className="text-text-primary text-sm font-medium">Voice Profiles</h4>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-text-secondary cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>
+                      Save named TTS configurations with their own provider, endpoint, API key,
+                      voice, and speed. Assign different profiles to different sessions.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleNewProfile}>
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              New
+            </Button>
+          </div>
+
+          {/* Active profile selector */}
+          {profiles.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-text-primary text-xs">Active Profile</h4>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-text-primary bg-background-primary border-border-primary"
+                  >
+                    <span>
+                      {activeProfileId
+                        ? profiles.find((p) => p.id === activeProfileId)?.name || 'Unknown'
+                        : 'None (use settings above)'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-full min-w-[200px]">
+                  <DropdownMenuRadioGroup
+                    value={activeProfileId || '__none__'}
+                    onValueChange={handleActiveProfileChange}
+                  >
+                    <DropdownMenuRadioItem value="__none__">
+                      None (use settings above)
+                    </DropdownMenuRadioItem>
+                    {profiles.map((p) => (
+                      <DropdownMenuRadioItem key={p.id} value={p.id}>
+                        {p.name} ({PROVIDER_LABELS[p.provider] || p.provider})
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
+
+          {/* Profile list */}
+          {profiles.length > 0 && !showProfileEditor && (
+            <div className="space-y-1.5">
+              {profiles.map((p) => (
+                <div
+                  key={p.id}
+                  className={`flex items-center justify-between rounded-md px-3 py-2 text-sm border ${
+                    p.id === activeProfileId
+                      ? 'border-accent-primary bg-accent-primary/5'
+                      : 'border-border-primary'
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-text-primary truncate">{p.name}</div>
+                    <div className="text-xs text-text-secondary truncate">
+                      {PROVIDER_LABELS[p.provider] || p.provider}
+                      {p.endpointUrl ? ` @ ${p.endpointUrl}` : ''}
+                      {p.voice ? ` / ${p.voice}` : ''}
+                    </div>
+                  </div>
+                  <div className="flex gap-1 ml-2 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => handleEditProfile(p)}
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                      onClick={() => handleDeleteProfile(p.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Profile editor */}
+          {showProfileEditor && editingProfile && (
+            <div className="space-y-3 rounded-md border border-border-primary p-3">
+              <h4 className="text-text-primary text-sm font-medium">
+                {editingProfile.id ? 'Edit Profile' : 'New Profile'}
+              </h4>
+              <Input
+                placeholder="Profile name"
+                value={editingProfile.name}
+                onChange={(e) =>
+                  setEditingProfile({ ...editingProfile, name: e.target.value })
+                }
+              />
+              <div className="space-y-1">
+                <label className="text-xs text-text-secondary">Provider</label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-text-primary bg-background-primary border-border-primary"
+                    >
+                      <span>
+                        {PROVIDER_LABELS[editingProfile.provider] || editingProfile.provider}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-full min-w-[200px]">
+                    <DropdownMenuRadioGroup
+                      value={editingProfile.provider}
+                      onValueChange={(v) =>
+                        setEditingProfile({ ...editingProfile, provider: v })
+                      }
+                    >
+                      {Object.entries(PROVIDER_LABELS).map(([key, label]) => (
+                        <DropdownMenuRadioItem key={key} value={key}>
+                          {label}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              {editingProfile.provider !== 'browser' &&
+                editingProfile.provider !== 'model' && (
+                  <Input
+                    placeholder="Endpoint URL (leave empty for default)"
+                    value={editingProfile.endpointUrl}
+                    onChange={(e) =>
+                      setEditingProfile({ ...editingProfile, endpointUrl: e.target.value })
+                    }
+                  />
+                )}
+              {editingProfile.provider !== 'browser' &&
+                editingProfile.provider !== 'model' && (
+                  <Input
+                    type="password"
+                    placeholder={
+                      editingProfile.apiKeyEnv
+                        ? 'API key (leave empty to keep current)'
+                        : 'API key'
+                    }
+                    value={profileApiKey}
+                    onChange={(e) => setProfileApiKey(e.target.value)}
+                  />
+                )}
+              <Input
+                placeholder="Voice ID (e.g. alloy, nova)"
+                value={editingProfile.voice}
+                onChange={(e) =>
+                  setEditingProfile({ ...editingProfile, voice: e.target.value })
+                }
+              />
+              <div className="flex items-center gap-4">
+                <label className="text-xs text-text-secondary shrink-0">Speed</label>
+                <input
+                  type="range"
+                  min="0.25"
+                  max="4.0"
+                  step="0.25"
+                  value={editingProfile.speed}
+                  onChange={(e) =>
+                    setEditingProfile({
+                      ...editingProfile,
+                      speed: parseFloat(e.target.value),
+                    })
+                  }
+                  className="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                />
+                <span className="text-sm text-text-secondary min-w-[40px] text-right">
+                  {editingProfile.speed.toFixed(2)}x
+                </span>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowProfileEditor(false);
+                    setEditingProfile(null);
+                    setProfileApiKey('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveProfile}
+                  disabled={!editingProfile.name.trim()}
+                >
+                  Save Profile
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

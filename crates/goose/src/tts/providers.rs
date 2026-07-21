@@ -181,15 +181,34 @@ async fn list_elevenlabs_voices() -> Result<Vec<VoiceInfo>> {
     Ok(voices)
 }
 
+/// Optional overrides for TTS synthesis — used by profile-based synthesis.
+#[derive(Debug, Default)]
+pub struct TtsSynthesizeOverrides {
+    /// Custom base URL (e.g. `http://awa:9002` for F5-TTS). Empty = provider default.
+    pub endpoint_url: String,
+    /// API key to use instead of the global config value. Empty = use global.
+    pub api_key: String,
+}
+
 pub async fn synthesize_with_provider(
     provider: TtsProvider,
     text: &str,
     voice: &str,
     speed: f32,
 ) -> Result<(Vec<u8>, String)> {
+    synthesize_with_provider_overrides(provider, text, voice, speed, &TtsSynthesizeOverrides::default()).await
+}
+
+pub async fn synthesize_with_provider_overrides(
+    provider: TtsProvider,
+    text: &str,
+    voice: &str,
+    speed: f32,
+    overrides: &TtsSynthesizeOverrides,
+) -> Result<(Vec<u8>, String)> {
     match provider {
-        TtsProvider::OpenAI => synthesize_openai(text, voice, speed).await,
-        TtsProvider::ElevenLabs => synthesize_elevenlabs(text, voice).await,
+        TtsProvider::OpenAI => synthesize_openai(text, voice, speed, overrides).await,
+        TtsProvider::ElevenLabs => synthesize_elevenlabs(text, voice, overrides).await,
         TtsProvider::Browser => {
             anyhow::bail!("Browser TTS is handled client-side via speechSynthesis")
         }
@@ -199,14 +218,72 @@ pub async fn synthesize_with_provider(
     }
 }
 
-async fn synthesize_openai(text: &str, voice: &str, speed: f32) -> Result<(Vec<u8>, String)> {
-    let config = Config::global();
-    let api_key: String = config.get_secret("OPENAI_API_KEY").map_err(|e| {
-        tracing::error!("OPENAI_API_KEY not configured: {}", e);
-        anyhow::anyhow!("OPENAI_API_KEY not configured")
-    })?;
+/// Synthesize using a saved TTS profile (looked up by ID).
+pub async fn synthesize_with_profile(
+    profile_id: &str,
+    text: &str,
+) -> Result<(Vec<u8>, String)> {
+    let profile = crate::tts::profiles::get_profile(profile_id)?
+        .ok_or_else(|| anyhow::anyhow!("TTS profile '{}' not found", profile_id))?;
 
-    let base_url = resolve_openai_base_url(config);
+    let provider: TtsProvider =
+        serde_json::from_value(serde_json::Value::String(profile.provider.clone()))
+            .map_err(|_| anyhow::anyhow!("Unknown TTS provider in profile: {}", profile.provider))?;
+
+    if provider == TtsProvider::Browser {
+        anyhow::bail!("Browser TTS is handled client-side via speechSynthesis");
+    }
+    if provider == TtsProvider::ModelNative {
+        return synthesize_with_model(text).await;
+    }
+
+    // Resolve API key: try profile-specific secret, fall back to provider default.
+    let config = Config::global();
+    let api_key = if !profile.api_key_env.is_empty() {
+        config
+            .get_secret::<String>(&profile.api_key_env)
+            .unwrap_or_default()
+    } else {
+        String::new()
+    };
+
+    let overrides = TtsSynthesizeOverrides {
+        endpoint_url: profile.endpoint_url.clone(),
+        api_key,
+    };
+
+    synthesize_with_provider_overrides(
+        provider,
+        text,
+        &profile.voice,
+        profile.speed,
+        &overrides,
+    )
+    .await
+}
+
+async fn synthesize_openai(
+    text: &str,
+    voice: &str,
+    speed: f32,
+    overrides: &TtsSynthesizeOverrides,
+) -> Result<(Vec<u8>, String)> {
+    let config = Config::global();
+
+    let api_key: String = if !overrides.api_key.is_empty() {
+        overrides.api_key.clone()
+    } else {
+        config.get_secret("OPENAI_API_KEY").map_err(|e| {
+            tracing::error!("OPENAI_API_KEY not configured: {}", e);
+            anyhow::anyhow!("OPENAI_API_KEY not configured")
+        })?
+    };
+
+    let base_url = if !overrides.endpoint_url.is_empty() {
+        overrides.endpoint_url.clone()
+    } else {
+        resolve_openai_base_url(config)
+    };
     let (host, query_params, has_v1) = parse_openai_base_url(&base_url)?;
     let endpoint = if has_v1 {
         "v1/audio/speech"
@@ -297,12 +374,27 @@ async fn synthesize_openai(text: &str, voice: &str, speed: f32) -> Result<(Vec<u
     Ok((audio_bytes, "audio/mpeg".to_string()))
 }
 
-async fn synthesize_elevenlabs(text: &str, voice: &str) -> Result<(Vec<u8>, String)> {
+async fn synthesize_elevenlabs(
+    text: &str,
+    voice: &str,
+    overrides: &TtsSynthesizeOverrides,
+) -> Result<(Vec<u8>, String)> {
     let config = Config::global();
-    let api_key: String = config.get_secret("ELEVENLABS_API_KEY").map_err(|e| {
-        tracing::error!("ELEVENLABS_API_KEY not configured: {}", e);
-        anyhow::anyhow!("ELEVENLABS_API_KEY not configured")
-    })?;
+
+    let api_key: String = if !overrides.api_key.is_empty() {
+        overrides.api_key.clone()
+    } else {
+        config.get_secret("ELEVENLABS_API_KEY").map_err(|e| {
+            tracing::error!("ELEVENLABS_API_KEY not configured: {}", e);
+            anyhow::anyhow!("ELEVENLABS_API_KEY not configured")
+        })?
+    };
+
+    let base_url = if !overrides.endpoint_url.is_empty() {
+        overrides.endpoint_url.clone()
+    } else {
+        "https://api.elevenlabs.io".to_string()
+    };
 
     let voice_id = if voice.is_empty() {
         "21m00Tcm4TlvDq8ikWAM"
@@ -321,7 +413,8 @@ async fn synthesize_elevenlabs(text: &str, voice: &str) -> Result<(Vec<u8>, Stri
 
     let response = client
         .post(format!(
-            "https://api.elevenlabs.io/v1/text-to-speech/{}",
+            "{}/v1/text-to-speech/{}",
+            base_url.trim_end_matches('/'),
             voice_id
         ))
         .header("xi-api-key", &api_key)

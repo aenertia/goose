@@ -1,7 +1,8 @@
 use super::*;
+use crate::tts::profiles;
 use crate::tts::providers::{
-    all_tts_providers, get_tts_provider_def, is_tts_configured, list_voices, synthesize_with_model,
-    synthesize_with_provider, TtsProvider,
+    all_tts_providers, get_tts_provider_def, is_tts_configured, list_voices,
+    synthesize_with_model, synthesize_with_profile, synthesize_with_provider, TtsProvider,
 };
 
 impl GooseAcpAgent {
@@ -10,6 +11,15 @@ impl GooseAcpAgent {
         req: TtsSynthesizeRequest,
     ) -> Result<TtsSynthesizeResponse, agent_client_protocol::Error> {
         use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
+
+        if let Some(ref pid) = req.profile_id {
+            if !pid.is_empty() {
+                let (audio_bytes, mime_type) =
+                    synthesize_with_profile(pid, &req.text).await.internal_err()?;
+                let audio = BASE64.encode(&audio_bytes);
+                return Ok(TtsSynthesizeResponse { audio, mime_type });
+            }
+        }
 
         let provider: TtsProvider = serde_json::from_value(serde_json::Value::String(
             req.provider.clone(),
@@ -114,6 +124,86 @@ impl GooseAcpAgent {
         config.delete_secret(key).internal_err()?;
         Config::global().invalidate_secrets_cache();
         Ok(EmptyResponse {})
+    }
+
+    pub(super) async fn on_tts_profile_list(
+        &self,
+        _req: TtsProfileListRequest,
+    ) -> Result<TtsProfileListResponse, agent_client_protocol::Error> {
+        let list = profiles::list_profiles().internal_err()?;
+        let entries = list.into_iter().map(profile_to_entry).collect();
+        Ok(TtsProfileListResponse { profiles: entries })
+    }
+
+    pub(super) async fn on_tts_profile_get(
+        &self,
+        req: TtsProfileGetRequest,
+    ) -> Result<TtsProfileGetResponse, agent_client_protocol::Error> {
+        let profile = profiles::get_profile(&req.profile_id).internal_err()?;
+        Ok(TtsProfileGetResponse {
+            profile: profile.map(profile_to_entry),
+        })
+    }
+
+    pub(super) async fn on_tts_profile_save(
+        &self,
+        req: TtsProfileSaveRequest,
+    ) -> Result<TtsProfileSaveResponse, agent_client_protocol::Error> {
+        let internal = entry_to_profile(req.profile);
+        let saved = profiles::save_profile(internal).internal_err()?;
+
+        if let Some(ref key_value) = req.api_key {
+            if !key_value.is_empty() && !saved.api_key_env.is_empty() {
+                let config = self.config()?;
+                config
+                    .set_secret(&saved.api_key_env, key_value)
+                    .internal_err()?;
+                Config::global().invalidate_secrets_cache();
+            }
+        }
+
+        Ok(TtsProfileSaveResponse {
+            profile: profile_to_entry(saved),
+        })
+    }
+
+    pub(super) async fn on_tts_profile_delete(
+        &self,
+        req: TtsProfileDeleteRequest,
+    ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        if let Some(existing) = profiles::get_profile(&req.profile_id).internal_err()? {
+            if !existing.api_key_env.is_empty() {
+                let config = self.config()?;
+                let _ = config.delete_secret(&existing.api_key_env);
+                Config::global().invalidate_secrets_cache();
+            }
+        }
+        profiles::delete_profile(&req.profile_id).internal_err()?;
+        Ok(EmptyResponse {})
+    }
+}
+
+fn profile_to_entry(p: profiles::TtsProfile) -> TtsProfileEntry {
+    TtsProfileEntry {
+        id: p.id,
+        name: p.name,
+        provider: p.provider,
+        endpoint_url: p.endpoint_url,
+        api_key_env: p.api_key_env,
+        voice: p.voice,
+        speed: p.speed,
+    }
+}
+
+fn entry_to_profile(e: TtsProfileEntry) -> profiles::TtsProfile {
+    profiles::TtsProfile {
+        id: e.id,
+        name: e.name,
+        provider: e.provider,
+        endpoint_url: e.endpoint_url,
+        api_key_env: e.api_key_env,
+        voice: e.voice,
+        speed: e.speed,
     }
 }
 

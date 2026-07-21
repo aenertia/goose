@@ -344,6 +344,16 @@ const PREFERENCE_DEFS: &[PreferenceDef] = &[
         config_key: "VOICE_MODE",
         prepare: prepare_voice_mode,
     },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsEndpointUrl,
+        config_key: "VOICE_TTS_ENDPOINT_URL",
+        prepare: prepare_voice_tts_endpoint_url,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsActiveProfile,
+        config_key: "VOICE_TTS_ACTIVE_PROFILE",
+        prepare: prepare_voice_tts_active_profile,
+    },
 ];
 
 fn preference_def(
@@ -538,6 +548,33 @@ fn prepare_voice_mode(
     }
     Ok(serde_json::Value::String(value.to_string()))
 }
+
+fn prepare_voice_tts_endpoint_url(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsEndpointUrl must be a string"));
+    };
+    if !value.is_empty() {
+        let _ = url::Url::parse(value).map_err(|_| {
+            agent_client_protocol::Error::invalid_params()
+                .data("voiceTtsEndpointUrl must be a valid URL or empty")
+        })?;
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_tts_active_profile(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsActiveProfile must be a string"));
+    };
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
 fn is_supported_voice_dictation_provider(value: &str) -> bool {
     matches!(
         value,

@@ -883,6 +883,38 @@ impl GooseAcpAgent {
         self.on_tts_secret_delete(req).await
     }
 
+    #[custom_method(TtsProfileListRequest)]
+    async fn dispatch_tts_profile_list(
+        &self,
+        req: TtsProfileListRequest,
+    ) -> Result<TtsProfileListResponse, agent_client_protocol::Error> {
+        self.on_tts_profile_list(req).await
+    }
+
+    #[custom_method(TtsProfileGetRequest)]
+    async fn dispatch_tts_profile_get(
+        &self,
+        req: TtsProfileGetRequest,
+    ) -> Result<TtsProfileGetResponse, agent_client_protocol::Error> {
+        self.on_tts_profile_get(req).await
+    }
+
+    #[custom_method(TtsProfileSaveRequest)]
+    async fn dispatch_tts_profile_save(
+        &self,
+        req: TtsProfileSaveRequest,
+    ) -> Result<TtsProfileSaveResponse, agent_client_protocol::Error> {
+        self.on_tts_profile_save(req).await
+    }
+
+    #[custom_method(TtsProfileDeleteRequest)]
+    async fn dispatch_tts_profile_delete(
+        &self,
+        req: TtsProfileDeleteRequest,
+    ) -> Result<EmptyResponse, agent_client_protocol::Error> {
+        self.on_tts_profile_delete(req).await
+    }
+
     #[custom_method(LocalInferenceModelsListRequest)]
     async fn dispatch_local_inference_models_list(
         &self,
