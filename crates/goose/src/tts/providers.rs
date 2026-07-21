@@ -457,10 +457,7 @@ async fn synthesize_openai(
     let resolved_voice: String = if !voice.is_empty() {
         voice.to_string()
     } else if has_custom_endpoint {
-        match auto_detect_default_voice(&base_url).await {
-            Some(v) => v,
-            None => String::new(),
-        }
+        auto_detect_default_voice(&base_url).await.unwrap_or_default()
     } else {
         "alloy".to_string()
     };
