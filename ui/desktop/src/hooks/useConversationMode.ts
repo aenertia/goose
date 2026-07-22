@@ -1,12 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useAudioPlayer } from './useAudioPlayer';
+import type { VoicePhase } from '@aaif/voice-shared/voice/types.js';
 
-export type ConversationState =
-  | 'idle'
-  | 'listening'
-  | 'transcribing'
-  | 'submitting'
-  | 'speaking';
+export type ConversationState = VoicePhase;
 
 export interface UseConversationModeReturn {
   // --- New two-axis API (Wave 1) ---
@@ -40,7 +36,7 @@ export interface UseConversationModeReturn {
   handleStreamFinish: (responseText: string) => void;
   startStreamingSpeak: () => Promise<void>;
   enqueueStreamChunk: (text: string) => Promise<void>;
-  snapshotListeningState: () => void;
+  handleSpeechStart: () => void;
 }
 
 interface UseConversationModeOptions {
@@ -65,7 +61,7 @@ export function useConversationMode({
   submitMessage,
   startRecording,
   stopRecording,
-  isRecording,
+  isRecording: _isRecording,
   isLoading: _isLoading,
 }: UseConversationModeOptions): UseConversationModeReturn {
   // --- Two independent state axes ---
@@ -79,7 +75,8 @@ export function useConversationMode({
   const honkActiveRef = useRef(false);
   const isListeningRef = useRef(false);
   const pausedMediaRef = useRef<string[]>([]);
-  const wasListeningBeforeSpeakingRef = useRef(false);
+  const echoSuspectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTtsAudioTimeRef = useRef(0);
 
   // Keep refs in sync
   honkActiveRef.current = honkActive;
@@ -133,6 +130,10 @@ export function useConversationMode({
     setIsSubmitting(false);
     stopRecordingRef.current();
     stopPlayback();
+    if (echoSuspectTimerRef.current !== null) {
+      clearTimeout(echoSuspectTimerRef.current);
+      echoSuspectTimerRef.current = null;
+    }
     window.electron?.voiceInhibitRelease?.();
     if (pausedMediaRef.current.length > 0) {
       window.electron?.voiceMediaResume?.(pausedMediaRef.current);
@@ -153,34 +154,52 @@ export function useConversationMode({
     stopRecordingRef.current();
   }, []);
 
-  const snapshotListeningState = useCallback(() => {
-    wasListeningBeforeSpeakingRef.current = isListeningRef.current;
-  }, []);
-
-  // --- Conversation loop handlers ---
-
-  /**
-   * Called by useAudioRecorder's onSilenceAutoSubmit when silence is detected
-   * after speech in conversation mode. Receives the transcribed text.
-   */
   const handleAutoSubmit = useCallback(
     (text: string) => {
       if (!honkActiveRef.current) return;
 
-      // Filter out non-speech artifacts (parenthetical noise descriptions)
       const filtered = text.replace(/\([^)]*\)/g, '').trim();
-      if (!filtered) {
-        beginListening();
-        return;
-      }
+      if (!filtered) return;
 
-      // Stop recording, submit the text
-      stopRecordingRef.current();
       setIsSubmitting(true);
       submitMessageRef.current(filtered);
     },
-    [beginListening]
+    []
   );
+
+  // Echo-suspect barge-in classification: when TTS is playing (or just finished),
+  // VAD triggers are likely speaker echo, not genuine user speech. Defer 500ms
+  // and only interrupt if speech persists. Mirrors TUI gstreamerBackend logic.
+  const ECHO_SUSPECT_DEFER_MS = 200;
+
+  const handleSpeechStart = useCallback(() => {
+    if (!honkActiveRef.current) return;
+
+    const isSpeakingNow = isPlaying;
+    const isRecentTts = Date.now() - lastTtsAudioTimeRef.current < 150;
+    const isEchoSuspect = isSpeakingNow || isRecentTts;
+
+    if (isEchoSuspect) {
+      // Already deferred — don't stack timers
+      if (echoSuspectTimerRef.current !== null) return;
+      echoSuspectTimerRef.current = setTimeout(() => {
+        echoSuspectTimerRef.current = null;
+        // Speech persisted past the defer window — genuine barge-in
+        if (isPlaying) {
+          stopPlayback();
+        }
+      }, ECHO_SUSPECT_DEFER_MS);
+    } else {
+      // Not echo-suspect — immediate barge-in
+      if (echoSuspectTimerRef.current !== null) {
+        clearTimeout(echoSuspectTimerRef.current);
+        echoSuspectTimerRef.current = null;
+      }
+      if (isPlaying) {
+        stopPlayback();
+      }
+    }
+  }, [isPlaying, stopPlayback]);
 
   /**
    * Called when the LLM stream finishes. If HONK mode is active,
@@ -196,8 +215,7 @@ export function useConversationMode({
         return;
       }
 
-      // Snapshot whether mic was in the voice loop before we enter speaking
-      wasListeningBeforeSpeakingRef.current = isListeningRef.current;
+      lastTtsAudioTimeRef.current = Date.now();
       speak(cleaned);
     },
     [speak, beginListening]
@@ -211,26 +229,6 @@ export function useConversationMode({
       setIsSubmitting(false);
     }
   }, [isPlaying, isSubmitting]);
-
-  // Watch isPlaying transitions: when TTS finishes and we were in speaking state,
-  // restart listening only if mic was active before speaking began.
-  const wasPlayingRef = useRef(false);
-  useEffect(() => {
-    if (wasPlayingRef.current && !isPlaying && honkActive) {
-      if (wasListeningBeforeSpeakingRef.current) {
-        beginListening();
-      }
-    }
-    wasPlayingRef.current = isPlaying;
-  }, [isPlaying, honkActive, beginListening]);
-
-  // User interruption: if user starts speaking during TTS playback,
-  // stop TTS and let recording continue
-  useEffect(() => {
-    if (honkActive && isRecording && isPlaying) {
-      stopPlayback();
-    }
-  }, [honkActive, isRecording, isPlaying, stopPlayback]);
 
   // Notify IPC of state changes
   useEffect(() => {
@@ -254,8 +252,14 @@ export function useConversationMode({
     state,
     handleAutoSubmit,
     handleStreamFinish,
-    startStreamingSpeak,
-    enqueueStreamChunk,
-    snapshotListeningState,
+    startStreamingSpeak: async () => {
+      lastTtsAudioTimeRef.current = Date.now();
+      return startStreamingSpeak();
+    },
+    enqueueStreamChunk: async (text: string) => {
+      lastTtsAudioTimeRef.current = Date.now();
+      return enqueueStreamChunk(text);
+    },
+    handleSpeechStart,
   };
 }

@@ -10,6 +10,7 @@ pub mod summarize;
 pub mod summon;
 pub mod todo;
 pub mod tom;
+pub mod honk;
 
 use std::collections::HashMap;
 
@@ -199,6 +200,20 @@ pub static PLATFORM_EXTENSIONS: Lazy<HashMap<&'static str, PlatformExtensionDef>
                 unprefixed_tools: true,
                 hidden: false,
                 client_factory: |ctx| Box::new(crate::skills::SkillsClient::new(ctx).unwrap()),
+            },
+        );
+
+        map.insert(
+            honk::EXTENSION_NAME,
+            PlatformExtensionDef {
+                name: honk::EXTENSION_NAME,
+                display_name: "HONK Integration",
+                description:
+                    "HONK conversation mode: voice I/O, accessibility awareness, screen reader detection, and conversation state management",
+                default_enabled: true,
+                unprefixed_tools: false,
+                hidden: false,
+                client_factory: |ctx| Box::new(honk::HonkClient::new(ctx).unwrap()),
             },
         );
 

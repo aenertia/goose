@@ -1,4 +1,6 @@
 import { AppEvents } from '../constants/events';
+import { HONK_FULL_CONTEXT } from '@aaif/voice-shared/voice/constants.js';
+import { detectSentenceBoundary } from '@aaif/voice-shared/voice/sentenceBoundary.js';
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { ArrowUp, Bug, ScrollText, Volume2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/Tooltip';
@@ -96,38 +98,6 @@ const getContextAlertType = (totalTokens: number, tokenLimit: number): AlertType
 
 // Manual compact trigger message - must match backend constant
 const MANUAL_COMPACT_TRIGGER = '/compact';
-
-/**
- * Full HONK! conversation context — injected with the first voice message
- * in each conversation session. Derived from the honk-conversation built-in skill.
- *
- * SYNC: This content must match the core behavioral rules in
- * crates/goose/src/skills/builtins/honk_conversation.md — update both when changing rules.
- */
-const HONK_FULL_CONTEXT = `You are in HONK! voice conversation mode. The user is speaking through a microphone and your responses will be read aloud by TTS.
-
-Core rules:
-- Be concise: 2-4 sentences unless asked for detail.
-- Speak naturally: contractions, active voice, short sentences.
-- Zero formatting: no markdown, code blocks, bullets, tables, emoji, or headers.
-- Acknowledge before action: "Got it, running the build..." Never go silent.
-- If input is garbled: "I didn't catch that. Could you repeat?"
-
-Tool use safety:
-- Read-only ops (ls, git status): execute and narrate results.
-- Write ops (edit, create, commit): announce intent, wait for "go ahead."
-- Destructive ops (rm, force push, DROP): refuse unless explicitly confirmed.
-- Long-running ops: narrate progress.
-
-When reporting file paths, errors, or commands: speak them precisely. Do not paraphrase error messages.
-
-If the user asks for code: describe it verbally and offer to switch to text mode for complex code.`;
-
-/**
- * Short reinforcement tag — appended to every voice message after the first.
- * Prevents LLM compliance drift back to markdown formatting.
- */
-export const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, no markdown/code blocks, concise]';
 
 let streamCursor = 0;
 let streamActive = false;
@@ -537,6 +507,7 @@ export default function ChatInput({
   // Ref to break circular dependency: useAudioRecorder needs conversationAutoSubmit,
   // but useConversationMode needs startRecording/stopRecording from useAudioRecorder.
   const conversationAutoSubmitRef = useRef<((text: string) => void) | undefined>(undefined);
+  const handleSpeechStartRef = useRef<(() => void) | undefined>(undefined);
   const honkIsListeningRef = useRef(false);
   const conversationTurnRef = useRef(0);
 
@@ -600,6 +571,9 @@ export default function ChatInput({
         conversationAutoSubmitRef.current?.(text);
       }
     }) : undefined,
+    onSpeechStart: voiceModeEnabled ? (() => {
+      handleSpeechStartRef.current?.();
+    }) : undefined,
   });
   const internalTextAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -624,7 +598,7 @@ export default function ChatInput({
     handleAutoSubmit: conversationAutoSubmit,
     startStreamingSpeak,
     enqueueStreamChunk,
-    snapshotListeningState,
+    handleSpeechStart,
   } = useConversationMode({
     submitMessage: conversationSubmit,
     startRecording,
@@ -635,6 +609,7 @@ export default function ChatInput({
   // Transition alias — remaining references use this until fully migrated
   const isConversationActive = honkActive;
   conversationAutoSubmitRef.current = conversationAutoSubmit;
+  handleSpeechStartRef.current = handleSpeechStart;
   honkIsListeningRef.current = honkIsListening;
 
   useEffect(() => {
@@ -659,7 +634,6 @@ export default function ChatInput({
       streamCursor = 0;
       streamMsgCount = messages.length;
       streamSessionId = sessionId ?? '';
-      snapshotListeningState();
       void startStreamingSpeak();
 
       // Start polling interval for sentence detection
@@ -681,46 +655,7 @@ export default function ChatInput({
         const unspoken = textContent.slice(streamCursor);
         if (!unspoken) return;
 
-        // Adaptive chunking: find the best break point in unspoken text
-        let splitPos = -1;
-
-        // Tier 1: Sentence-ending punctuation followed by space, newline, or end-of-string
-        // Includes CJK (。！？), Devanagari (।), Arabic (؟), full-width (.！？)
-        const sentenceMatch = unspoken.search(/[.!?。！？।؟\u104A\u104B](?:\s|$)/);
-        if (sentenceMatch >= 0) {
-          splitPos = sentenceMatch + 1;
-        }
-
-        // Tier 2: Clause/list breaks when enough text accumulated (>60 chars)
-        // Includes CJK commas/colons (、，；：), Arabic (،؛), full-width, newlines
-        if (splitPos < 0 && unspoken.length > 60) {
-          const clauseBreaks = /[,;:、，；：،؛]\s?|\n/g;
-          let lastBreak = -1;
-          let m;
-          while ((m = clauseBreaks.exec(unspoken)) !== null) {
-            lastBreak = m.index + m[0].length;
-          }
-          if (lastBreak > 20) {
-            splitPos = lastBreak;
-          }
-        }
-
-        // Tier 3: Force split on word/character boundary when very long (>120 chars)
-        // Uses space for Latin scripts, or any CJK character boundary
-        if (splitPos < 0 && unspoken.length > 120) {
-          const lastSpace = unspoken.lastIndexOf(' ', 120);
-          if (lastSpace > 20) {
-            splitPos = lastSpace + 1;
-          } else {
-            // CJK/Thai: no spaces — split between any CJK characters or at 120
-            const cjkBoundary = unspoken.slice(0, 120).search(/.[\u3000-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/);
-            if (cjkBoundary > 20) {
-              splitPos = cjkBoundary + 1;
-            } else {
-              splitPos = 120;
-            }
-          }
-        }
+        const splitPos = detectSentenceBoundary(unspoken);
 
         if (splitPos > 0) {
           const chunk = unspoken.slice(0, splitPos).trim();
@@ -770,7 +705,7 @@ export default function ChatInput({
         streamIntervalId = null;
       }
     };
-  }, [isLoading, honkActive, startStreamingSpeak, enqueueStreamChunk, snapshotListeningState]);
+  }, [isLoading, honkActive, startStreamingSpeak, enqueueStreamChunk]);
 
   const textAreaRef = inputRef || internalTextAreaRef;
   const timeoutRefsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());

@@ -1,13 +1,13 @@
 export * from './types.js';
 export { detectMediaCapabilities } from './detection.js';
-export { NoopAudioPlayer } from './noopBackend.js';
-export { GStreamerAudioPlayer } from './gstreamerBackend.js';
+export { NoopAudioPlayer, NoopAudioRecorder } from './noopBackend.js';
+export { GStreamerAudioPlayer, GStreamerAudioRecorder, loadEchoCancel, unloadEchoCancel, isEchoCancelLoaded } from './gstreamerBackend.js';
 export { PacatAudioPlayer } from './pacatBackend.js';
 
-import type { AudioPlayer, MediaCapabilities } from './types.js';
+import type { AudioPlayer, AudioRecorder, MediaCapabilities } from './types.js';
 import { detectMediaCapabilities } from './detection.js';
-import { NoopAudioPlayer } from './noopBackend.js';
-import { GStreamerAudioPlayer } from './gstreamerBackend.js';
+import { NoopAudioPlayer, NoopAudioRecorder } from './noopBackend.js';
+import { GStreamerAudioPlayer, GStreamerAudioRecorder, loadEchoCancel } from './gstreamerBackend.js';
 import { PacatAudioPlayer } from './pacatBackend.js';
 
 export async function createAudioPlayer(
@@ -30,6 +30,22 @@ export async function createAudioPlayer(
   }
 }
 
+export function createAudioRecorder(
+  caps: MediaCapabilities,
+): AudioRecorder {
+  if (!caps.audioCapture) return new NoopAudioRecorder();
+  switch (caps.backend) {
+    case 'gstreamer':
+      return new GStreamerAudioRecorder();
+    case 'pacat':
+    case 'afplay':
+    case 'powershell':
+    case 'noop':
+    default:
+      return new NoopAudioRecorder();
+  }
+}
+
 export async function detectAndCreateAudioPlayer(): Promise<{
   player: AudioPlayer;
   capabilities: MediaCapabilities;
@@ -37,4 +53,18 @@ export async function detectAndCreateAudioPlayer(): Promise<{
   const capabilities = await detectMediaCapabilities();
   const player = await createAudioPlayer(capabilities);
   return { player, capabilities };
+}
+
+export async function detectAndCreateMedia(): Promise<{
+  player: AudioPlayer;
+  recorder: AudioRecorder;
+  capabilities: MediaCapabilities;
+}> {
+  const capabilities = await detectMediaCapabilities();
+  const player = await createAudioPlayer(capabilities);
+  const recorder = createAudioRecorder(capabilities);
+  if (capabilities.loopbackAvailable && capabilities.echoCancelAvailable) {
+    loadEchoCancel();
+  }
+  return { player, recorder, capabilities };
 }

@@ -15,6 +15,7 @@ function splitText(text: string, strategy: SplitStrategy): string[] {
 
 let globalSource: AudioBufferSourceNode | null = null;
 let globalStopped = false;
+let globalTtsReferenceStream: MediaStream | null = null;
 
 // Streaming TTS state (module-level to survive component remounts)
 let streamProvider = '';
@@ -57,6 +58,10 @@ export function getAudioOutputDevice(): string | null {
 
 export function getStoredAudioOutputDevice(): StoredDevice | null {
   return audioOutputDevice;
+}
+
+export function getTtsReferenceStream(): MediaStream | null {
+  return globalTtsReferenceStream;
 }
 
 function b64ToArrayBuffer(b64: string): ArrayBuffer {
@@ -157,10 +162,19 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       }
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
-      source.connect(ctx.destination);
+
+      const gainNode = ctx.createGain();
+      source.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      const refDest = ctx.createMediaStreamDestination();
+      gainNode.connect(refDest);
+      globalTtsReferenceStream = refDest.stream;
+
       globalSource = source;
 
       source.onended = () => {
+        globalTtsReferenceStream = null;
         if (globalSource === source) globalSource = null;
         resolve();
       };

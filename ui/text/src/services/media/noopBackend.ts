@@ -1,4 +1,4 @@
-import type { AudioPlayer } from './types.js';
+import type { AudioPlayer, AudioRecorder, RecordOpts } from './types.js';
 
 export class NoopAudioPlayer implements AudioPlayer {
   readonly backend = 'noop' as const;
@@ -25,6 +25,24 @@ export class NoopAudioPlayer implements AudioPlayer {
   drain(): Promise<void> {
     return Promise.resolve();
   }
+
+  dispose(): Promise<void> {
+    return Promise.resolve();
+  }
+}
+
+export class NoopAudioRecorder implements AudioRecorder {
+  readonly backend = 'noop' as const;
+
+  connect(_opts: RecordOpts): Promise<void> {
+    return Promise.resolve();
+  }
+
+  onData(_cb: (pcm: Buffer) => void): void {}
+  onSpeech(_cb: () => void): void {}
+  onSilence(_cb: () => void): void {}
+
+  stop(): void {}
 
   dispose(): Promise<void> {
     return Promise.resolve();

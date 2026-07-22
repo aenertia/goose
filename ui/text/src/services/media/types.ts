@@ -14,7 +14,7 @@ export interface AudioPlayer {
 export interface RecordOpts {
   sampleRate: number;
   channels: number;
-  vadMethod: 'gst-level' | 'rms-energy' | 'none';
+  vadMethod: 'silero' | 'gst-level' | 'rms-energy' | 'none';
   silenceThresholdMs: number;
 }
 
@@ -38,4 +38,6 @@ export interface MediaCapabilities {
   supportedFormats: readonly string[];
   gstreamerVersion: string | null;
   pipewire: boolean;
+  loopbackAvailable: boolean;
+  echoCancelAvailable: boolean;
 }

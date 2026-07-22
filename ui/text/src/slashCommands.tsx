@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { getTtsEnabled, setTtsEnabled, getTtsCapabilities, setTtsFormat, getTtsFormat, setTtsVoice, getTtsVoice, setTtsSpeed, getTtsSpeed } from "./ttsState.js";
+import { getTtsEnabled, setTtsEnabled, getTtsCapabilities, setTtsFormat, getTtsFormat, setTtsVoice, getTtsVoice, setTtsSpeed, getTtsSpeed, getHonkActive, setHonkActive } from "./voiceState.js";
 
 export interface SlashCommandContext {
   cwd: string;
@@ -141,9 +141,47 @@ const ttsCommand: SlashCommand = {
   },
 };
 
+const honkCommand: SlashCommand = {
+  name: "honk",
+  description: "voice conversation mode (on|off) — requires mic + speaker",
+  run: (ctx) => {
+    const caps = getTtsCapabilities();
+    const sub = ctx.args.trim().toLowerCase();
+
+    if (!caps) {
+      return { handled: true, message: "[honk] audio backend not yet initialized" };
+    }
+    if (!caps.audioPlayback) {
+      return { handled: true, message: "[honk] no audio playback available — TTS required for conversation mode" };
+    }
+    if (!caps.audioCapture) {
+      return { handled: true, message: "[honk] no audio capture available — mic required for conversation mode (pw-cat not found)" };
+    }
+
+    if (sub === "on") {
+      setHonkActive(true);
+      setTtsEnabled(true);
+      const ecWarn = !caps.loopbackAvailable ? ' ⚠ no echo cancellation — headphones required' : '';
+      return { handled: true, message: `[honk] conversation mode ON — speak naturally, Ctrl+L to toggle mic${ecWarn}` };
+    }
+
+    if (sub === "off") {
+      setHonkActive(false);
+      return { handled: true, message: "[honk] conversation mode OFF" };
+    }
+
+    const state = getHonkActive() ? "on" : "off";
+    return {
+      handled: true,
+      message: `[honk] ${state} — backend: ${caps.backend}, playback: ${caps.audioPlayback}, capture: ${caps.audioCapture}`,
+    };
+  },
+};
+
 const COMMANDS: Record<string, SlashCommand> = {
   diff: diffCommand,
   tts: ttsCommand,
+  honk: honkCommand,
 };
 
 export function tryRunSlashCommand(

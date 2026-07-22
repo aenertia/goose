@@ -26,6 +26,21 @@ function probeOutput(command: string, args: string[]): string | null {
   return result.stdout?.trim() ?? null;
 }
 
+function hasPwLoopback(): boolean {
+  return spawnSync('pw-loopback', ['--help'], {
+    stdio: ['ignore', 'ignore', 'ignore'],
+  }).status !== null;
+}
+
+function hasEchoCancel(): boolean {
+  const result = spawnSync('pactl', ['list', 'modules', 'short'], {
+    stdio: ['ignore', 'pipe', 'ignore'],
+    encoding: 'utf-8',
+  });
+  if (result.status !== 0) return false;
+  return (result.stdout ?? '').includes('module-echo-cancel');
+}
+
 function detectDarwin(): MediaCapabilities {
   return {
     backend: 'afplay',
@@ -36,6 +51,8 @@ function detectDarwin(): MediaCapabilities {
     supportedFormats: ['wav', 'mp3', 'aac'],
     gstreamerVersion: null,
     pipewire: false,
+    loopbackAvailable: false,
+    echoCancelAvailable: false,
   };
 }
 
@@ -49,6 +66,8 @@ function detectWin32(): MediaCapabilities {
     supportedFormats: ['wav'],
     gstreamerVersion: null,
     pipewire: false,
+    loopbackAvailable: false,
+    echoCancelAvailable: false,
   };
 }
 
@@ -71,8 +90,16 @@ function probeGStreamerFormats(): string[] {
   return formats;
 }
 
+function hasPwCat(): boolean {
+  return spawnSync('pw-cat', ['--help'], {
+    stdio: ['ignore', 'ignore', 'ignore'],
+  }).status !== null;
+}
+
 function detectLinux(): MediaCapabilities {
-  // Try GStreamer first
+  const pwCatAvailable = hasPwCat();
+  const pwLoopback = hasPwLoopback();
+
   const gstVersion = probeOutput('gst-launch-1.0', ['--version']);
   if (gstVersion !== null) {
     const hasPWSink = probe('gst-inspect-1.0', ['pipewiresink']);
@@ -81,17 +108,18 @@ function detectLinux(): MediaCapabilities {
 
     return {
       backend: 'gstreamer',
-      audioPlayback: hasPWSink || formats.length > 0,
-      audioCapture: hasPWSrc,
-      persistentStreams: hasPWSink,
+      audioPlayback: hasPWSink || pwCatAvailable || formats.length > 0,
+      audioCapture: hasPWSrc || pwCatAvailable,
+      persistentStreams: pwLoopback || hasPWSink || pwCatAvailable,
       screenCapture: false,
       supportedFormats: formats,
       gstreamerVersion: gstVersion,
-      pipewire: hasPWSink || hasPWSrc,
+      pipewire: hasPWSink || hasPWSrc || pwCatAvailable,
+      loopbackAvailable: pwLoopback,
+      echoCancelAvailable: hasEchoCancel(),
     };
   }
 
-  // Fallback: pacat (PulseAudio)
   if (probe('pacat', ['--version'])) {
     return {
       backend: 'pacat',
@@ -102,10 +130,11 @@ function detectLinux(): MediaCapabilities {
       supportedFormats: ['wav'],
       gstreamerVersion: null,
       pipewire: false,
+      loopbackAvailable: false,
+      echoCancelAvailable: false,
     };
   }
 
-  // No audio backend
   return {
     backend: 'noop',
     audioPlayback: false,
@@ -115,6 +144,8 @@ function detectLinux(): MediaCapabilities {
     supportedFormats: [],
     gstreamerVersion: null,
     pipewire: false,
+    loopbackAvailable: false,
+    echoCancelAvailable: false,
   };
 }
 

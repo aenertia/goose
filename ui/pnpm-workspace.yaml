@@ -1,5 +1,6 @@
 packages:
   - 'sdk'
+  - 'shared'
   - 'text'
   - 'desktop'
   - 'goose-binary/*'
@@ -18,6 +19,8 @@ allowBuilds:
   electron: true
   electron-winstaller: true
   esbuild: true
+  onnxruntime-node: set this to true or false
+  protobufjs: set this to true or false
   usocket: true
 # Electron Forge resolves @electron/node-gyp from git.
 blockExoticSubdeps: false

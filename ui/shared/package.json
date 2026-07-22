@@ -1,0 +1,15 @@
+{
+  "name": "@aaif/voice-shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./voice/constants.js": "./src/voice/constants.ts",
+    "./voice/types.js": "./src/voice/types.ts",
+    "./voice/index.js": "./src/voice/index.ts",
+    "./voice/encoding.js": "./src/voice/encoding.ts",
+    "./voice/vad.js": "./src/voice/vad.ts",
+    "./voice/sentenceBoundary.js": "./src/voice/sentenceBoundary.ts",
+    "./voice": "./src/voice/index.ts"
+  }
+}
