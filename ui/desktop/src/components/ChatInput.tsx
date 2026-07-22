@@ -128,6 +128,9 @@ If the user asks for code: describe it verbally and offer to switch to text mode
  */
 export const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, no markdown/code blocks, concise]';
 
+let streamCursor = 0;
+let streamActive = false;
+
 const i18n = defineMessages({
   dictationError: {
     id: 'chatInput.dictationError',
@@ -636,31 +639,28 @@ export default function ChatInput({
     }
   }, [honkActive]);
 
-  const streamCursorRef = useRef(0);
-  const streamActiveRef = useRef(false);
-
   useEffect(() => {
     if (!honkActive) {
-      if (streamActiveRef.current) {
-        streamActiveRef.current = false;
-        streamCursorRef.current = 0;
+      if (streamActive) {
+        streamActive = false;
+        streamCursor = 0;
       }
       return;
     }
 
-    if (isLoading && !streamActiveRef.current) {
-      streamActiveRef.current = true;
-      streamCursorRef.current = 0;
+    if (isLoading && !streamActive) {
+      streamActive = true;
+      streamCursor = 0;
       snapshotListeningState();
       startStreamingSpeak();
       return;
     }
 
-    if (isLoading && streamActiveRef.current) {
+    if (isLoading && streamActive) {
       const lastMsg = [...messages].reverse().find((m) => m.role === 'assistant');
       if (!lastMsg) return;
       const { textContent } = getTextAndImageContent(lastMsg);
-      const unspoken = textContent.slice(streamCursorRef.current);
+      const unspoken = textContent.slice(streamCursor);
 
       const sentenceEnd = unspoken.search(/[.!?](?:\s|$)/);
       if (sentenceEnd >= 0) {
@@ -668,23 +668,23 @@ export default function ChatInput({
         if (chunk) {
           void enqueueStreamChunk(chunk);
           const charAfter = unspoken[sentenceEnd + 1];
-          streamCursorRef.current += sentenceEnd + (charAfter === ' ' ? 2 : 1);
+          streamCursor += sentenceEnd + (charAfter === ' ' ? 2 : 1);
         }
       }
       return;
     }
 
-    if (!isLoading && streamActiveRef.current) {
-      streamActiveRef.current = false;
+    if (!isLoading && streamActive) {
+      streamActive = false;
       const lastMsg = [...messages].reverse().find((m) => m.role === 'assistant');
       if (lastMsg) {
         const { textContent } = getTextAndImageContent(lastMsg);
-        const remaining = textContent.slice(streamCursorRef.current).trim();
+        const remaining = textContent.slice(streamCursor).trim();
         if (remaining) {
           void enqueueStreamChunk(remaining);
         }
       }
-      streamCursorRef.current = 0;
+      streamCursor = 0;
     }
   }, [isLoading, honkActive, messages, startStreamingSpeak, enqueueStreamChunk, snapshotListeningState]);
 
