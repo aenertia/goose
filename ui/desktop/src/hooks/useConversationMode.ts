@@ -38,6 +38,9 @@ export interface UseConversationModeReturn {
   handleAutoSubmit: (text: string) => void;
   /** Call when the LLM stream finishes (from onStreamFinish). */
   handleStreamFinish: (responseText: string) => void;
+  startStreamingSpeak: () => Promise<void>;
+  enqueueStreamChunk: (text: string) => void;
+  snapshotListeningState: () => void;
 }
 
 interface UseConversationModeOptions {
@@ -65,7 +68,7 @@ export function useConversationMode({
   const [isListening, setIsListening] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { speak, stop: stopPlayback, isPlaying } = useAudioPlayer();
+  const { speak, stop: stopPlayback, isPlaying, startStreamingSpeak, enqueueStreamChunk } = useAudioPlayer();
 
   // Refs for stable callback access
   const honkActiveRef = useRef(false);
@@ -141,6 +144,10 @@ export function useConversationMode({
     setIsListening(false);
     isListeningRef.current = false;
     stopRecordingRef.current();
+  }, []);
+
+  const snapshotListeningState = useCallback(() => {
+    wasListeningBeforeSpeakingRef.current = isListeningRef.current;
   }, []);
 
   // --- Conversation loop handlers ---
@@ -240,5 +247,8 @@ export function useConversationMode({
     state,
     handleAutoSubmit,
     handleStreamFinish,
+    startStreamingSpeak,
+    enqueueStreamChunk,
+    snapshotListeningState,
   };
 }

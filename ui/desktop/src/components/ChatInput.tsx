@@ -531,7 +531,6 @@ export default function ChatInput({
   // but useConversationMode needs startRecording/stopRecording from useAudioRecorder.
   const conversationAutoSubmitRef = useRef<((text: string) => void) | undefined>(undefined);
   const honkIsListeningRef = useRef(false);
-  const prevIsLoadingRef = useRef(false);
   const conversationTurnRef = useRef(0);
 
   // Audio recorder hook for voice dictation
@@ -616,7 +615,9 @@ export default function ChatInput({
     stopListening: honkStopListening,
     state: conversationState,
     handleAutoSubmit: conversationAutoSubmit,
-    handleStreamFinish: conversationHandleStreamFinish,
+    startStreamingSpeak,
+    enqueueStreamChunk,
+    snapshotListeningState,
   } = useConversationMode({
     submitMessage: conversationSubmit,
     startRecording,
@@ -635,18 +636,56 @@ export default function ChatInput({
     }
   }, [honkActive]);
 
+  const streamCursorRef = useRef(0);
+  const streamActiveRef = useRef(false);
+
   useEffect(() => {
-    if (prevIsLoadingRef.current && !isLoading && honkActive) {
-      const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
-      if (lastAssistant) {
-        const { textContent } = getTextAndImageContent(lastAssistant);
-        if (textContent.trim()) {
-          conversationHandleStreamFinish(textContent);
+    if (!honkActive) {
+      if (streamActiveRef.current) {
+        streamActiveRef.current = false;
+        streamCursorRef.current = 0;
+      }
+      return;
+    }
+
+    if (isLoading && !streamActiveRef.current) {
+      streamActiveRef.current = true;
+      streamCursorRef.current = 0;
+      snapshotListeningState();
+      startStreamingSpeak();
+      return;
+    }
+
+    if (isLoading && streamActiveRef.current) {
+      const lastMsg = [...messages].reverse().find((m) => m.role === 'assistant');
+      if (!lastMsg) return;
+      const { textContent } = getTextAndImageContent(lastMsg);
+      const unspoken = textContent.slice(streamCursorRef.current);
+
+      const sentenceEnd = unspoken.search(/[.!?]\s/);
+      if (sentenceEnd >= 0) {
+        const chunk = unspoken.slice(0, sentenceEnd + 1).trim();
+        if (chunk) {
+          enqueueStreamChunk(chunk);
+          streamCursorRef.current += sentenceEnd + 2;
         }
       }
+      return;
     }
-    prevIsLoadingRef.current = isLoading;
-  }, [isLoading, honkActive, messages, conversationHandleStreamFinish]);
+
+    if (!isLoading && streamActiveRef.current) {
+      streamActiveRef.current = false;
+      const lastMsg = [...messages].reverse().find((m) => m.role === 'assistant');
+      if (lastMsg) {
+        const { textContent } = getTextAndImageContent(lastMsg);
+        const remaining = textContent.slice(streamCursorRef.current).trim();
+        if (remaining) {
+          enqueueStreamChunk(remaining);
+        }
+      }
+      streamCursorRef.current = 0;
+    }
+  }, [isLoading, honkActive, messages, startStreamingSpeak, enqueueStreamChunk, snapshotListeningState]);
 
   const textAreaRef = inputRef || internalTextAreaRef;
   const timeoutRefsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
@@ -1903,7 +1942,7 @@ export default function ChatInput({
         )}
 
         {/* Right: HONK! conversation mode toggle (Goose icon) */}
-        {dictationProvider && voiceModeEnabled && (
+        {voiceModeEnabled && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -1919,7 +1958,6 @@ export default function ChatInput({
                     activateHonk();
                   }
                 }}
-                disabled={!isEnabled || isTranscribing}
                 className={cn(
                   'transition-colors',
                   isConversationActive

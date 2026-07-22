@@ -59,6 +59,8 @@ interface UseAudioPlayerReturn {
   speak: (text: string) => Promise<void>;
   stop: () => void;
   isPlaying: boolean;
+  startStreamingSpeak: () => Promise<void>;
+  enqueueStreamChunk: (text: string) => void;
 }
 
 export function useAudioPlayer(): UseAudioPlayerReturn {
@@ -229,5 +231,61 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     [read, stop, synthesizeChunk, playBuffer]
   );
 
-  return { speak, stop, isPlaying };
+  // === STREAMING TTS ===
+  const streamProviderRef = useRef('');
+  const streamVoiceRef = useRef('');
+  const streamSpeedRef = useRef(1.0);
+  const streamProfileRef = useRef<string | undefined>(undefined);
+  const streamQueueRef = useRef<Promise<AudioBuffer | null>[]>([]);
+  const drainingRef = useRef(false);
+
+  const startStreamingSpeak = useCallback(async () => {
+    stop();
+    globalStopped = false;
+    streamQueueRef.current = [];
+    drainingRef.current = false;
+
+    streamProviderRef.current = ((await read('voice_tts_provider', false)) as string) || '__disabled__';
+    streamVoiceRef.current = ((await read('voice_tts_voice', false)) as string) || '';
+    const speedStr = ((await read('voice_tts_speed', false)) as string) || '1.00';
+    streamSpeedRef.current = parseFloat(speedStr) || 1.0;
+    streamProfileRef.current = ((await read('voice_tts_active_profile', false)) as string) || undefined;
+  }, [read, stop]);
+
+  const drainStreamingQueue = useCallback(async () => {
+    while (streamQueueRef.current.length > 0) {
+      if (globalStopped) break;
+      const bufPromise = streamQueueRef.current.shift()!;
+      const buf = await bufPromise;
+      if (!buf || globalStopped) continue;
+      await playBuffer(buf);
+    }
+    drainingRef.current = false;
+    if (!globalStopped) {
+      playingRef.current = false;
+      setIsPlaying(false);
+    }
+  }, [playBuffer]);
+
+  const enqueueStreamChunk = useCallback(
+    (text: string) => {
+      const provider = streamProviderRef.current;
+      if (!provider || provider === '__disabled__' || globalStopped) return;
+
+      const bufPromise = synthesizeChunk(
+        text, provider, streamVoiceRef.current, streamSpeedRef.current, streamProfileRef.current
+      );
+      streamQueueRef.current.push(bufPromise);
+
+      if (!drainingRef.current) {
+        drainingRef.current = true;
+        playingRef.current = true;
+        setIsPlaying(true);
+        drainStreamingQueue();
+      }
+    },
+    [synthesizeChunk, drainStreamingQueue]
+  );
+
+  return { speak, stop, isPlaying, startStreamingSpeak, enqueueStreamChunk };
 }

@@ -27,7 +27,7 @@ export function TtsSpeedSlider({ speed, onSpeedChange }: TtsSpeedSliderProps) {
           type="range"
           min="0.25"
           max="4.0"
-          step="0.25"
+          step="0.05"
           value={speed}
           onChange={onSpeedChange}
           className="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-accent-primary"
