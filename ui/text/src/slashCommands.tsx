@@ -1,7 +1,9 @@
 import { spawnSync } from "node:child_process";
+import { getTtsEnabled, setTtsEnabled, getTtsCapabilities } from "./ttsState.js";
 
 export interface SlashCommandContext {
   cwd: string;
+  args: string;
 }
 
 export type SlashCommandResult =
@@ -72,20 +74,61 @@ const diffCommand: SlashCommand = {
   },
 };
 
+const ttsCommand: SlashCommand = {
+  name: "tts",
+  description: "enable/disable text-to-speech (on|off)",
+  run: (ctx) => {
+    const caps = getTtsCapabilities();
+
+    if (!caps || !caps.audioPlayback) {
+      const reason = !caps
+        ? "audio backend not yet initialized"
+        : `no audio playback available (backend: ${caps.backend})`;
+      return { handled: true, message: `[tts] ${reason}` };
+    }
+
+    const arg = ctx.args.trim().toLowerCase();
+
+    if (arg === "on") {
+      setTtsEnabled(true);
+      const fmts = caps.supportedFormats.join(", ");
+      return {
+        handled: true,
+        message: `[tts] enabled — backend: ${caps.backend}, formats: ${fmts}`,
+      };
+    }
+
+    if (arg === "off") {
+      setTtsEnabled(false);
+      return { handled: true, message: "[tts] disabled" };
+    }
+
+    const state = getTtsEnabled() ? "on" : "off";
+    const fmts = caps.supportedFormats.join(", ");
+    return {
+      handled: true,
+      message: `[tts] ${state} — backend: ${caps.backend} (${caps.gstreamerVersion ?? "n/a"}), formats: ${fmts || "none"}, persistent: ${caps.persistentStreams}`,
+    };
+  },
+};
+
 const COMMANDS: Record<string, SlashCommand> = {
   diff: diffCommand,
+  tts: ttsCommand,
 };
 
 export function tryRunSlashCommand(
   input: string,
-  ctx: SlashCommandContext,
+  ctx: Omit<SlashCommandContext, "args">,
 ): SlashCommandResult {
   const trimmed = input.trim();
   if (!trimmed.startsWith("/")) return { handled: false };
-  const name = trimmed.slice(1).split(/\s+/)[0]?.toLowerCase() ?? "";
+  const parts = trimmed.slice(1).split(/\s+/);
+  const name = parts[0]?.toLowerCase() ?? "";
+  const args = parts.slice(1).join(" ");
   const cmd = COMMANDS[name];
   if (!cmd) return { handled: false };
-  return cmd.run(ctx);
+  return cmd.run({ ...ctx, args });
 }
 
 export function listSlashCommands(): SlashCommand[] {

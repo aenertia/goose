@@ -11,6 +11,7 @@ interface HeaderProps {
   loading: boolean;
   spinIdx: number;
   turnInfo?: { current: number; total: number };
+  voicePhase?: 'speaking' | 'listening' | 'idle';
 }
 
 export const Header = React.memo(function Header({
@@ -19,6 +20,7 @@ export const Header = React.memo(function Header({
   loading,
   spinIdx,
   turnInfo,
+  voicePhase,
 }: HeaderProps) {
   const statusColor =
     status === "ready" ? TEAL : isErrorStatus(status) ? CRANBERRY : TEXT_DIM;
@@ -41,6 +43,12 @@ export const Header = React.memo(function Header({
           )}
         </Box>
         <Box width={rightSideWidth} justifyContent="flex-end">
+          {voicePhase === 'speaking' && (
+            <Text>{"🔊 "}</Text>
+          )}
+          {voicePhase === 'listening' && (
+            <Text>{"🎤 "}</Text>
+          )}
           {turnInfo && turnInfo.total > 1 && (
             <Text color={TEXT_DIM}>
               {turnInfo.current}/{turnInfo.total}{"  "}

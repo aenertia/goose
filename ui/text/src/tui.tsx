@@ -61,6 +61,80 @@ import {
   SCROLL_FAST_MULTIPLIER,
 } from "./constants.js";
 import { tryRunSlashCommand } from "./slashCommands.js";
+import { setTtsCapabilities } from "./ttsState.js";
+import {
+  detectAndCreateAudioPlayer,
+  type AudioPlayer,
+  type MediaCapabilities,
+} from './services/media/index.js';
+
+// TTS state — module-level to survive component re-renders
+let ttsEnabled = false;
+let audioPlayer: AudioPlayer | null = null;
+let ttsCapabilities: MediaCapabilities | null = null;
+let ttsStreamBuf = '';
+let ttsCursor = 0;
+let ttsVoiceProvider = '';
+let ttsVoiceId = '';
+let ttsFormat = 'opus';
+let ttsSpeed = 1.0;
+let currentVoicePhase: 'idle' | 'speaking' | 'listening' = 'idle';
+
+export function setTtsEnabled(v: boolean): void {
+  ttsEnabled = v;
+  if (!v) audioPlayer?.stop();
+}
+
+export function getTtsEnabled(): boolean {
+  return ttsEnabled;
+}
+
+export function getMediaCapabilities(): MediaCapabilities | null {
+  return ttsCapabilities;
+}
+
+function detectSentenceBoundary(text: string): number {
+  // Tier 1: sentence-ending punctuation (Unicode-aware)
+  const m = text.search(/[.!?。！？।؟\u104A\u104B](?:\s|$)/);
+  if (m >= 0) return m + 1;
+  // Tier 2: clause break at >60 chars
+  if (text.length > 60) {
+    const clauseRe = /[,;:、，；：،؛]\s?|\n/g;
+    let last = -1;
+    let match;
+    while ((match = clauseRe.exec(text)) !== null) {
+      last = match.index + match[0].length;
+    }
+    if (last > 20) return last;
+  }
+  // Tier 3: force split at >120
+  if (text.length > 120) {
+    const sp = text.lastIndexOf(' ', 120);
+    return sp > 20 ? sp + 1 : 120;
+  }
+  return -1;
+}
+
+async function speakChunk(client: GooseClient, text: string): Promise<void> {
+  if (!audioPlayer || !ttsVoiceProvider || ttsVoiceProvider === '__disabled__') return;
+  try {
+    currentVoicePhase = 'speaking';
+    const resp = await client.extMethod('_goose/unstable/tts/synthesize', {
+      text,
+      provider: ttsVoiceProvider,
+      voice: ttsVoiceId,
+      speed: ttsSpeed,
+      responseFormat: ttsFormat,
+    });
+    const audioB64 = resp.audio as string;
+    const audioBuf = Buffer.from(audioB64, 'base64');
+    audioPlayer.pushChunk(audioBuf, ttsFormat);
+  } catch (err) {
+    console.error('[tts] synthesis failed:', err);
+  } finally {
+    currentVoicePhase = 'idle';
+  }
+}
 
 const InputBar = React.memo(function InputBar({
   width,
@@ -691,6 +765,14 @@ function App({
         setStatus(`error`);
         appendError(errorMsg);
       } finally {
+        if (ttsEnabled && ttsStreamBuf.trim() && audioPlayer && ttsVoiceProvider) {
+          const remaining = ttsStreamBuf.trim();
+          ttsStreamBuf = '';
+          if (client) {
+            void speakChunk(client, remaining);
+          }
+        }
+        ttsStreamBuf = '';
         setLoading(false);
       }
     },
@@ -777,6 +859,18 @@ function App({
                 if (update.content.type === "text") {
                   streamBuf.current += update.content.text;
                   appendAgent(update.content.text);
+
+                  if (ttsEnabled && audioPlayer && ttsVoiceProvider && ttsVoiceProvider !== '__disabled__') {
+                    ttsStreamBuf += update.content.text;
+                    const boundary = detectSentenceBoundary(ttsStreamBuf);
+                    if (boundary > 0) {
+                      const sentence = ttsStreamBuf.slice(0, boundary).trim();
+                      ttsStreamBuf = ttsStreamBuf.slice(boundary);
+                      if (sentence) {
+                        void speakChunk(client, sentence);
+                      }
+                    }
+                  }
                 }
               } else if (update.sessionUpdate === "tool_call") {
                 handleToolCall(update);
@@ -817,6 +911,34 @@ function App({
           setLoading(false);
           setStatus("setup required");
           return;
+        }
+
+        if (audioPlayer === null) {
+          detectAndCreateAudioPlayer().then(async ({ player, capabilities }) => {
+            audioPlayer = player;
+            ttsCapabilities = capabilities;
+            setTtsCapabilities(capabilities);
+            try {
+              const providerResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_provider' });
+              ttsVoiceProvider = (providerResp.value as string) ?? '';
+              const voiceResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_voice' });
+              ttsVoiceId = (voiceResp.value as string) ?? '';
+              const speedResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_speed' });
+              ttsSpeed = parseFloat((speedResp.value as string) ?? '1.0') || 1.0;
+              const fmtResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_format' });
+              const requestedFmt = (fmtResp.value as string) ?? 'opus';
+              ttsFormat = capabilities.supportedFormats.includes(requestedFmt)
+                ? requestedFmt
+                : (capabilities.supportedFormats[0] ?? 'opus');
+            } catch {
+              /* config keys may not exist — defaults suffice */
+            }
+            if (ttsVoiceProvider && ttsVoiceProvider !== '__disabled__') {
+              await player.connect();
+            }
+          }).catch((err: unknown) => {
+            console.error('[tts] init failed:', err);
+          });
         }
 
         await createSession(client);
