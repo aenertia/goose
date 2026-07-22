@@ -18,6 +18,6 @@ allowBuilds:
   electron: true
   electron-winstaller: true
   esbuild: true
-  usocket: set this to true or false
+  usocket: true
 # Electron Forge resolves @electron/node-gyp from git.
 blockExoticSubdeps: false
