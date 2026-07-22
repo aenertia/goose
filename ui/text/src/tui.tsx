@@ -79,6 +79,7 @@ let ttsVoiceId = '';
 let ttsFormat = 'opus';
 let ttsSpeed = 1.0;
 let currentVoicePhase: 'idle' | 'speaking' | 'listening' = 'idle';
+let ttsConfigInitialized = false;
 
 export function setTtsEnabled(v: boolean): void {
   ttsEnabled = v;
@@ -115,8 +116,47 @@ function detectSentenceBoundary(text: string): number {
   return -1;
 }
 
+async function ensureTtsReady(client: GooseClient): Promise<boolean> {
+  if (ttsConfigInitialized) return audioPlayer !== null && ttsVoiceProvider !== '' && ttsVoiceProvider !== '__disabled__';
+  ttsConfigInitialized = true; // set first to prevent concurrent double-init
+
+  // Read voice config
+  try {
+    const providerResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_provider' });
+    ttsVoiceProvider = (providerResp.value as string) ?? '';
+    const voiceResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_voice' });
+    ttsVoiceId = (voiceResp.value as string) ?? '';
+    const speedResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_speed' });
+    ttsSpeed = parseFloat((speedResp.value as string) ?? '1.0') || 1.0;
+    const fmtResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_format' });
+    const requestedFmt = (fmtResp.value as string) ?? 'opus';
+    if (ttsCapabilities) {
+      ttsFormat = ttsCapabilities.supportedFormats.includes(requestedFmt)
+        ? requestedFmt
+        : (ttsCapabilities.supportedFormats[0] ?? 'opus');
+    } else {
+      ttsFormat = requestedFmt;
+    }
+  } catch {
+    // config read failed — use defaults (empty provider = TTS will be skipped)
+  }
+
+  // Connect player if provider is configured
+  if (audioPlayer && ttsVoiceProvider && ttsVoiceProvider !== '__disabled__') {
+    try {
+      await audioPlayer.connect();
+    } catch (err) {
+      console.error('[tts] player connect failed:', err);
+      return false;
+    }
+  }
+
+  return audioPlayer !== null && ttsVoiceProvider !== '' && ttsVoiceProvider !== '__disabled__';
+}
+
 async function speakChunk(client: GooseClient, text: string): Promise<void> {
-  if (!audioPlayer || !ttsVoiceProvider || ttsVoiceProvider === '__disabled__') return;
+  const ready = await ensureTtsReady(client);
+  if (!ready) return;
   try {
     currentVoicePhase = 'speaking';
     const resp = await client.extMethod('_goose/unstable/tts/synthesize', {
@@ -128,7 +168,7 @@ async function speakChunk(client: GooseClient, text: string): Promise<void> {
     });
     const audioB64 = resp.audio as string;
     const audioBuf = Buffer.from(audioB64, 'base64');
-    audioPlayer.pushChunk(audioBuf, ttsFormat);
+    audioPlayer!.pushChunk(audioBuf, ttsFormat);
   } catch (err) {
     console.error('[tts] synthesis failed:', err);
   } finally {
@@ -860,7 +900,7 @@ function App({
                   streamBuf.current += update.content.text;
                   appendAgent(update.content.text);
 
-                  if (ttsEnabled && audioPlayer && ttsVoiceProvider && ttsVoiceProvider !== '__disabled__') {
+                  if (ttsEnabled) {
                     ttsStreamBuf += update.content.text;
                     const boundary = detectSentenceBoundary(ttsStreamBuf);
                     if (boundary > 0) {
@@ -914,28 +954,10 @@ function App({
         }
 
         if (audioPlayer === null) {
-          detectAndCreateAudioPlayer().then(async ({ player, capabilities }) => {
+          detectAndCreateAudioPlayer().then(({ player, capabilities }) => {
             audioPlayer = player;
             ttsCapabilities = capabilities;
             setTtsCapabilities(capabilities);
-            try {
-              const providerResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_provider' });
-              ttsVoiceProvider = (providerResp.value as string) ?? '';
-              const voiceResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_voice' });
-              ttsVoiceId = (voiceResp.value as string) ?? '';
-              const speedResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_speed' });
-              ttsSpeed = parseFloat((speedResp.value as string) ?? '1.0') || 1.0;
-              const fmtResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_format' });
-              const requestedFmt = (fmtResp.value as string) ?? 'opus';
-              ttsFormat = capabilities.supportedFormats.includes(requestedFmt)
-                ? requestedFmt
-                : (capabilities.supportedFormats[0] ?? 'opus');
-            } catch {
-              /* config keys may not exist — defaults suffice */
-            }
-            if (ttsVoiceProvider && ttsVoiceProvider !== '__disabled__') {
-              await player.connect();
-            }
           }).catch((err: unknown) => {
             console.error('[tts] init failed:', err);
           });

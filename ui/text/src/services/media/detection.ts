@@ -4,7 +4,16 @@ import type { MediaCapabilities } from './types.js';
 let cached: MediaCapabilities | null = null;
 
 function probe(command: string, args: string[]): boolean {
-  const result = spawnSync(command, args, { stdio: 'ignore' });
+  const result = spawnSync(command, args, {
+    stdio: ['ignore', 'pipe', 'ignore'],
+    encoding: 'utf-8',
+  });
+  const out = (result.stdout ?? '') as string;
+  // gst-inspect-1.0 exits 0 even for missing plugins — check stdout instead
+  if (out.includes('No such element') || out.includes('No such plugin')) {
+    return false;
+  }
+  // For other commands (e.g. pacat --version), rely on exit code
   return result.status === 0;
 }
 

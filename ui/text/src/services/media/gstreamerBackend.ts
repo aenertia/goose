@@ -1,5 +1,14 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import type { AudioPlayer } from "./types.js";
+
+function hasPipeWireSink(): boolean {
+  const result = spawnSync('gst-inspect-1.0', ['pipewiresink'], {
+    stdio: ['ignore', 'pipe', 'ignore'],
+    encoding: 'utf-8',
+  });
+  const out = (result.stdout ?? '') as string;
+  return !out.includes('No such element') && !out.includes('No such plugin');
+}
 
 /**
  * Linux audio backend using a persistent gst-launch-1.0 pipeline.
@@ -25,6 +34,19 @@ export class GStreamerAudioPlayer implements AudioPlayer {
   async connect(): Promise<void> {
     if (this.proc !== null) return;
 
+    const usePipeWire = hasPipeWireSink();
+    const sinkArgs = usePipeWire
+      ? [
+          'pipewiresink',
+          'client-name=Goose',
+          'stream-properties=props,media.name=Goose TTS,media.role=Communication',
+        ]
+      : ['autoaudiosink'];
+
+    if (!usePipeWire) {
+      console.warn('[gstreamer] pipewiresink not available, using autoaudiosink (no persistent mixer entry)');
+    }
+
     const child = spawn(
       "gst-launch-1.0",
       [
@@ -38,9 +60,7 @@ export class GStreamerAudioPlayer implements AudioPlayer {
         "!",
         "audioresample",
         "!",
-        "pipewiresink",
-        "client-name=Goose",
-        'stream-properties=props,media.name=Goose TTS,media.role=Communication',
+        ...sinkArgs,
       ],
       { stdio: ["pipe", "ignore", "ignore"] },
     );
