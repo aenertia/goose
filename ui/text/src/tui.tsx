@@ -10,6 +10,7 @@ import { Box, Text, render, useApp, useInput, useStdout } from "ink";
 import { MultilineInput } from "ink-multiline-input";
 import meow from "meow";
 import { spawn } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { Readable, Writable } from "node:stream";
 import type {
   SessionNotification,
@@ -61,7 +62,7 @@ import {
   SCROLL_FAST_MULTIPLIER,
 } from "./constants.js";
 import { tryRunSlashCommand } from "./slashCommands.js";
-import { setTtsCapabilities } from "./ttsState.js";
+import { setTtsCapabilities, getTtsEnabled as getTtsEnabledState, setTtsEnabled as setTtsEnabledState } from "./ttsState.js";
 import {
   detectAndCreateAudioPlayer,
   type AudioPlayer,
@@ -83,6 +84,7 @@ let ttsConfigInitialized = false;
 
 export function setTtsEnabled(v: boolean): void {
   ttsEnabled = v;
+  setTtsEnabledState(v);
   if (!v) audioPlayer?.stop();
 }
 
@@ -116,6 +118,27 @@ function detectSentenceBoundary(text: string): number {
   return -1;
 }
 
+function readGooseConfigVoice(): { provider: string; voice: string; speed: number; format: string } {
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
+  const configPath = `${home}/.config/goose/config.yaml`;
+  const defaults = { provider: '', voice: '', speed: 1.0, format: 'opus' };
+  try {
+    const content = readFileSync(configPath, 'utf-8');
+    const get = (key: string): string => {
+      const m = content.match(new RegExp(`^${key}:\\s*'?([^'\\n]+?)'?\\s*$`, 'm'));
+      return m ? m[1].trim() : '';
+    };
+    return {
+      provider: get('voice_tts_provider'),
+      voice: get('voice_tts_voice'),
+      speed: parseFloat(get('voice_tts_speed')) || 1.0,
+      format: get('voice_tts_format') || 'opus',
+    };
+  } catch {
+    return defaults;
+  }
+}
+
 async function ensureTtsReady(client: GooseClient): Promise<boolean> {
   if (ttsConfigInitialized) return audioPlayer !== null && ttsVoiceProvider !== '' && ttsVoiceProvider !== '__disabled__';
   ttsConfigInitialized = true; // set first to prevent concurrent double-init
@@ -138,7 +161,18 @@ async function ensureTtsReady(client: GooseClient): Promise<boolean> {
       ttsFormat = requestedFmt;
     }
   } catch {
-    // config read failed — use defaults (empty provider = TTS will be skipped)
+    // ACP config/read not available — fall back to config file
+    const cfg = readGooseConfigVoice();
+    ttsVoiceProvider = cfg.provider;
+    ttsVoiceId = cfg.voice;
+    ttsSpeed = cfg.speed;
+    const requestedFmt = cfg.format;
+    ttsFormat = ttsCapabilities?.supportedFormats.includes(requestedFmt)
+      ? requestedFmt
+      : (ttsCapabilities?.supportedFormats[0] ?? 'opus');
+    if (!ttsVoiceProvider) {
+      console.error('[tts] voice_tts_provider not configured in ~/.config/goose/config.yaml');
+    }
   }
 
   // Connect player if provider is configured
@@ -805,12 +839,10 @@ function App({
         setStatus(`error`);
         appendError(errorMsg);
       } finally {
-        if (ttsEnabled && ttsStreamBuf.trim() && audioPlayer && ttsVoiceProvider) {
+        if (getTtsEnabledState() && ttsStreamBuf.trim()) {
           const remaining = ttsStreamBuf.trim();
           ttsStreamBuf = '';
-          if (client) {
-            void speakChunk(client, remaining);
-          }
+          void speakChunk(client, remaining);
         }
         ttsStreamBuf = '';
         setLoading(false);
@@ -900,7 +932,7 @@ function App({
                   streamBuf.current += update.content.text;
                   appendAgent(update.content.text);
 
-                  if (ttsEnabled) {
+                  if (getTtsEnabledState()) {
                     ttsStreamBuf += update.content.text;
                     const boundary = detectSentenceBoundary(ttsStreamBuf);
                     if (boundary > 0) {
