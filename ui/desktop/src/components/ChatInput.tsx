@@ -16,6 +16,7 @@ import { cn } from '../utils';
 import { AlertType, useAlerts } from './alerts';
 import { useModelAndProvider } from './ModelAndProviderContext';
 import { acpListProviderDetails } from '../acp/providers';
+import { acpChatSessionStore } from '../acp/chatSessionStore';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useConversationMode } from '../hooks/useConversationMode';
@@ -130,7 +131,7 @@ export const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, no mark
 
 let streamCursor = 0;
 let streamActive = false;
-let latestMessages: any[] = [];
+let streamSessionId = '';
 let streamIntervalId: ReturnType<typeof setInterval> | null = null;
 let streamMsgCount = 0;
 
@@ -635,7 +636,6 @@ export default function ChatInput({
   const isConversationActive = honkActive;
   conversationAutoSubmitRef.current = conversationAutoSubmit;
   honkIsListeningRef.current = honkIsListening;
-  latestMessages = messages;
 
   useEffect(() => {
     if (!honkActive) {
@@ -658,6 +658,7 @@ export default function ChatInput({
       streamActive = true;
       streamCursor = 0;
       streamMsgCount = messages.length;
+      streamSessionId = sessionId ?? '';
       snapshotListeningState();
       void startStreamingSpeak();
 
@@ -665,7 +666,8 @@ export default function ChatInput({
       streamIntervalId = setInterval(() => {
         if (!streamActive) return;
 
-        const msgs = latestMessages;
+        const snapshot = acpChatSessionStore.getSnapshot(streamSessionId);
+        const msgs = snapshot?.messages ?? [];
         let targetMsg = null;
         for (let i = msgs.length - 1; i >= streamMsgCount; i--) {
           if (msgs[i]?.role === 'assistant') {
@@ -741,7 +743,8 @@ export default function ChatInput({
       }
 
       // Find the correct assistant message (appeared after streaming started)
-      const msgs = messages;
+      const flushSnapshot = acpChatSessionStore.getSnapshot(streamSessionId);
+      const msgs = flushSnapshot?.messages ?? [];
       let targetMsg = null;
       for (let i = msgs.length - 1; i >= streamMsgCount; i--) {
         if (msgs[i]?.role === 'assistant') {
