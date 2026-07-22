@@ -76,6 +76,12 @@ export interface UseTtsConfigReturn {
   runTtsTest: () => Promise<void>;
   refreshProfiles: () => Promise<void>;
 
+  // Format/quality state
+  ttsFormat: string;
+  ttsQuality: string;
+  handleFormatChange: (format: string) => void;
+  handleQualityChange: (quality: string) => void;
+
   // Handler functions
   handleProviderChange: (value: string) => void;
   handleVoiceChange: (value: string) => void;
@@ -123,6 +129,9 @@ export function useTtsConfig(): UseTtsConfigReturn {
   const [editingProfile, setEditingProfile] = useState<TtsProfile | null>(null);
   const [profileApiKey, setProfileApiKey] = useState('');
   const [showProfileEditor, setShowProfileEditor] = useState(false);
+
+  const [ttsFormat, setTtsFormat] = useState('opus');
+  const [ttsQuality, setTtsQuality] = useState('medium');
 
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState('');
@@ -292,6 +301,14 @@ export function useTtsConfig(): UseTtsConfigReturn {
       if (savedProfile && typeof savedProfile === 'string') {
         setActiveProfileId(savedProfile);
       }
+      const savedFormat = await read('voice_tts_format', false);
+      if (savedFormat && typeof savedFormat === 'string') {
+        setTtsFormat(savedFormat);
+      }
+      const savedQuality = await read('voice_tts_quality', false);
+      if (savedQuality && typeof savedQuality === 'string') {
+        setTtsQuality(savedQuality);
+      }
     };
     loadSettings();
   }, [read]);
@@ -350,6 +367,16 @@ export function useTtsConfig(): UseTtsConfigReturn {
   const handleEndpointUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEndpointUrl(value);
+  };
+
+  const handleFormatChange = (format: string) => {
+    setTtsFormat(format);
+    upsert('voice_tts_format', format, false);
+  };
+
+  const handleQualityChange = (quality: string) => {
+    setTtsQuality(quality);
+    upsert('voice_tts_quality', quality, false);
   };
 
   const handleEndpointUrlBlur = () => {
@@ -476,6 +503,8 @@ export function useTtsConfig(): UseTtsConfigReturn {
     setIsEditingKey,
     endpointUrl,
     setEndpointUrl,
+    ttsFormat,
+    ttsQuality,
 
     // Profile state
     profiles,
@@ -512,6 +541,8 @@ export function useTtsConfig(): UseTtsConfigReturn {
     handleEndpointUrlBlur,
     handleSaveKey,
     handleRemoveKey,
+    handleFormatChange,
+    handleQualityChange,
     handleActiveProfileChange,
     handleNewProfile,
     handleEditProfile,

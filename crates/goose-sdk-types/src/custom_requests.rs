@@ -566,6 +566,8 @@ pub enum PreferenceKey {
     VoiceMode,
     VoiceTtsEndpointUrl,
     VoiceTtsActiveProfile,
+    VoiceTtsFormat,
+    VoiceTtsQuality,
     VoiceSttEndpoint,
 }
 
@@ -2257,10 +2259,18 @@ pub struct TtsSynthesizeRequest {
     pub speed: f32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile_id: Option<String>,
+    #[serde(default = "default_tts_format")]
+    pub response_format: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quality: Option<String>,
 }
 
 fn default_tts_speed() -> f32 {
     1.0
+}
+
+fn default_tts_format() -> String {
+    "opus".to_string()
 }
 
 /// TTS synthesis result with base64 audio data.

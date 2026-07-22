@@ -44,9 +44,23 @@ impl GooseAcpAgent {
             let endpoint_url = config
                 .get_param::<String>("voice_tts_endpoint_url")
                 .unwrap_or_default();
+
+            // Format: use request value, fall back to config, then default "opus"
+            let response_format = if !req.response_format.is_empty() && req.response_format != "opus" {
+                req.response_format.clone()
+            } else {
+                config.get_param::<String>("voice_tts_format").unwrap_or_default()
+            };
+
+            let quality = req.quality.clone().unwrap_or_else(|| {
+                config.get_param::<String>("voice_tts_quality").unwrap_or_default()
+            });
+
             let overrides = TtsSynthesizeOverrides {
                 endpoint_url,
                 api_key: String::new(),
+                response_format,
+                quality,
             };
             synthesize_with_provider_overrides(provider, &req.text, &req.voice, speed, &overrides)
                 .await

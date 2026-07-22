@@ -297,6 +297,10 @@ pub struct TtsSynthesizeOverrides {
     pub endpoint_url: String,
     /// API key to use instead of the global config value. Empty = use global.
     pub api_key: String,
+    /// Audio response format: "opus"|"wav"|"mp3"|"pcm"|"ogg"|"flac". Empty = "opus".
+    pub response_format: String,
+    /// Quality hint for compressed formats: "low"|"medium"|"high". Empty = provider default.
+    pub quality: String,
 }
 
 pub async fn synthesize_with_provider(
@@ -359,6 +363,8 @@ pub async fn synthesize_with_profile(
     let overrides = TtsSynthesizeOverrides {
         endpoint_url: profile.endpoint_url.clone(),
         api_key,
+        response_format: String::new(),
+        quality: String::new(),
     };
 
     synthesize_with_provider_overrides(
@@ -423,12 +429,18 @@ async fn synthesize_openai_compatible(
         "alloy".to_string()
     };
 
+    let fmt = if overrides.response_format.is_empty() {
+        "opus"
+    } else {
+        &overrides.response_format
+    };
+
     let body = serde_json::json!({
         "model": "tts-1",
         "input": text,
         "voice": if resolved_voice.is_empty() { "default" } else { &resolved_voice },
         "speed": speed,
-        "response_format": "opus"
+        "response_format": fmt,
     });
 
     let tls = provider_tls_config_from_config(config)?;
@@ -495,7 +507,15 @@ async fn synthesize_openai_compatible(
     }
 
     let audio_bytes = response.bytes().await?.to_vec();
-    Ok((audio_bytes, "audio/ogg".to_string()))
+    let mime_type = match fmt {
+        "wav" => "audio/wav",
+        "mp3" => "audio/mpeg",
+        "pcm" => "audio/pcm",
+        "ogg" => "audio/ogg",
+        "flac" => "audio/flac",
+        _ => "audio/ogg", // opus → ogg container
+    };
+    Ok((audio_bytes, mime_type.to_string()))
 }
 
 async fn synthesize_elevenlabs(

@@ -6,6 +6,8 @@ import { TtsEndpointUrlInput } from './TtsEndpointUrlInput';
 import { TtsApiKeySection } from './TtsApiKeySection';
 import { TtsVoiceSelector } from './TtsVoiceSelector';
 import { TtsSpeedSlider } from './TtsSpeedSlider';
+import { TtsFormatSelector } from './TtsFormatSelector';
+import { TtsQualitySelector } from './TtsQualitySelector';
 import { TtsTestAndOutput } from './TtsTestAndOutput';
 import { TtsProfileSelector } from './TtsProfileSelector';
 import { TtsProfileEditor } from './TtsProfileEditor';
@@ -38,6 +40,10 @@ export function TtsSettings() {
     handleDeleteProfile,
     refreshProfiles,
     browserTtsAvailable,
+    ttsFormat,
+    ttsQuality,
+    handleFormatChange,
+    handleQualityChange,
   } = useTtsConfig();
 
   const refreshStatuses = async () => {
@@ -110,6 +116,14 @@ export function TtsSettings() {
 
       {provider && (
         <TtsSpeedSlider speed={speed} onSpeedChange={handleSpeedChange} />
+      )}
+
+      {provider && (
+        <TtsFormatSelector format={ttsFormat} onFormatChange={handleFormatChange} />
+      )}
+
+      {provider && ttsFormat !== 'wav' && ttsFormat !== 'pcm' && (
+        <TtsQualitySelector quality={ttsQuality} onQualityChange={handleQualityChange} />
       )}
 
       {provider && (

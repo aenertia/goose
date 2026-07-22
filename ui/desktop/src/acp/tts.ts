@@ -27,12 +27,20 @@ export async function synthesizeTts(
   provider: string,
   voice: string,
   speed: number,
-  profileId?: string
+  profileId?: string,
+  responseFormat?: string,
+  quality?: string,
 ): Promise<{ audio: string; mimeType: string }> {
   const client = await getAcpClient();
   const params: Record<string, unknown> = { text, provider, voice, speed };
   if (profileId) {
     params.profileId = profileId;
+  }
+  if (responseFormat && responseFormat !== 'opus') {
+    params.responseFormat = responseFormat;
+  }
+  if (quality) {
+    params.quality = quality;
   }
   const response = await client.extMethod('_goose/unstable/tts/synthesize', params);
   return { audio: response.audio as string, mimeType: response.mimeType as string };

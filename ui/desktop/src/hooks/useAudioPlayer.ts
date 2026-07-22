@@ -21,6 +21,8 @@ let streamProvider = '';
 let streamVoice = '';
 let streamSpeed = 1.0;
 let streamProfile: string | undefined = undefined;
+let streamFormat = 'opus';
+let streamQuality = '';
 let streamQueue: Promise<AudioBuffer | null>[] = [];
 let draining = false;
 let streamInitPromise: Promise<void> = Promise.resolve();
@@ -105,9 +107,11 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       provider: string,
       voice: string,
       speed: number,
-      profileId?: string
+      profileId?: string,
+      responseFormat?: string,
+      quality?: string,
     ): Promise<AudioBuffer | null> => {
-      const cacheKey = `${profileId || provider}:${voice}:${speed}:${chunkText}`;
+      const cacheKey = `${profileId || provider}:${voice}:${speed}:${responseFormat || 'opus'}:${chunkText}`;
       const cached = globalCache.get(cacheKey);
       if (cached) {
         const idx = globalCacheOrder.indexOf(cacheKey);
@@ -119,7 +123,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       }
 
       try {
-        const { audio } = await synthesizeTts(chunkText, provider, voice, speed, profileId);
+        const { audio } = await synthesizeTts(chunkText, provider, voice, speed, profileId, responseFormat, quality);
         const arrayBuf = b64ToArrayBuffer(audio);
         const ctx = getSharedCtx();
         if (ctx.state === 'suspended') await ctx.resume();
@@ -180,6 +184,8 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         ((await read('voice_tts_split_on', false)) as SplitStrategy) || 'punctuation';
       const profileId =
         ((await read('voice_tts_active_profile', false)) as string) || undefined;
+      const format = ((await read('voice_tts_format', false)) as string) || 'opus';
+      const quality = ((await read('voice_tts_quality', false)) as string) || '';
 
       if (provider === 'browser') {
         if (!window.speechSynthesis) return;
@@ -217,14 +223,14 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
         const currentBuf =
           i === 0
-            ? await synthesizeChunk(chunks[i], provider, voice, speed, profileId)
+            ? await synthesizeChunk(chunks[i], provider, voice, speed, profileId, format, quality)
             : await (nextBufPromise ??
-                synthesizeChunk(chunks[i], provider, voice, speed, profileId));
+                synthesizeChunk(chunks[i], provider, voice, speed, profileId, format, quality));
 
         if (globalStopped || !currentBuf) break;
 
         if (i + 1 < chunks.length) {
-          nextBufPromise = synthesizeChunk(chunks[i + 1], provider, voice, speed, profileId);
+          nextBufPromise = synthesizeChunk(chunks[i + 1], provider, voice, speed, profileId, format, quality);
         } else {
           nextBufPromise = null;
         }
@@ -253,6 +259,8 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       const speedStr = ((await read('voice_tts_speed', false)) as string) || '1.00';
       streamSpeed = parseFloat(speedStr) || 1.0;
       streamProfile = ((await read('voice_tts_active_profile', false)) as string) || undefined;
+      streamFormat = ((await read('voice_tts_format', false)) as string) || 'opus';
+      streamQuality = ((await read('voice_tts_quality', false)) as string) || '';
     })();
     streamInitPromise = initPromise;
     await initPromise;
@@ -299,7 +307,8 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       }
 
       const bufPromise = synthesizeChunk(
-        text, provider, streamVoice, streamSpeed, streamProfile
+        text, provider, streamVoice, streamSpeed, streamProfile,
+        streamFormat, streamQuality,
       );
       streamQueue.push(bufPromise);
 
