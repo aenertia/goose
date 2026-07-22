@@ -45,8 +45,8 @@ impl GooseAcpAgent {
                 .get_param::<String>("voice_tts_endpoint_url")
                 .unwrap_or_default();
 
-            // Format: use request value, fall back to config, then default "opus"
-            let response_format = if !req.response_format.is_empty() && req.response_format != "opus" {
+            // Format: use request value if explicitly sent, else config, else "opus"
+            let response_format = if !req.response_format.is_empty() {
                 req.response_format.clone()
             } else {
                 config.get_param::<String>("voice_tts_format").unwrap_or_default()

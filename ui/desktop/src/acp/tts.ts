@@ -36,7 +36,7 @@ export async function synthesizeTts(
   if (profileId) {
     params.profileId = profileId;
   }
-  if (responseFormat && responseFormat !== 'opus') {
+  if (responseFormat) {
     params.responseFormat = responseFormat;
   }
   if (quality) {

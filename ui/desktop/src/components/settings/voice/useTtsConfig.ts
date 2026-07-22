@@ -186,7 +186,10 @@ export function useTtsConfig(): UseTtsConfigReturn {
         'Hello! This is a test of the text to speech system. Honk!',
         provider,
         voice,
-        spd
+        spd,
+        activeProfileId || undefined,
+        ttsFormat || undefined,
+        ttsQuality || undefined,
       );
 
       const raw = atob(result.audio);

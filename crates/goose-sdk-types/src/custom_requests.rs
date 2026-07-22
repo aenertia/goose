@@ -2270,7 +2270,7 @@ fn default_tts_speed() -> f32 {
 }
 
 fn default_tts_format() -> String {
-    "opus".to_string()
+    String::new()
 }
 
 /// TTS synthesis result with base64 audio data.
