@@ -282,6 +282,22 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
       const provider = streamProvider;
       if (!provider || provider === '__disabled__' || globalStopped) return;
 
+      if (provider === 'browser') {
+        if (!window.speechSynthesis) return;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = streamSpeed;
+        playingRef.current = true;
+        setIsPlaying(true);
+        utterance.onend = () => {
+          if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+            playingRef.current = false;
+            setIsPlaying(false);
+          }
+        };
+        window.speechSynthesis.speak(utterance);
+        return;
+      }
+
       const bufPromise = synthesizeChunk(
         text, provider, streamVoice, streamSpeed, streamProfile
       );
