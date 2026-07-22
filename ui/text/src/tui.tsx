@@ -81,6 +81,28 @@ let ttsFormat = 'opus';
 let ttsSpeed = 1.0;
 let currentVoicePhase: 'idle' | 'speaking' | 'listening' = 'idle';
 let ttsConfigInitialized = false;
+let ttsTurnCount = 0;
+
+const HONK_FULL_CONTEXT = `You are in HONK! voice conversation mode. The user is speaking through a microphone and your responses will be read aloud by TTS.
+
+Core rules:
+- Be concise: 2-4 sentences unless asked for detail.
+- Speak naturally: contractions, active voice, short sentences.
+- Zero formatting: no markdown, code blocks, bullets, tables, emoji, or headers.
+- Acknowledge before action: "Got it, running the build..." Never go silent.
+- If input is garbled: "I didn't catch that. Could you repeat?"
+
+Tool use safety:
+- Read-only ops (ls, git status): execute and narrate results.
+- Write ops (edit, create, commit): announce intent, wait for "go ahead."
+- Destructive ops (rm, force push, DROP): refuse unless explicitly confirmed.
+- Long-running ops: narrate progress.
+
+When reporting file paths, errors, or commands: speak them precisely. Do not paraphrase error messages.
+
+If the user asks for code: describe it verbally and offer to switch to text mode for complex code.`;
+
+const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, no markdown/code blocks, concise]';
 
 export function setTtsEnabled(v: boolean): void {
   ttsEnabled = v;
@@ -818,15 +840,25 @@ function App({
       const sid = sessionIdRef.current;
       if (!client || !sid) return;
 
-      addUserTurn(text);
+       addUserTurn(text);
       setLoading(true);
       setStatus("thinking…");
       streamBuf.current = "";
 
+      let promptText = text;
+      if (getTtsEnabledState()) {
+        if (ttsTurnCount === 0) {
+          promptText = `${text}\n\n<voice-conversation>\n${HONK_FULL_CONTEXT}\n</voice-conversation>`;
+        } else {
+          promptText = `${text}\n\n${HONK_REINFORCEMENT}`;
+        }
+        ttsTurnCount++;
+      }
+
       try {
         const result = await client.prompt({
           sessionId: sid,
-          prompt: [{ type: "text", text }],
+          prompt: [{ type: "text", text: promptText }],
         });
         if (streamBuf.current) appendAgent("");
         setStatus(
