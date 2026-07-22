@@ -953,7 +953,7 @@ export default function ChatInput({
     const val = evt.target.value;
     const cursorPosition = evt.target.selectionStart;
 
-    stopAudioPlayback();
+    if (!honkActive) stopAudioPlayback();
     setDisplayValue(val);
     updateValue(val);
     setHasUserTyped(true);
