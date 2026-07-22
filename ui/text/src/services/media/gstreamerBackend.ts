@@ -1,136 +1,141 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import type { AudioPlayer } from "./types.js";
 
-const LOOPBACK_NAME = "goose-tts";
-
-const CAPTURE_PROPS = JSON.stringify({
-  "media.class": "Audio/Sink",
-  "node.name": LOOPBACK_NAME,
-  "node.description": "Goose",
+const PW_PROPS = JSON.stringify({
   "media.name": "Goose TTS",
   "application.name": "Goose",
 });
 
-const PLAYBACK_PROPS = JSON.stringify({
-  "media.role": "Communication",
-});
+function parseWavHeader(buf: Buffer): { sampleRate: number; channels: number; dataOffset: number } | null {
+  if (buf.length < 44) return null;
+  if (buf.toString('ascii', 0, 4) !== 'RIFF') return null;
+  const channels = buf.readUInt16LE(22);
+  const sampleRate = buf.readUInt32LE(24);
+  // Find 'data' chunk — usually at offset 36 but can vary
+  let offset = 12;
+  while (offset + 8 < buf.length) {
+    const id = buf.toString('ascii', offset, offset + 4);
+    const size = buf.readUInt32LE(offset + 4);
+    if (id === 'data') return { sampleRate, channels, dataOffset: offset + 8 };
+    offset += 8 + size;
+  }
+  return { sampleRate, channels, dataOffset: 44 };
+}
 
 export class GStreamerAudioPlayer implements AudioPlayer {
   readonly backend = "gstreamer" as const;
   readonly persistent = true as const;
   readonly supportedFormats: readonly string[];
 
-  private loopback: ChildProcess | null = null;
+  private proc: ChildProcess | null = null;
   private queue: Buffer[] = [];
-  private playing = false;
-  private currentProc: ChildProcess | null = null;
+  private draining = false;
   private stopped = false;
+  private sampleRate = 0;
 
   constructor(formats: readonly string[]) {
     this.supportedFormats = formats;
   }
 
   async connect(): Promise<void> {
-    if (this.loopback !== null) return;
     this.stopped = false;
-
-    const child = spawn(
-      "pw-loopback",
-      [
-        `--name=${LOOPBACK_NAME}`,
-        "--channels=1",
-        "-i", CAPTURE_PROPS,
-        "-o", PLAYBACK_PROPS,
-      ],
-      { stdio: "ignore" },
-    );
-
-    child.on("error", (err) => {
-      console.error("[pw-loopback] spawn error:", err.message);
-      this.loopback = null;
-    });
-
-    child.on("exit", (code) => {
-      if (code !== null && code !== 0) {
-        console.error(`[pw-loopback] exited: ${code}`);
-      }
-      this.loopback = null;
-    });
-
-    this.loopback = child;
-    await new Promise((r) => setTimeout(r, 200));
   }
 
-  pushChunk(audio: Buffer, _format: string): void {
+  pushChunk(audio: Buffer, format: string): void {
     if (this.stopped) return;
     this.queue.push(audio);
-    if (!this.playing) {
-      void this.drainQueue();
+    if (!this.draining) {
+      void this.drainQueue(format);
     }
   }
 
-  private async drainQueue(): Promise<void> {
-    this.playing = true;
+  private async drainQueue(format: string): Promise<void> {
+    this.draining = true;
     while (this.queue.length > 0 && !this.stopped) {
       const chunk = this.queue.shift()!;
-      await this.playOne(chunk);
+
+      if (format === 'wav' || format === 'pcm') {
+        this.feedPcm(chunk);
+      } else {
+        await this.playEncoded(chunk);
+      }
     }
-    this.playing = false;
+    this.draining = false;
   }
 
-  private playOne(audio: Buffer): Promise<void> {
+  private feedPcm(wav: Buffer): void {
+    const header = parseWavHeader(wav);
+    if (!header) {
+      console.error('[pw-cat] invalid WAV header');
+      return;
+    }
+
+    if (!this.proc || this.sampleRate !== header.sampleRate) {
+      this.killProc();
+      this.sampleRate = header.sampleRate;
+
+      const child = spawn('pw-cat', [
+        '--playback', '--raw',
+        `--rate=${header.sampleRate}`,
+        `--channels=${header.channels}`,
+        '--format=s16',
+        '--media-role=Communication',
+        '-P', PW_PROPS,
+        '-',
+      ], { stdio: ['pipe', 'ignore', 'ignore'] });
+
+      child.on('exit', () => { this.proc = null; });
+      child.on('error', (err) => {
+        console.error('[pw-cat] error:', err.message);
+        this.proc = null;
+      });
+
+      this.proc = child;
+    }
+
+    if (this.proc?.stdin?.writable) {
+      this.proc.stdin.write(wav.subarray(header.dataOffset));
+    }
+  }
+
+  private playEncoded(audio: Buffer): Promise<void> {
     return new Promise<void>((resolve) => {
-      const child = spawn(
-        "pw-play",
-        [
-          `--target=${LOOPBACK_NAME}`,
-          "-",
-        ],
-        { stdio: ["pipe", "ignore", "ignore"] },
-      );
+      const child = spawn('pw-play', [
+        '--media-role=Communication',
+        '-P', PW_PROPS,
+        '-',
+      ], { stdio: ['pipe', 'ignore', 'ignore'] });
 
-      this.currentProc = child;
-
-      child.on("exit", () => {
-        this.currentProc = null;
-        resolve();
-      });
-
-      child.on("error", (err) => {
-        console.error("[pw-play] error:", err.message);
-        this.currentProc = null;
-        resolve();
-      });
-
+      child.on('exit', () => resolve());
+      child.on('error', () => resolve());
       child.stdin!.write(audio);
       child.stdin!.end();
     });
   }
 
-  setVolume(_level: number): void {
-    // user adjusts via DE mixer on the persistent Goose node
+  private killProc(): void {
+    if (this.proc) {
+      this.proc.stdin?.end();
+      this.proc.kill('SIGTERM');
+      this.proc = null;
+    }
   }
+
+  setVolume(_level: number): void {}
 
   stop(): void {
     this.stopped = true;
     this.queue.length = 0;
-    if (this.currentProc) {
-      this.currentProc.kill("SIGTERM");
-      this.currentProc = null;
-    }
   }
 
   async drain(): Promise<void> {
-    while (this.playing) {
+    while (this.draining) {
       await new Promise((r) => setTimeout(r, 50));
     }
   }
 
   async dispose(): Promise<void> {
     this.stop();
-    if (this.loopback) {
-      this.loopback.kill("SIGTERM");
-      this.loopback = null;
-    }
+    this.killProc();
   }
 }
