@@ -56,6 +56,11 @@ interface UseConversationModeOptions {
   isLoading: boolean;
 }
 
+// Module-level persistence: survives React component remounts (ChatInput
+// remounts during the first LLM response cycle, resetting all useState).
+// Same pattern as globalStopped/globalSource in useAudioPlayer.ts.
+let persistedHonkActive = false;
+
 export function useConversationMode({
   submitMessage,
   startRecording,
@@ -64,7 +69,7 @@ export function useConversationMode({
   isLoading: _isLoading,
 }: UseConversationModeOptions): UseConversationModeReturn {
   // --- Two independent state axes ---
-  const [honkActive, setHonkActive] = useState(false);
+  const [honkActive, setHonkActive] = useState(persistedHonkActive);
   const [isListening, setIsListening] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -110,6 +115,7 @@ export function useConversationMode({
 
   // --- Public API ---
   const activateHonk = useCallback(() => {
+    persistedHonkActive = true;
     setHonkActive(true);
     honkActiveRef.current = true;
     window.electron?.voiceInhibitStart?.('Voice conversation active');
@@ -119,6 +125,7 @@ export function useConversationMode({
   }, []);
 
   const deactivateHonk = useCallback(() => {
+    persistedHonkActive = false;
     setHonkActive(false);
     honkActiveRef.current = false;
     setIsListening(false);
