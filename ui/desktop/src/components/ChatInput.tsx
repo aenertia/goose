@@ -705,6 +705,7 @@ export default function ChatInput({
         streamIntervalId = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omit messages.length/sessionId to avoid restarting the polling interval on every message
   }, [isLoading, honkActive, startStreamingSpeak, enqueueStreamChunk]);
 
   const textAreaRef = inputRef || internalTextAreaRef;

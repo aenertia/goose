@@ -1,6 +1,7 @@
 import type { MediaInhibitService } from './types';
 
 export class PortalInhibitBackend implements MediaInhibitService {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dbus-next session bus is untyped
   private bus: any = null;
   private inhibited = false;
   private fallback: MediaInhibitService | null = null;
@@ -45,6 +46,7 @@ export class PortalInhibitBackend implements MediaInhibitService {
 
       this.bus
         .getProxyObject('org.freedesktop.portal.Desktop', expectedRequestPath)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dbus-next proxy
         .then((reqObj: any) => {
           const reqIface = reqObj.getInterface('org.freedesktop.portal.Request');
           reqIface.on('Response', (responseCode: number) => {

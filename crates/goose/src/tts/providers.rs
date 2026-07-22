@@ -177,11 +177,7 @@ async fn list_custom_endpoint_voices(endpoint: &str) -> Result<Vec<VoiceInfo>> {
         .build()?;
 
     // Try /v1/audio/voices first (OpenAI-compatible)
-    if let Ok(resp) = client
-        .get(format!("{}/v1/audio/voices", base))
-        .send()
-        .await
-    {
+    if let Ok(resp) = client.get(format!("{}/v1/audio/voices", base)).send().await {
         if resp.status().is_success() {
             if let Ok(data) = resp.json::<serde_json::Value>().await {
                 let voices: Vec<VoiceInfo> = data["voices"]
@@ -309,7 +305,14 @@ pub async fn synthesize_with_provider(
     voice: &str,
     speed: f32,
 ) -> Result<(Vec<u8>, String)> {
-    synthesize_with_provider_overrides(provider, text, voice, speed, &TtsSynthesizeOverrides::default()).await
+    synthesize_with_provider_overrides(
+        provider,
+        text,
+        voice,
+        speed,
+        &TtsSynthesizeOverrides::default(),
+    )
+    .await
 }
 
 pub async fn synthesize_with_provider_overrides(
@@ -332,16 +335,14 @@ pub async fn synthesize_with_provider_overrides(
 }
 
 /// Synthesize using a saved TTS profile (looked up by ID).
-pub async fn synthesize_with_profile(
-    profile_id: &str,
-    text: &str,
-) -> Result<(Vec<u8>, String)> {
+pub async fn synthesize_with_profile(profile_id: &str, text: &str) -> Result<(Vec<u8>, String)> {
     let profile = crate::tts::profiles::get_profile(profile_id)?
         .ok_or_else(|| anyhow::anyhow!("TTS profile '{}' not found", profile_id))?;
 
-    let provider: TtsProvider =
-        serde_json::from_value(serde_json::Value::String(profile.provider.clone()))
-            .map_err(|_| anyhow::anyhow!("Unknown TTS provider in profile: {}", profile.provider))?;
+    let provider: TtsProvider = serde_json::from_value(serde_json::Value::String(
+        profile.provider.clone(),
+    ))
+    .map_err(|_| anyhow::anyhow!("Unknown TTS provider in profile: {}", profile.provider))?;
 
     if provider == TtsProvider::Browser {
         anyhow::bail!("Browser TTS is handled client-side via speechSynthesis");
@@ -367,14 +368,8 @@ pub async fn synthesize_with_profile(
         quality: String::new(),
     };
 
-    synthesize_with_provider_overrides(
-        provider,
-        text,
-        &profile.voice,
-        profile.speed,
-        &overrides,
-    )
-    .await
+    synthesize_with_provider_overrides(provider, text, &profile.voice, profile.speed, &overrides)
+        .await
 }
 
 async fn synthesize_openai_compatible(

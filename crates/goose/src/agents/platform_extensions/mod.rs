@@ -5,12 +5,12 @@ pub mod chatrecall;
 pub mod code_execution;
 pub mod developer;
 pub mod ext_manager;
+pub mod honk;
 pub mod orchestrator;
 pub mod summarize;
 pub mod summon;
 pub mod todo;
 pub mod tom;
-pub mod honk;
 
 use std::collections::HashMap;
 

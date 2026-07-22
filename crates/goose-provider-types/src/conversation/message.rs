@@ -5,8 +5,8 @@ use crate::utils::sanitize_unicode_tags;
 use chrono::Utc;
 use rmcp::model::{
     AnnotateAble, AudioContent, CallToolRequestParams, CallToolResult, Content, ElicitationAction,
-    ImageContent, JsonObject, PromptMessage, PromptMessageContent, PromptMessageRole, RawContent,
-    RawAudioContent, RawImageContent, RawTextContent, Role, TextContent,
+    ImageContent, JsonObject, PromptMessage, PromptMessageContent, PromptMessageRole,
+    RawAudioContent, RawContent, RawImageContent, RawTextContent, Role, TextContent,
 };
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashSet;

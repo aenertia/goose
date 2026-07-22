@@ -141,7 +141,7 @@ export default function VoiceSettingsSection() {
       }
     };
     loadSettings();
-  }, [read]);
+  }, [read, upsert]);
 
   const handleSilenceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

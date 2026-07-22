@@ -74,14 +74,14 @@
   "authSettings.deleteCredential": {
     "defaultMessage": "Elimina credenziale"
   },
+  "authSettings.deleted": {
+    "defaultMessage": "Credenziale eliminata"
+  },
   "authSettings.deleteMessage": {
     "defaultMessage": "Eliminare la credenziale {name} per {provider}?"
   },
   "authSettings.deleteTitle": {
     "defaultMessage": "Elimina credenziale"
-  },
-  "authSettings.deleted": {
-    "defaultMessage": "Credenziale eliminata"
   },
   "authSettings.description": {
     "defaultMessage": "Gestisci le credenziali dei provider memorizzate localmente da goose."
@@ -107,11 +107,11 @@
   "authSettings.reauthorize": {
     "defaultMessage": "Riautorizza"
   },
-  "authSettings.signIn": {
-    "defaultMessage": "Accedi"
-  },
   "authSettings.signedIn": {
     "defaultMessage": "Credenziale configurata"
+  },
+  "authSettings.signIn": {
+    "defaultMessage": "Accedi"
   },
   "authSettings.storageProviderCache": {
     "defaultMessage": "Cache del provider"
@@ -134,6 +134,12 @@
   "baseChat.reconnecting": {
     "defaultMessage": "Connessione persa. Riconnessione…"
   },
+  "bottomMenuExtensionSelection.extensionsForNewChats": {
+    "defaultMessage": "Estensioni per le nuove chat"
+  },
+  "bottomMenuExtensionSelection.extensionsForThisSession": {
+    "defaultMessage": "Estensioni per questa sessione di chat"
+  },
   "bottomMenuExtensionSelection.extensionUpdated": {
     "defaultMessage": "Estensione aggiornata"
   },
@@ -142,12 +148,6 @@
   },
   "bottomMenuExtensionSelection.extensionWillBeEnabled": {
     "defaultMessage": "{name} verrà abilitata nelle nuove chat"
-  },
-  "bottomMenuExtensionSelection.extensionsForNewChats": {
-    "defaultMessage": "Estensioni per le nuove chat"
-  },
-  "bottomMenuExtensionSelection.extensionsForThisSession": {
-    "defaultMessage": "Estensioni per questa sessione di chat"
   },
   "bottomMenuExtensionSelection.manageExtensions": {
     "defaultMessage": "gestisci estensioni"
@@ -175,6 +175,18 @@
   },
   "chatInput.contextWindow": {
     "defaultMessage": "Finestra di contesto"
+  },
+  "chatInput.conversationListening": {
+    "defaultMessage": "Listening..."
+  },
+  "chatInput.conversationMode": {
+    "defaultMessage": "Conversation mode"
+  },
+  "chatInput.conversationSpeaking": {
+    "defaultMessage": "Speaking..."
+  },
+  "chatInput.conversationSubmitting": {
+    "defaultMessage": "Thinking..."
   },
   "chatInput.dictationError": {
     "defaultMessage": "Errore di dettatura"
@@ -650,11 +662,11 @@
   "customProviderForm.attachments": {
     "defaultMessage": "Allegati"
   },
-  "customProviderForm.authHint": {
-    "defaultMessage": "Gli LLM locali come Ollama in genere non richiedono una chiave API."
-  },
   "customProviderForm.authentication": {
     "defaultMessage": "Autenticazione"
+  },
+  "customProviderForm.authHint": {
+    "defaultMessage": "Gli LLM locali come Ollama in genere non richiedono una chiave API."
   },
   "customProviderForm.availableModels": {
     "defaultMessage": "Modelli disponibili (separati da virgola)"
@@ -953,17 +965,20 @@
   "elicitationRequest.waitingForResponse": {
     "defaultMessage": "In attesa della tua risposta ({timeRemaining} rimanenti)"
   },
+  "environmentBadge.dev": {
+    "defaultMessage": "Dev"
+  },
   "envVarsSection.add": {
     "defaultMessage": "Aggiungi"
   },
   "envVarsSection.bothRequired": {
     "defaultMessage": "È necessario inserire sia il nome della variabile sia il valore"
   },
-  "envVarsSection.envVarsDescription": {
-    "defaultMessage": "Aggiungi coppie chiave-valore per le variabili d'ambiente. Fai clic sul pulsante \"+\" per aggiungere dopo aver compilato entrambi i campi. Per i valori segreti esistenti, fai clic sul pulsante di modifica per modificarli."
-  },
   "envVarsSection.environmentVariables": {
     "defaultMessage": "Variabili d'ambiente"
+  },
+  "envVarsSection.envVarsDescription": {
+    "defaultMessage": "Aggiungi coppie chiave-valore per le variabili d'ambiente. Fai clic sul pulsante \"+\" per aggiungere dopo aver compilato entrambi i campi. Per i valori segreti esistenti, fai clic sul pulsante di modifica per modificarli."
   },
   "envVarsSection.noSpaces": {
     "defaultMessage": "Il nome della variabile non può contenere spazi"
@@ -973,9 +988,6 @@
   },
   "envVarsSection.variableName": {
     "defaultMessage": "Nome della variabile"
-  },
-  "environmentBadge.dev": {
-    "defaultMessage": "Dev"
   },
   "errorBoundary.errorGeneric": {
     "defaultMessage": "Si è verificato un errore."
@@ -1136,9 +1148,6 @@
   "extensionModal.unsavedChangesTitle": {
     "defaultMessage": "Modifiche non salvate"
   },
-  "extensionTimeoutField.timeoutLabel": {
-    "defaultMessage": "Timeout"
-  },
   "extensionsSection.addCustomExtension": {
     "defaultMessage": "Aggiungi estensione personalizzata"
   },
@@ -1174,6 +1183,9 @@
   },
   "extensionsView.searchPlaceholder": {
     "defaultMessage": "Cerca estensioni..."
+  },
+  "extensionTimeoutField.timeoutLabel": {
+    "defaultMessage": "Timeout"
   },
   "externalBackendSection.certFingerprint": {
     "defaultMessage": "Impronta del certificato (facoltativa)"
@@ -1394,11 +1406,11 @@
   "huggingFaceSignInPrompt.failedToConfigure": {
     "defaultMessage": "Accesso a Hugging Face non riuscito: {error}"
   },
-  "huggingFaceSignInPrompt.signIn": {
-    "defaultMessage": "Accedi"
-  },
   "huggingFaceSignInPrompt.signedIn": {
     "defaultMessage": "Accesso a Hugging Face effettuato"
+  },
+  "huggingFaceSignInPrompt.signIn": {
+    "defaultMessage": "Accedi"
   },
   "huggingFaceSignInPrompt.signingIn": {
     "defaultMessage": "Accesso in corso..."
@@ -1433,14 +1445,14 @@
   "importRecipeForm.expectedRecipeStructure": {
     "defaultMessage": "Struttura prevista della ricetta"
   },
+  "importRecipeForm.importing": {
+    "defaultMessage": "Importazione in corso..."
+  },
   "importRecipeForm.importRecipeButton": {
     "defaultMessage": "Importa ricetta"
   },
   "importRecipeForm.importRecipeTitle": {
     "defaultMessage": "Importa ricetta"
-  },
-  "importRecipeForm.importing": {
-    "defaultMessage": "Importazione in corso..."
   },
   "importRecipeForm.or": {
     "defaultMessage": "OPPURE"
@@ -1540,18 +1552,6 @@
   },
   "jsonSchemaForm.submit": {
     "defaultMessage": "Invia"
-  },
-  "keyValueEditor.addValue": {
-    "defaultMessage": "Aggiungi valore preconfigurato"
-  },
-  "keyValueEditor.defaultKeyPlaceholder": {
-    "defaultMessage": "Nome parametro..."
-  },
-  "keyValueEditor.defaultValuePlaceholder": {
-    "defaultMessage": "Valore parametro..."
-  },
-  "keyValueEditor.removeValue": {
-    "defaultMessage": "Rimuovi valore preconfigurato {key}"
   },
   "keyboardShortcuts.alwaysOnTopDescription": {
     "defaultMessage": "Attiva/disattiva la finestra sempre in primo piano"
@@ -1697,6 +1697,18 @@
   "keyboardShortcuts.toggleNavigationLabel": {
     "defaultMessage": "Attiva/disattiva navigazione"
   },
+  "keyValueEditor.addValue": {
+    "defaultMessage": "Aggiungi valore preconfigurato"
+  },
+  "keyValueEditor.defaultKeyPlaceholder": {
+    "defaultMessage": "Nome parametro..."
+  },
+  "keyValueEditor.defaultValuePlaceholder": {
+    "defaultMessage": "Valore parametro..."
+  },
+  "keyValueEditor.removeValue": {
+    "defaultMessage": "Rimuovi valore preconfigurato {key}"
+  },
   "launcher.placeholder": {
     "defaultMessage": "Chiedi qualsiasi cosa a goose..."
   },
@@ -1736,17 +1748,17 @@
   "localInferenceSettings.downloadCancelled": {
     "defaultMessage": "Download annullato"
   },
-  "localInferenceSettings.downloadFailed": {
-    "defaultMessage": "Download non riuscito"
-  },
-  "localInferenceSettings.downloadProgress": {
-    "defaultMessage": "{downloaded} / {total} ({percent}%)"
-  },
   "localInferenceSettings.downloadedModels": {
     "defaultMessage": "Modelli scaricati"
   },
+  "localInferenceSettings.downloadFailed": {
+    "defaultMessage": "Download non riuscito"
+  },
   "localInferenceSettings.downloading": {
     "defaultMessage": "Download in corso"
+  },
+  "localInferenceSettings.downloadProgress": {
+    "defaultMessage": "{downloaded} / {total} ({percent}%)"
   },
   "localInferenceSettings.evictFromMemory": {
     "defaultMessage": "Evict from memory"
@@ -1835,11 +1847,11 @@
   "localModelPicker.checkingModels": {
     "defaultMessage": "Verifica dei modelli disponibili..."
   },
-  "localModelPicker.downloadModel": {
-    "defaultMessage": "Scarica {modelId} ({size})"
-  },
   "localModelPicker.downloading": {
     "defaultMessage": "Download di {modelId} in corso"
+  },
+  "localModelPicker.downloadModel": {
+    "defaultMessage": "Scarica {modelId} ({size})"
   },
   "localModelPicker.failedToLoad": {
     "defaultMessage": "Impossibile caricare i modelli disponibili. Riprova."
@@ -2003,6 +2015,9 @@
   "messageQueue.paused": {
     "defaultMessage": "In pausa"
   },
+  "messageQueue.queued": {
+    "defaultMessage": "in coda"
+  },
   "messageQueue.queuePaused": {
     "defaultMessage": "Coda in pausa"
   },
@@ -2011,9 +2026,6 @@
   },
   "messageQueue.queuePausedExpanded": {
     "defaultMessage": "Coda in pausa per interruzione. Usa \"Invia ora\" o aggiungi un nuovo messaggio per riprendere."
-  },
-  "messageQueue.queued": {
-    "defaultMessage": "in coda"
   },
   "messageQueue.removeFromQueue": {
     "defaultMessage": "Rimuovi questo messaggio dalla coda"
@@ -2063,11 +2075,11 @@
   "messageUsageStats.speed": {
     "defaultMessage": "Velocità"
   },
-  "messageUsageStats.tokenUnit": {
-    "defaultMessage": "tok"
-  },
   "messageUsageStats.tokensPerSecondUnit": {
     "defaultMessage": "tok/s"
+  },
+  "messageUsageStats.tokenUnit": {
+    "defaultMessage": "tok"
   },
   "messageUsageStats.total": {
     "defaultMessage": "Totale"
@@ -2105,35 +2117,11 @@
   "microphoneSelector.test": {
     "defaultMessage": "Prova"
   },
-  "modeSelectionItem.autonomousDescription": {
-    "defaultMessage": "Funzionalità complete di modifica dei file: modifica, crea ed elimina file liberamente."
-  },
-  "modeSelectionItem.autonomousLabel": {
-    "defaultMessage": "Autonoma"
-  },
-  "modeSelectionItem.chatOnlyDescription": {
-    "defaultMessage": "Interagisci con il provider selezionato senza usare strumenti o estensioni."
-  },
-  "modeSelectionItem.chatOnlyLabel": {
-    "defaultMessage": "Solo chat"
-  },
-  "modeSelectionItem.manualDescription": {
-    "defaultMessage": "Tutti gli strumenti, le estensioni e le modifiche ai file richiederanno l'approvazione umana"
-  },
-  "modeSelectionItem.manualLabel": {
-    "defaultMessage": "Manuale"
-  },
-  "modeSelectionItem.smartDescription": {
-    "defaultMessage": "Determina in modo intelligente quali azioni necessitano di approvazione in base al livello di rischio"
-  },
-  "modeSelectionItem.smartLabel": {
-    "defaultMessage": "Intelligente"
+  "modelAndProviderContext.modelChangedTitle": {
+    "defaultMessage": "Modello cambiato"
   },
   "modelAndProviderContext.modelChangeFailed": {
     "defaultMessage": "{provider}/{model} non riuscito"
-  },
-  "modelAndProviderContext.modelChangedTitle": {
-    "defaultMessage": "Modello cambiato"
   },
   "modelAndProviderContext.selectModel": {
     "defaultMessage": "Seleziona modello"
@@ -2146,6 +2134,27 @@
   },
   "modelAndProviderContext.unknownProviderTitle": {
     "defaultMessage": "Ricerca nome provider"
+  },
+  "modelsBottomBar.changeModel": {
+    "defaultMessage": "Cambia modello"
+  },
+  "modelsBottomBar.currentModel": {
+    "defaultMessage": "Modello corrente"
+  },
+  "modelsBottomBar.loadingModel": {
+    "defaultMessage": "Caricamento modello..."
+  },
+  "modelsBottomBar.localModelSettings": {
+    "defaultMessage": "Impostazioni modello locale"
+  },
+  "modelsBottomBar.localModelSettingsTitle": {
+    "defaultMessage": "Impostazioni modello locale — {modelName}"
+  },
+  "modelsBottomBar.resolvedModel": {
+    "defaultMessage": "Modello risolto"
+  },
+  "modelsBottomBar.selectModel": {
+    "defaultMessage": "Seleziona modello"
   },
   "modelSettingsButtons.configureProviders": {
     "defaultMessage": "Configura provider"
@@ -2306,32 +2315,35 @@
   "modelSettingsPanel.topP": {
     "defaultMessage": "Top P"
   },
-  "modelsBottomBar.changeModel": {
-    "defaultMessage": "Cambia modello"
-  },
-  "modelsBottomBar.currentModel": {
-    "defaultMessage": "Modello corrente"
-  },
-  "modelsBottomBar.loadingModel": {
-    "defaultMessage": "Caricamento modello..."
-  },
-  "modelsBottomBar.localModelSettings": {
-    "defaultMessage": "Impostazioni modello locale"
-  },
-  "modelsBottomBar.localModelSettingsTitle": {
-    "defaultMessage": "Impostazioni modello locale — {modelName}"
-  },
-  "modelsBottomBar.resolvedModel": {
-    "defaultMessage": "Modello risolto"
-  },
-  "modelsBottomBar.selectModel": {
-    "defaultMessage": "Seleziona modello"
-  },
   "modelsSection.resetDescription": {
     "defaultMessage": "Cancella le impostazioni del modello e del provider selezionati per ricominciare da zero"
   },
   "modelsSection.resetTitle": {
     "defaultMessage": "Reimposta provider e modello"
+  },
+  "modeSelectionItem.autonomousDescription": {
+    "defaultMessage": "Funzionalità complete di modifica dei file: modifica, crea ed elimina file liberamente."
+  },
+  "modeSelectionItem.autonomousLabel": {
+    "defaultMessage": "Autonoma"
+  },
+  "modeSelectionItem.chatOnlyDescription": {
+    "defaultMessage": "Interagisci con il provider selezionato senza usare strumenti o estensioni."
+  },
+  "modeSelectionItem.chatOnlyLabel": {
+    "defaultMessage": "Solo chat"
+  },
+  "modeSelectionItem.manualDescription": {
+    "defaultMessage": "Tutti gli strumenti, le estensioni e le modifiche ai file richiederanno l'approvazione umana"
+  },
+  "modeSelectionItem.manualLabel": {
+    "defaultMessage": "Manuale"
+  },
+  "modeSelectionItem.smartDescription": {
+    "defaultMessage": "Determina in modo intelligente quali azioni necessitano di approvazione in base al livello di rischio"
+  },
+  "modeSelectionItem.smartLabel": {
+    "defaultMessage": "Intelligente"
   },
   "navigation.itemApps": {
     "defaultMessage": "App"
@@ -2612,11 +2624,11 @@
   "promptsSettings.edit": {
     "defaultMessage": "Modifica"
   },
-  "promptsSettings.editPromptTitle": {
-    "defaultMessage": "Modifica: {name}"
-  },
   "promptsSettings.editingLabel": {
     "defaultMessage": "Modifica in corso: {name}"
+  },
+  "promptsSettings.editPromptTitle": {
+    "defaultMessage": "Modifica: {name}"
   },
   "promptsSettings.enterPromptContent": {
     "defaultMessage": "Inserisci il contenuto del prompt..."
@@ -2726,11 +2738,11 @@
   "providerConfigForm.noApiKey": {
     "defaultMessage": "Non hai una chiave API?"
   },
-  "providerConfigForm.signInWith": {
-    "defaultMessage": "Accedi con {providerName}"
-  },
   "providerConfigForm.signingIn": {
     "defaultMessage": "Accesso in corso..."
+  },
+  "providerConfigForm.signInWith": {
+    "defaultMessage": "Accedi con {providerName}"
   },
   "providerConfigurationModal.addApiKeyDescription": {
     "defaultMessage": "Aggiungi la tua chiave o le tue chiavi API per questo provider da integrare in goose"
@@ -2792,11 +2804,11 @@
   "providerConfigurationModal.seeDocumentation": {
     "defaultMessage": "Consulta la <link>documentazione</link> per maggiori dettagli."
   },
-  "providerConfigurationModal.signInWith": {
-    "defaultMessage": "Accedi con {providerName}"
-  },
   "providerConfigurationModal.signingIn": {
     "defaultMessage": "Accesso in corso..."
+  },
+  "providerConfigurationModal.signInWith": {
+    "defaultMessage": "Accedi con {providerName}"
   },
   "providerGrid.addProvider": {
     "defaultMessage": "Aggiungi provider"
@@ -3032,39 +3044,6 @@
   "recipeNameField.formatHint": {
     "defaultMessage": "Verrà formattato automaticamente (minuscolo, trattini al posto degli spazi)"
   },
-  "recipeWarningModal.cancel": {
-    "defaultMessage": "Annulla"
-  },
-  "recipeWarningModal.descriptionLabel": {
-    "defaultMessage": "Descrizione:"
-  },
-  "recipeWarningModal.firstTimeDescription": {
-    "defaultMessage": "Stai per eseguire una ricetta che non hai mai eseguito prima."
-  },
-  "recipeWarningModal.hiddenCharsWarning": {
-    "defaultMessage": "Questa ricetta contiene caratteri nascosti che verranno ignorati per la tua sicurezza, poiché potrebbero essere usati per scopi dannosi."
-  },
-  "recipeWarningModal.instructionsLabel": {
-    "defaultMessage": "Istruzioni:"
-  },
-  "recipeWarningModal.newRecipeWarningTitle": {
-    "defaultMessage": "⚠️ Avviso nuova ricetta"
-  },
-  "recipeWarningModal.recipePreview": {
-    "defaultMessage": "Anteprima ricetta:"
-  },
-  "recipeWarningModal.securityWarningTitle": {
-    "defaultMessage": "⚠️ Avviso di sicurezza"
-  },
-  "recipeWarningModal.titleLabel": {
-    "defaultMessage": "Titolo:"
-  },
-  "recipeWarningModal.trustAndExecute": {
-    "defaultMessage": "Considera attendibile ed esegui"
-  },
-  "recipeWarningModal.trustSource": {
-    "defaultMessage": "Procedi solo se ti fidi della fonte di questa ricetta."
-  },
   "recipesView.addSchedule": {
     "defaultMessage": "Aggiungi pianificazione"
   },
@@ -3239,6 +3218,39 @@
   "recipesView.yamlFiles": {
     "defaultMessage": "File YAML"
   },
+  "recipeWarningModal.cancel": {
+    "defaultMessage": "Annulla"
+  },
+  "recipeWarningModal.descriptionLabel": {
+    "defaultMessage": "Descrizione:"
+  },
+  "recipeWarningModal.firstTimeDescription": {
+    "defaultMessage": "Stai per eseguire una ricetta che non hai mai eseguito prima."
+  },
+  "recipeWarningModal.hiddenCharsWarning": {
+    "defaultMessage": "Questa ricetta contiene caratteri nascosti che verranno ignorati per la tua sicurezza, poiché potrebbero essere usati per scopi dannosi."
+  },
+  "recipeWarningModal.instructionsLabel": {
+    "defaultMessage": "Istruzioni:"
+  },
+  "recipeWarningModal.newRecipeWarningTitle": {
+    "defaultMessage": "⚠️ Avviso nuova ricetta"
+  },
+  "recipeWarningModal.recipePreview": {
+    "defaultMessage": "Anteprima ricetta:"
+  },
+  "recipeWarningModal.securityWarningTitle": {
+    "defaultMessage": "⚠️ Avviso di sicurezza"
+  },
+  "recipeWarningModal.titleLabel": {
+    "defaultMessage": "Titolo:"
+  },
+  "recipeWarningModal.trustAndExecute": {
+    "defaultMessage": "Considera attendibile ed esegui"
+  },
+  "recipeWarningModal.trustSource": {
+    "defaultMessage": "Procedi solo se ti fidi della fonte di questa ricetta."
+  },
   "resetProviderSection.resetButton": {
     "defaultMessage": "Reimposta provider e modello"
   },
@@ -3272,11 +3284,11 @@
   "scheduleDetailView.cronExpression": {
     "defaultMessage": "Espressione cron:"
   },
-  "scheduleDetailView.currentSession": {
-    "defaultMessage": "Sessione corrente:"
-  },
   "scheduleDetailView.currentlyRunning": {
     "defaultMessage": "Attualmente in esecuzione"
+  },
+  "scheduleDetailView.currentSession": {
+    "defaultMessage": "Sessione corrente:"
   },
   "scheduleDetailView.dir": {
     "defaultMessage": "Dir: {path}"
@@ -3335,12 +3347,6 @@
   "scheduleDetailView.noSessions": {
     "defaultMessage": "Nessuna sessione trovata per questa pianificazione."
   },
-  "scheduleDetailView.pauseSchedule": {
-    "defaultMessage": "Sospendi pianificazione"
-  },
-  "scheduleDetailView.pauseUnpauseError": {
-    "defaultMessage": "Errore di sospensione/ripresa"
-  },
   "scheduleDetailView.paused": {
     "defaultMessage": "Sospesa"
   },
@@ -3349,6 +3355,12 @@
   },
   "scheduleDetailView.pausedWarning": {
     "defaultMessage": "Questa pianificazione è sospesa e non verrà eseguita automaticamente. Usa \"Esegui pianificazione ora\" per attivarla manualmente o riprendila per ripristinare l'esecuzione automatica."
+  },
+  "scheduleDetailView.pauseSchedule": {
+    "defaultMessage": "Sospendi pianificazione"
+  },
+  "scheduleDetailView.pauseUnpauseError": {
+    "defaultMessage": "Errore di sospensione/ripresa"
   },
   "scheduleDetailView.processStarted": {
     "defaultMessage": "Processo avviato:"
@@ -3395,17 +3407,17 @@
   "scheduleDetailView.sessionId": {
     "defaultMessage": "ID sessione: {id}"
   },
-  "scheduleDetailView.unpauseSchedule": {
-    "defaultMessage": "Riprendi pianificazione"
-  },
   "scheduleDetailView.unpausedMsg": {
     "defaultMessage": "Ripresa \"{id}\""
   },
-  "scheduleDetailView.updateScheduleError": {
-    "defaultMessage": "Errore di aggiornamento della pianificazione"
+  "scheduleDetailView.unpauseSchedule": {
+    "defaultMessage": "Riprendi pianificazione"
   },
   "scheduleDetailView.updatedMsg": {
     "defaultMessage": "Aggiornata \"{id}\""
+  },
+  "scheduleDetailView.updateScheduleError": {
+    "defaultMessage": "Errore di aggiornamento della pianificazione"
   },
   "scheduleDetailView.viewingScheduleId": {
     "defaultMessage": "Visualizzazione ID pianificazione: {id}"
@@ -3530,11 +3542,11 @@
   "schedulesView.pause": {
     "defaultMessage": "Sospendi"
   },
-  "schedulesView.pauseError": {
-    "defaultMessage": "Errore di sospensione della pianificazione"
-  },
   "schedulesView.paused": {
     "defaultMessage": "Sospesa"
+  },
+  "schedulesView.pauseError": {
+    "defaultMessage": "Errore di sospensione della pianificazione"
   },
   "schedulesView.refresh": {
     "defaultMessage": "Aggiorna"
@@ -3554,6 +3566,9 @@
   "schedulesView.schedulePausedMsg": {
     "defaultMessage": "Pianificazione \"{id}\" sospesa correttamente"
   },
+  "schedulesView.scheduler": {
+    "defaultMessage": "Pianificatore"
+  },
   "schedulesView.scheduleUnpaused": {
     "defaultMessage": "Pianificazione ripresa"
   },
@@ -3565,9 +3580,6 @@
   },
   "schedulesView.scheduleUpdatedMsg": {
     "defaultMessage": "Pianificazione \"{id}\" aggiornata correttamente"
-  },
-  "schedulesView.scheduler": {
-    "defaultMessage": "Pianificatore"
   },
   "schedulesView.unpauseError": {
     "defaultMessage": "Errore di ripresa della pianificazione"
@@ -3674,14 +3686,14 @@
   "sessionActionsHeader.copyText": {
     "defaultMessage": "Copia testo"
   },
+  "sessionActionsHeader.duplicated": {
+    "defaultMessage": "Sessione duplicata"
+  },
   "sessionActionsHeader.duplicateFailed": {
     "defaultMessage": "Impossibile duplicare la sessione: {error}"
   },
   "sessionActionsHeader.duplicateSession": {
     "defaultMessage": "Duplica sessione"
-  },
-  "sessionActionsHeader.duplicated": {
-    "defaultMessage": "Sessione duplicata"
   },
   "sessionActionsHeader.fullTextTitle": {
     "defaultMessage": "Valore di testo"
@@ -3701,6 +3713,9 @@
   "sessionActionsHeader.modelInteractionsTitle": {
     "defaultMessage": "Recent model interactions"
   },
+  "sessionActionsHeader.renamed": {
+    "defaultMessage": "Sessione rinominata"
+  },
   "sessionActionsHeader.renameFailed": {
     "defaultMessage": "Impossibile rinominare la sessione: {error}"
   },
@@ -3712,9 +3727,6 @@
   },
   "sessionActionsHeader.renameTitle": {
     "defaultMessage": "Rinomina sessione"
-  },
-  "sessionActionsHeader.renamed": {
-    "defaultMessage": "Sessione rinominata"
   },
   "sessionActionsHeader.save": {
     "defaultMessage": "Salva"
@@ -3736,24 +3748,6 @@
   },
   "sessionIndicators.streaming": {
     "defaultMessage": "Streaming"
-  },
-  "sessionViewComponents.empty.description": {
-    "defaultMessage": "Questa sessione non contiene messaggi"
-  },
-  "sessionViewComponents.empty.title": {
-    "defaultMessage": "Nessun messaggio trovato"
-  },
-  "sessionViewComponents.error.loading": {
-    "defaultMessage": "Errore durante il caricamento dei dettagli della sessione"
-  },
-  "sessionViewComponents.error.tryAgain": {
-    "defaultMessage": "Riprova"
-  },
-  "sessionViewComponents.role.assistant": {
-    "defaultMessage": "Goose"
-  },
-  "sessionViewComponents.role.user": {
-    "defaultMessage": "Tu"
   },
   "sessions.action.delete": {
     "defaultMessage": "Elimina sessione"
@@ -3812,6 +3806,9 @@
   "sessions.import": {
     "defaultMessage": "Importa sessione"
   },
+  "sessions.importing": {
+    "defaultMessage": "Importazione in corso..."
+  },
   "sessions.importNostr": {
     "defaultMessage": "Importa link"
   },
@@ -3823,9 +3820,6 @@
   },
   "sessions.importNostr.title": {
     "defaultMessage": "Importa sessione Nostr"
-  },
-  "sessions.importing": {
-    "defaultMessage": "Importazione in corso..."
   },
   "sessions.loadingMore": {
     "defaultMessage": "Caricamento di altre sessioni..."
@@ -3854,26 +3848,26 @@
   "sessions.toast.copied": {
     "defaultMessage": "Copiato negli appunti"
   },
-  "sessions.toast.deleteFailed": {
-    "defaultMessage": "Impossibile eliminare la sessione \"{name}\": {error}"
-  },
   "sessions.toast.deleted": {
     "defaultMessage": "Sessione eliminata correttamente"
   },
-  "sessions.toast.duplicateFailed": {
-    "defaultMessage": "Impossibile duplicare la sessione: {error}"
+  "sessions.toast.deleteFailed": {
+    "defaultMessage": "Impossibile eliminare la sessione \"{name}\": {error}"
   },
   "sessions.toast.duplicated": {
     "defaultMessage": "Sessione \"{name}\" duplicata correttamente"
   },
+  "sessions.toast.duplicateFailed": {
+    "defaultMessage": "Impossibile duplicare la sessione: {error}"
+  },
   "sessions.toast.exported": {
     "defaultMessage": "Sessione esportata correttamente"
   },
-  "sessions.toast.importFailed": {
-    "defaultMessage": "Impossibile importare la sessione: {error}"
-  },
   "sessions.toast.imported": {
     "defaultMessage": "Sessione importata correttamente"
+  },
+  "sessions.toast.importFailed": {
+    "defaultMessage": "Impossibile importare la sessione: {error}"
   },
   "sessions.toast.shareNostr": {
     "defaultMessage": "Link di condivisione Nostr crittografato creato"
@@ -3881,11 +3875,29 @@
   "sessions.toast.shareNostrFailed": {
     "defaultMessage": "Impossibile creare il link di condivisione Nostr: {error}"
   },
+  "sessions.toast.updated": {
+    "defaultMessage": "Descrizione della sessione aggiornata correttamente"
+  },
   "sessions.toast.updateFailed": {
     "defaultMessage": "Impossibile aggiornare la descrizione della sessione: {error}"
   },
-  "sessions.toast.updated": {
-    "defaultMessage": "Descrizione della sessione aggiornata correttamente"
+  "sessionViewComponents.empty.description": {
+    "defaultMessage": "Questa sessione non contiene messaggi"
+  },
+  "sessionViewComponents.empty.title": {
+    "defaultMessage": "Nessun messaggio trovato"
+  },
+  "sessionViewComponents.error.loading": {
+    "defaultMessage": "Errore durante il caricamento dei dettagli della sessione"
+  },
+  "sessionViewComponents.error.tryAgain": {
+    "defaultMessage": "Riprova"
+  },
+  "sessionViewComponents.role.assistant": {
+    "defaultMessage": "Goose"
+  },
+  "sessionViewComponents.role.user": {
+    "defaultMessage": "Tu"
   },
   "settings.appearance.description": {
     "defaultMessage": "Configura l'aspetto di goose sul tuo sistema"
@@ -4078,6 +4090,9 @@
   },
   "settingsView.tabPrompts": {
     "defaultMessage": "Prompt"
+  },
+  "settingsView.tabVoice": {
+    "defaultMessage": "Voice"
   },
   "settingsView.title": {
     "defaultMessage": "Impostazioni"
@@ -4427,11 +4442,11 @@
   "themeSelector.theme": {
     "defaultMessage": "Tema"
   },
-  "toolApprovalButtons.allowOnce": {
-    "defaultMessage": "Consenti una volta"
-  },
   "toolApprovalButtons.allowedOnce": {
     "defaultMessage": "Consentito una volta"
+  },
+  "toolApprovalButtons.allowOnce": {
+    "defaultMessage": "Consenti una volta"
   },
   "toolApprovalButtons.alwaysAllow": {
     "defaultMessage": "Consenti sempre"
@@ -4514,17 +4529,17 @@
   "updateSection.disableAutoDownloadDesc": {
     "defaultMessage": "Se abilitato, Goose ti avviserà delle nuove versioni ma non le scaricherà automaticamente."
   },
-  "updateSection.downloadNow": {
-    "defaultMessage": "Scarica ora"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "Aggiornamento scaricato e pronto per l'installazione!"
-  },
   "updateSection.downloadingProgress": {
     "defaultMessage": "Download dell'aggiornamento... {percent}%"
   },
   "updateSection.downloadingUpdate": {
     "defaultMessage": "Download dell'aggiornamento..."
+  },
+  "updateSection.downloadNow": {
+    "defaultMessage": "Scarica ora"
+  },
+  "updateSection.downloadReady": {
+    "defaultMessage": "Aggiornamento scaricato e pronto per l'installazione!"
   },
   "updateSection.installAndRestart": {
     "defaultMessage": "Installa e riavvia"
@@ -4550,11 +4565,11 @@
   "updateSection.readyInstallManual": {
     "defaultMessage": "✓ L'aggiornamento è pronto! Fai clic su \"Installa e riavvia\" per le istruzioni di installazione."
   },
-  "updateSection.upToDate": {
-    "defaultMessage": "(aggiornato)"
-  },
   "updateSection.updateAvailable": {
     "defaultMessage": "Aggiornamento disponibile!"
+  },
+  "updateSection.upToDate": {
+    "defaultMessage": "(aggiornato)"
   },
   "updateSection.versionAvailable": {
     "defaultMessage": "→ {version} disponibile"
@@ -4606,5 +4621,68 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "Crea una nuova sessione con il messaggio modificato"
+  },
+  "voiceSettings.autoSpeakLabel": {
+    "defaultMessage": "Auto-speak responses"
+  },
+  "voiceSettings.autoSpeakTooltip": {
+    "defaultMessage": "Automatically read out AI responses using text-to-speech."
+  },
+  "voiceSettings.dictationDescription": {
+    "defaultMessage": "Configure voice dictation provider and microphone settings"
+  },
+  "voiceSettings.dictationTitle": {
+    "defaultMessage": "Voice Input"
+  },
+  "voiceSettings.modeHonk": {
+    "defaultMessage": "HONK! Enabled"
+  },
+  "voiceSettings.modeHonkDescription": {
+    "defaultMessage": "HONK button appears in chat when enabled. Press HONK to activate conversational style and auto-speak."
+  },
+  "voiceSettings.modeStandard": {
+    "defaultMessage": "Standard"
+  },
+  "voiceSettings.modeStandardDescription": {
+    "defaultMessage": "Microphone dictation only. Text appears in input box for review before sending."
+  },
+  "voiceSettings.silenceDescription": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting"
+  },
+  "voiceSettings.silenceTitle": {
+    "defaultMessage": "Silence Detection Threshold"
+  },
+  "voiceSettings.silenceTooltip": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting in conversation mode. Longer values are more forgiving for natural pauses. (500ms–3000ms)"
+  },
+  "voiceSettings.silenceValue": {
+    "defaultMessage": "{value}ms"
+  },
+  "voiceSettings.splitNone": {
+    "defaultMessage": "None"
+  },
+  "voiceSettings.splitParagraph": {
+    "defaultMessage": "Paragraph"
+  },
+  "voiceSettings.splitPunctuation": {
+    "defaultMessage": "Punctuation"
+  },
+  "voiceSettings.splitStrategyLabel": {
+    "defaultMessage": "Split Strategy"
+  },
+  "voiceSettings.splitStrategyTooltip": {
+    "defaultMessage": "Controls how text is broken into audio chunks for speech. 'Punctuation' gives faster first-word playback. 'None' synthesizes the full response at once."
+  },
+  "voiceSettings.ttsDescription": {
+    "defaultMessage": "Configure how Goose speaks responses aloud"
+  },
+  "voiceSettings.ttsTitle": {
+    "defaultMessage": "Text-to-Speech"
+  },
+  "voiceSettings.voiceModeDescription": {
+    "defaultMessage": "Choose how voice input behaves"
+  },
+  "voiceSettings.voiceModeTitle": {
+    "defaultMessage": "Voice Mode"
   }
 }

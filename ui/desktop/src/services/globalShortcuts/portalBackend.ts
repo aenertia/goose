@@ -1,6 +1,7 @@
 import type { ShortcutBinding, ShortcutService } from './types';
 
 export class PortalShortcutBackend implements ShortcutService {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dbus-next proxy objects are untyped
   private bus: any = null;
   private callbacks = new Map<string, () => void>();
   private fallback: ShortcutService | null = null;
@@ -50,8 +51,10 @@ export class PortalShortcutBackend implements ShortcutService {
       }, 5000);
 
       this.bus.getProxyObject('org.freedesktop.portal.Desktop', expectedRequestPath)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dbus-next proxy
         .then((reqObj: any) => {
           const reqIface = reqObj.getInterface('org.freedesktop.portal.Request');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- D-Bus variant dict
           reqIface.on('Response', (responseCode: number, results: Record<string, any>) => {
             clearTimeout(timeout);
             if (responseCode === 0) {
@@ -94,6 +97,7 @@ export class PortalShortcutBackend implements ShortcutService {
       }, 5000);
 
       this.bus.getProxyObject('org.freedesktop.portal.Desktop', expectedBindPath)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dbus-next proxy
         .then((reqObj: any) => {
           const reqIface = reqObj.getInterface('org.freedesktop.portal.Request');
           reqIface.on('Response', (responseCode: number) => {

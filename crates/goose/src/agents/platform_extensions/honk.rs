@@ -82,16 +82,13 @@ impl HonkClient {
         Self::read_config_value("VOICE_DICTATION_PROVIDER").is_some()
     }
 
-    async fn handle_status(
-        &self,
-        _session_id: &str,
-    ) -> Result<Vec<Content>, String> {
+    async fn handle_status(&self, _session_id: &str) -> Result<Vec<Content>, String> {
         let tts_provider = Self::read_config_value("VOICE_TTS_PROVIDER")
             .unwrap_or_else(|| "not configured".to_string());
-        let tts_voice = Self::read_config_value("VOICE_TTS_VOICE")
-            .unwrap_or_else(|| "default".to_string());
-        let tts_format = Self::read_config_value("VOICE_TTS_FORMAT")
-            .unwrap_or_else(|| "opus".to_string());
+        let tts_voice =
+            Self::read_config_value("VOICE_TTS_VOICE").unwrap_or_else(|| "default".to_string());
+        let tts_format =
+            Self::read_config_value("VOICE_TTS_FORMAT").unwrap_or_else(|| "opus".to_string());
         let stt_provider = Self::read_config_value("VOICE_DICTATION_PROVIDER")
             .unwrap_or_else(|| "not configured".to_string());
 
@@ -330,7 +327,10 @@ impl McpClientTrait for HonkClient {
         let mut parts = Vec::new();
         parts.push("HONK voice I/O is available.".to_string());
         if Self::dictation_configured() {
-            parts.push("The user may be speaking via microphone. Full conversation mode is available.".to_string());
+            parts.push(
+                "The user may be speaking via microphone. Full conversation mode is available."
+                    .to_string(),
+            );
         }
         Some(parts.join(" "))
     }

@@ -79,8 +79,8 @@ pub fn get_profile(id: &str) -> Result<Option<TtsProfile>> {
     if !path.exists() {
         return Ok(None);
     }
-    let contents = fs::read_to_string(&path)
-        .with_context(|| format!("Failed to read TTS profile {}", id))?;
+    let contents =
+        fs::read_to_string(&path).with_context(|| format!("Failed to read TTS profile {}", id))?;
     let profile: TtsProfile = serde_json::from_str(&contents)
         .with_context(|| format!("Failed to parse TTS profile {}", id))?;
     Ok(Some(profile))
@@ -104,8 +104,7 @@ pub fn save_profile(mut profile: TtsProfile) -> Result<TtsProfile> {
     fs::create_dir_all(&dir).context("Failed to create tts_profiles directory")?;
 
     let path = profile_path(&profile.id);
-    let json = serde_json::to_string_pretty(&profile)
-        .context("Failed to serialize TTS profile")?;
+    let json = serde_json::to_string_pretty(&profile).context("Failed to serialize TTS profile")?;
     fs::write(&path, json).with_context(|| format!("Failed to write TTS profile to {:?}", path))?;
 
     #[cfg(unix)]
@@ -121,8 +120,7 @@ pub fn save_profile(mut profile: TtsProfile) -> Result<TtsProfile> {
 pub fn delete_profile(id: &str) -> Result<bool> {
     let path = profile_path(id);
     if path.exists() {
-        fs::remove_file(&path)
-            .with_context(|| format!("Failed to delete TTS profile {}", id))?;
+        fs::remove_file(&path).with_context(|| format!("Failed to delete TTS profile {}", id))?;
         Ok(true)
     } else {
         Ok(false)

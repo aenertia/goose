@@ -294,7 +294,7 @@ export const useAudioRecorder = ({
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setIsRecording(false);
-  }, []);
+  }, [sileroReset]);
 
   const startRecording = useCallback(
     async () => {
@@ -395,7 +395,7 @@ export const useAudioRecorder = ({
         onError(errorMessage(error));
       }
     },
-    [isEnabled, onError, handleSamples, stopRecording, read]
+    [isEnabled, onError, handleSamples, stopRecording, read, sileroProcess, sileroReadyRef]
   );
 
   useEffect(() => {

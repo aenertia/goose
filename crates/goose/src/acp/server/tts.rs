@@ -1,9 +1,9 @@
 use super::*;
 use crate::tts::profiles;
 use crate::tts::providers::{
-    all_tts_providers, get_tts_provider_def, is_tts_configured, list_voices,
-    synthesize_with_model, synthesize_with_profile, synthesize_with_provider_overrides,
-    TtsProvider, TtsSynthesizeOverrides,
+    all_tts_providers, get_tts_provider_def, is_tts_configured, list_voices, synthesize_with_model,
+    synthesize_with_profile, synthesize_with_provider_overrides, TtsProvider,
+    TtsSynthesizeOverrides,
 };
 
 impl GooseAcpAgent {
@@ -15,8 +15,9 @@ impl GooseAcpAgent {
 
         if let Some(ref pid) = req.profile_id {
             if !pid.is_empty() {
-                let (audio_bytes, mime_type) =
-                    synthesize_with_profile(pid, &req.text).await.internal_err()?;
+                let (audio_bytes, mime_type) = synthesize_with_profile(pid, &req.text)
+                    .await
+                    .internal_err()?;
                 let audio = BASE64.encode(&audio_bytes);
                 return Ok(TtsSynthesizeResponse { audio, mime_type });
             }
@@ -49,11 +50,15 @@ impl GooseAcpAgent {
             let response_format = if !req.response_format.is_empty() {
                 req.response_format.clone()
             } else {
-                config.get_param::<String>("voice_tts_format").unwrap_or_default()
+                config
+                    .get_param::<String>("voice_tts_format")
+                    .unwrap_or_default()
             };
 
             let quality = req.quality.clone().unwrap_or_else(|| {
-                config.get_param::<String>("voice_tts_quality").unwrap_or_default()
+                config
+                    .get_param::<String>("voice_tts_quality")
+                    .unwrap_or_default()
             });
 
             let overrides = TtsSynthesizeOverrides {

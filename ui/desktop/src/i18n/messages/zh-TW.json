@@ -74,14 +74,14 @@
   "authSettings.deleteCredential": {
     "defaultMessage": "刪除憑證"
   },
+  "authSettings.deleted": {
+    "defaultMessage": "憑證已刪除"
+  },
   "authSettings.deleteMessage": {
     "defaultMessage": "要刪除 {provider} 的 {name} 憑證嗎？"
   },
   "authSettings.deleteTitle": {
     "defaultMessage": "刪除憑證"
-  },
-  "authSettings.deleted": {
-    "defaultMessage": "憑證已刪除"
   },
   "authSettings.description": {
     "defaultMessage": "管理 goose 在本機儲存的供應商憑證。"
@@ -107,11 +107,11 @@
   "authSettings.reauthorize": {
     "defaultMessage": "重新授權"
   },
-  "authSettings.signIn": {
-    "defaultMessage": "登入"
-  },
   "authSettings.signedIn": {
     "defaultMessage": "憑證已設定"
+  },
+  "authSettings.signIn": {
+    "defaultMessage": "登入"
   },
   "authSettings.storageProviderCache": {
     "defaultMessage": "供應商快取"
@@ -134,6 +134,12 @@
   "baseChat.reconnecting": {
     "defaultMessage": "連線已中斷。正在重新連線…"
   },
+  "bottomMenuExtensionSelection.extensionsForNewChats": {
+    "defaultMessage": "新聊天的擴充功能"
+  },
+  "bottomMenuExtensionSelection.extensionsForThisSession": {
+    "defaultMessage": "此聊天工作階段的擴充功能"
+  },
   "bottomMenuExtensionSelection.extensionUpdated": {
     "defaultMessage": "擴充功能已更新"
   },
@@ -142,12 +148,6 @@
   },
   "bottomMenuExtensionSelection.extensionWillBeEnabled": {
     "defaultMessage": "{name} 將在新的聊天中啟用"
-  },
-  "bottomMenuExtensionSelection.extensionsForNewChats": {
-    "defaultMessage": "新聊天的擴充功能"
-  },
-  "bottomMenuExtensionSelection.extensionsForThisSession": {
-    "defaultMessage": "此聊天工作階段的擴充功能"
   },
   "bottomMenuExtensionSelection.manageExtensions": {
     "defaultMessage": "管理擴充功能"
@@ -175,6 +175,18 @@
   },
   "chatInput.contextWindow": {
     "defaultMessage": "上下文視窗"
+  },
+  "chatInput.conversationListening": {
+    "defaultMessage": "Listening..."
+  },
+  "chatInput.conversationMode": {
+    "defaultMessage": "Conversation mode"
+  },
+  "chatInput.conversationSpeaking": {
+    "defaultMessage": "Speaking..."
+  },
+  "chatInput.conversationSubmitting": {
+    "defaultMessage": "Thinking..."
   },
   "chatInput.dictationError": {
     "defaultMessage": "聽寫錯誤"
@@ -650,11 +662,11 @@
   "customProviderForm.attachments": {
     "defaultMessage": "附件"
   },
-  "customProviderForm.authHint": {
-    "defaultMessage": "Ollama 等本機 LLM 通常不需要 API 金鑰。"
-  },
   "customProviderForm.authentication": {
     "defaultMessage": "驗證"
+  },
+  "customProviderForm.authHint": {
+    "defaultMessage": "Ollama 等本機 LLM 通常不需要 API 金鑰。"
   },
   "customProviderForm.availableModels": {
     "defaultMessage": "可用模型（以逗號分隔）"
@@ -953,17 +965,20 @@
   "elicitationRequest.waitingForResponse": {
     "defaultMessage": "正在等待您的回應（剩餘 {timeRemaining}）"
   },
+  "environmentBadge.dev": {
+    "defaultMessage": "開發"
+  },
   "envVarsSection.add": {
     "defaultMessage": "新增"
   },
   "envVarsSection.bothRequired": {
     "defaultMessage": "必須同時輸入變數名稱與值"
   },
-  "envVarsSection.envVarsDescription": {
-    "defaultMessage": "新增環境變數的鍵值組。填妥兩個欄位後，按一下「+」按鈕即可新增。若要修改現有的密碼值，請按一下編輯按鈕。"
-  },
   "envVarsSection.environmentVariables": {
     "defaultMessage": "環境變數"
+  },
+  "envVarsSection.envVarsDescription": {
+    "defaultMessage": "新增環境變數的鍵值組。填妥兩個欄位後，按一下「+」按鈕即可新增。若要修改現有的密碼值，請按一下編輯按鈕。"
   },
   "envVarsSection.noSpaces": {
     "defaultMessage": "變數名稱不可包含空格"
@@ -973,9 +988,6 @@
   },
   "envVarsSection.variableName": {
     "defaultMessage": "變數名稱"
-  },
-  "environmentBadge.dev": {
-    "defaultMessage": "開發"
   },
   "errorBoundary.errorGeneric": {
     "defaultMessage": "發生錯誤。"
@@ -1136,9 +1148,6 @@
   "extensionModal.unsavedChangesTitle": {
     "defaultMessage": "尚未儲存的變更"
   },
-  "extensionTimeoutField.timeoutLabel": {
-    "defaultMessage": "逾時"
-  },
   "extensionsSection.addCustomExtension": {
     "defaultMessage": "新增自訂擴充功能"
   },
@@ -1174,6 +1183,9 @@
   },
   "extensionsView.searchPlaceholder": {
     "defaultMessage": "搜尋擴充功能…"
+  },
+  "extensionTimeoutField.timeoutLabel": {
+    "defaultMessage": "逾時"
   },
   "externalBackendSection.certFingerprint": {
     "defaultMessage": "憑證指紋（選填）"
@@ -1394,11 +1406,11 @@
   "huggingFaceSignInPrompt.failedToConfigure": {
     "defaultMessage": "登入 Hugging Face 失敗：{error}"
   },
-  "huggingFaceSignInPrompt.signIn": {
-    "defaultMessage": "登入"
-  },
   "huggingFaceSignInPrompt.signedIn": {
     "defaultMessage": "已登入 Hugging Face"
+  },
+  "huggingFaceSignInPrompt.signIn": {
+    "defaultMessage": "登入"
   },
   "huggingFaceSignInPrompt.signingIn": {
     "defaultMessage": "正在登入…"
@@ -1433,14 +1445,14 @@
   "importRecipeForm.expectedRecipeStructure": {
     "defaultMessage": "預期的食譜結構"
   },
+  "importRecipeForm.importing": {
+    "defaultMessage": "正在匯入…"
+  },
   "importRecipeForm.importRecipeButton": {
     "defaultMessage": "匯入食譜"
   },
   "importRecipeForm.importRecipeTitle": {
     "defaultMessage": "匯入食譜"
-  },
-  "importRecipeForm.importing": {
-    "defaultMessage": "正在匯入…"
   },
   "importRecipeForm.or": {
     "defaultMessage": "或"
@@ -1540,18 +1552,6 @@
   },
   "jsonSchemaForm.submit": {
     "defaultMessage": "提交"
-  },
-  "keyValueEditor.addValue": {
-    "defaultMessage": "新增預先設定的值"
-  },
-  "keyValueEditor.defaultKeyPlaceholder": {
-    "defaultMessage": "參數名稱…"
-  },
-  "keyValueEditor.defaultValuePlaceholder": {
-    "defaultMessage": "參數值…"
-  },
-  "keyValueEditor.removeValue": {
-    "defaultMessage": "移除預先設定的值 {key}"
   },
   "keyboardShortcuts.alwaysOnTopDescription": {
     "defaultMessage": "切換視窗永遠在最上層"
@@ -1697,6 +1697,18 @@
   "keyboardShortcuts.toggleNavigationLabel": {
     "defaultMessage": "切換導覽"
   },
+  "keyValueEditor.addValue": {
+    "defaultMessage": "新增預先設定的值"
+  },
+  "keyValueEditor.defaultKeyPlaceholder": {
+    "defaultMessage": "參數名稱…"
+  },
+  "keyValueEditor.defaultValuePlaceholder": {
+    "defaultMessage": "參數值…"
+  },
+  "keyValueEditor.removeValue": {
+    "defaultMessage": "移除預先設定的值 {key}"
+  },
   "launcher.placeholder": {
     "defaultMessage": "向 goose 詢問任何問題…"
   },
@@ -1736,17 +1748,17 @@
   "localInferenceSettings.downloadCancelled": {
     "defaultMessage": "下載已取消"
   },
-  "localInferenceSettings.downloadFailed": {
-    "defaultMessage": "下載失敗"
-  },
-  "localInferenceSettings.downloadProgress": {
-    "defaultMessage": "{downloaded} / {total}（{percent}%）"
-  },
   "localInferenceSettings.downloadedModels": {
     "defaultMessage": "已下載的模型"
   },
+  "localInferenceSettings.downloadFailed": {
+    "defaultMessage": "下載失敗"
+  },
   "localInferenceSettings.downloading": {
     "defaultMessage": "下載中"
+  },
+  "localInferenceSettings.downloadProgress": {
+    "defaultMessage": "{downloaded} / {total}（{percent}%）"
   },
   "localInferenceSettings.evictFromMemory": {
     "defaultMessage": "Evict from memory"
@@ -1835,11 +1847,11 @@
   "localModelPicker.checkingModels": {
     "defaultMessage": "正在檢查可用的模型…"
   },
-  "localModelPicker.downloadModel": {
-    "defaultMessage": "下載 {modelId}（{size}）"
-  },
   "localModelPicker.downloading": {
     "defaultMessage": "正在下載 {modelId}"
+  },
+  "localModelPicker.downloadModel": {
+    "defaultMessage": "下載 {modelId}（{size}）"
   },
   "localModelPicker.failedToLoad": {
     "defaultMessage": "載入可用模型失敗。請再試一次。"
@@ -2003,6 +2015,9 @@
   "messageQueue.paused": {
     "defaultMessage": "已暫停"
   },
+  "messageQueue.queued": {
+    "defaultMessage": "已排入佇列"
+  },
   "messageQueue.queuePaused": {
     "defaultMessage": "佇列已暫停"
   },
@@ -2011,9 +2026,6 @@
   },
   "messageQueue.queuePausedExpanded": {
     "defaultMessage": "佇列因中斷而暫停。請使用「立即傳送」或新增訊息以繼續。"
-  },
-  "messageQueue.queued": {
-    "defaultMessage": "已排入佇列"
   },
   "messageQueue.removeFromQueue": {
     "defaultMessage": "從佇列中移除此訊息"
@@ -2063,11 +2075,11 @@
   "messageUsageStats.speed": {
     "defaultMessage": "速度"
   },
-  "messageUsageStats.tokenUnit": {
-    "defaultMessage": "tok"
-  },
   "messageUsageStats.tokensPerSecondUnit": {
     "defaultMessage": "tok/s"
+  },
+  "messageUsageStats.tokenUnit": {
+    "defaultMessage": "tok"
   },
   "messageUsageStats.total": {
     "defaultMessage": "總計"
@@ -2105,35 +2117,11 @@
   "microphoneSelector.test": {
     "defaultMessage": "測試"
   },
-  "modeSelectionItem.autonomousDescription": {
-    "defaultMessage": "完整的檔案修改能力，可自由編輯、建立與刪除檔案。"
-  },
-  "modeSelectionItem.autonomousLabel": {
-    "defaultMessage": "自主"
-  },
-  "modeSelectionItem.chatOnlyDescription": {
-    "defaultMessage": "與選定的供應商互動，不使用工具或擴充功能。"
-  },
-  "modeSelectionItem.chatOnlyLabel": {
-    "defaultMessage": "僅對話"
-  },
-  "modeSelectionItem.manualDescription": {
-    "defaultMessage": "所有工具、擴充功能與檔案修改都需要人工核准"
-  },
-  "modeSelectionItem.manualLabel": {
-    "defaultMessage": "手動"
-  },
-  "modeSelectionItem.smartDescription": {
-    "defaultMessage": "根據風險程度智慧判斷哪些動作需要核准"
-  },
-  "modeSelectionItem.smartLabel": {
-    "defaultMessage": "智慧"
+  "modelAndProviderContext.modelChangedTitle": {
+    "defaultMessage": "模型已變更"
   },
   "modelAndProviderContext.modelChangeFailed": {
     "defaultMessage": "{provider}/{model} 失敗"
-  },
-  "modelAndProviderContext.modelChangedTitle": {
-    "defaultMessage": "模型已變更"
   },
   "modelAndProviderContext.selectModel": {
     "defaultMessage": "選擇模型"
@@ -2146,6 +2134,27 @@
   },
   "modelAndProviderContext.unknownProviderTitle": {
     "defaultMessage": "供應商名稱查詢"
+  },
+  "modelsBottomBar.changeModel": {
+    "defaultMessage": "變更模型"
+  },
+  "modelsBottomBar.currentModel": {
+    "defaultMessage": "目前模型"
+  },
+  "modelsBottomBar.loadingModel": {
+    "defaultMessage": "正在載入模型…"
+  },
+  "modelsBottomBar.localModelSettings": {
+    "defaultMessage": "本機模型設定"
+  },
+  "modelsBottomBar.localModelSettingsTitle": {
+    "defaultMessage": "本機模型設定 — {modelName}"
+  },
+  "modelsBottomBar.resolvedModel": {
+    "defaultMessage": "已解析的模型"
+  },
+  "modelsBottomBar.selectModel": {
+    "defaultMessage": "選擇模型"
   },
   "modelSettingsButtons.configureProviders": {
     "defaultMessage": "設定供應商"
@@ -2306,32 +2315,35 @@
   "modelSettingsPanel.topP": {
     "defaultMessage": "Top P"
   },
-  "modelsBottomBar.changeModel": {
-    "defaultMessage": "變更模型"
-  },
-  "modelsBottomBar.currentModel": {
-    "defaultMessage": "目前模型"
-  },
-  "modelsBottomBar.loadingModel": {
-    "defaultMessage": "正在載入模型…"
-  },
-  "modelsBottomBar.localModelSettings": {
-    "defaultMessage": "本機模型設定"
-  },
-  "modelsBottomBar.localModelSettingsTitle": {
-    "defaultMessage": "本機模型設定 — {modelName}"
-  },
-  "modelsBottomBar.resolvedModel": {
-    "defaultMessage": "已解析的模型"
-  },
-  "modelsBottomBar.selectModel": {
-    "defaultMessage": "選擇模型"
-  },
   "modelsSection.resetDescription": {
     "defaultMessage": "清除您選定的模型與供應商設定以重新開始"
   },
   "modelsSection.resetTitle": {
     "defaultMessage": "重設供應商與模型"
+  },
+  "modeSelectionItem.autonomousDescription": {
+    "defaultMessage": "完整的檔案修改能力，可自由編輯、建立與刪除檔案。"
+  },
+  "modeSelectionItem.autonomousLabel": {
+    "defaultMessage": "自主"
+  },
+  "modeSelectionItem.chatOnlyDescription": {
+    "defaultMessage": "與選定的供應商互動，不使用工具或擴充功能。"
+  },
+  "modeSelectionItem.chatOnlyLabel": {
+    "defaultMessage": "僅對話"
+  },
+  "modeSelectionItem.manualDescription": {
+    "defaultMessage": "所有工具、擴充功能與檔案修改都需要人工核准"
+  },
+  "modeSelectionItem.manualLabel": {
+    "defaultMessage": "手動"
+  },
+  "modeSelectionItem.smartDescription": {
+    "defaultMessage": "根據風險程度智慧判斷哪些動作需要核准"
+  },
+  "modeSelectionItem.smartLabel": {
+    "defaultMessage": "智慧"
   },
   "navigation.itemApps": {
     "defaultMessage": "應用程式"
@@ -2612,11 +2624,11 @@
   "promptsSettings.edit": {
     "defaultMessage": "編輯"
   },
-  "promptsSettings.editPromptTitle": {
-    "defaultMessage": "編輯：{name}"
-  },
   "promptsSettings.editingLabel": {
     "defaultMessage": "正在編輯：{name}"
+  },
+  "promptsSettings.editPromptTitle": {
+    "defaultMessage": "編輯：{name}"
   },
   "promptsSettings.enterPromptContent": {
     "defaultMessage": "輸入提示內容..."
@@ -2726,11 +2738,11 @@
   "providerConfigForm.noApiKey": {
     "defaultMessage": "沒有 API 金鑰嗎？"
   },
-  "providerConfigForm.signInWith": {
-    "defaultMessage": "使用 {providerName} 登入"
-  },
   "providerConfigForm.signingIn": {
     "defaultMessage": "正在登入..."
+  },
+  "providerConfigForm.signInWith": {
+    "defaultMessage": "使用 {providerName} 登入"
   },
   "providerConfigurationModal.addApiKeyDescription": {
     "defaultMessage": "新增此提供者的 API 金鑰以整合至 goose"
@@ -2792,11 +2804,11 @@
   "providerConfigurationModal.seeDocumentation": {
     "defaultMessage": "如需更多詳細資料，請參閱<link>說明文件</link>。"
   },
-  "providerConfigurationModal.signInWith": {
-    "defaultMessage": "使用 {providerName} 登入"
-  },
   "providerConfigurationModal.signingIn": {
     "defaultMessage": "正在登入..."
+  },
+  "providerConfigurationModal.signInWith": {
+    "defaultMessage": "使用 {providerName} 登入"
   },
   "providerGrid.addProvider": {
     "defaultMessage": "新增提供者"
@@ -3032,39 +3044,6 @@
   "recipeNameField.formatHint": {
     "defaultMessage": "將自動格式化（小寫，空格以連字號取代）"
   },
-  "recipeWarningModal.cancel": {
-    "defaultMessage": "取消"
-  },
-  "recipeWarningModal.descriptionLabel": {
-    "defaultMessage": "說明："
-  },
-  "recipeWarningModal.firstTimeDescription": {
-    "defaultMessage": "您即將執行一個尚未執行過的配方。"
-  },
-  "recipeWarningModal.hiddenCharsWarning": {
-    "defaultMessage": "為了您的安全，此配方包含的隱藏字元將被忽略，因為它們可能被用於惡意目的。"
-  },
-  "recipeWarningModal.instructionsLabel": {
-    "defaultMessage": "指示："
-  },
-  "recipeWarningModal.newRecipeWarningTitle": {
-    "defaultMessage": "⚠️ 新配方警告"
-  },
-  "recipeWarningModal.recipePreview": {
-    "defaultMessage": "配方預覽："
-  },
-  "recipeWarningModal.securityWarningTitle": {
-    "defaultMessage": "⚠️ 安全性警告"
-  },
-  "recipeWarningModal.titleLabel": {
-    "defaultMessage": "標題："
-  },
-  "recipeWarningModal.trustAndExecute": {
-    "defaultMessage": "信任並執行"
-  },
-  "recipeWarningModal.trustSource": {
-    "defaultMessage": "只有在您信任此配方的來源時才繼續進行。"
-  },
   "recipesView.addSchedule": {
     "defaultMessage": "新增排程"
   },
@@ -3239,6 +3218,39 @@
   "recipesView.yamlFiles": {
     "defaultMessage": "YAML 檔案"
   },
+  "recipeWarningModal.cancel": {
+    "defaultMessage": "取消"
+  },
+  "recipeWarningModal.descriptionLabel": {
+    "defaultMessage": "說明："
+  },
+  "recipeWarningModal.firstTimeDescription": {
+    "defaultMessage": "您即將執行一個尚未執行過的配方。"
+  },
+  "recipeWarningModal.hiddenCharsWarning": {
+    "defaultMessage": "為了您的安全，此配方包含的隱藏字元將被忽略，因為它們可能被用於惡意目的。"
+  },
+  "recipeWarningModal.instructionsLabel": {
+    "defaultMessage": "指示："
+  },
+  "recipeWarningModal.newRecipeWarningTitle": {
+    "defaultMessage": "⚠️ 新配方警告"
+  },
+  "recipeWarningModal.recipePreview": {
+    "defaultMessage": "配方預覽："
+  },
+  "recipeWarningModal.securityWarningTitle": {
+    "defaultMessage": "⚠️ 安全性警告"
+  },
+  "recipeWarningModal.titleLabel": {
+    "defaultMessage": "標題："
+  },
+  "recipeWarningModal.trustAndExecute": {
+    "defaultMessage": "信任並執行"
+  },
+  "recipeWarningModal.trustSource": {
+    "defaultMessage": "只有在您信任此配方的來源時才繼續進行。"
+  },
   "resetProviderSection.resetButton": {
     "defaultMessage": "重設供應商與模型"
   },
@@ -3272,11 +3284,11 @@
   "scheduleDetailView.cronExpression": {
     "defaultMessage": "Cron 運算式："
   },
-  "scheduleDetailView.currentSession": {
-    "defaultMessage": "目前工作階段："
-  },
   "scheduleDetailView.currentlyRunning": {
     "defaultMessage": "目前正在執行"
+  },
+  "scheduleDetailView.currentSession": {
+    "defaultMessage": "目前工作階段："
   },
   "scheduleDetailView.dir": {
     "defaultMessage": "目錄：{path}"
@@ -3335,12 +3347,6 @@
   "scheduleDetailView.noSessions": {
     "defaultMessage": "找不到此排程的工作階段。"
   },
-  "scheduleDetailView.pauseSchedule": {
-    "defaultMessage": "暫停排程"
-  },
-  "scheduleDetailView.pauseUnpauseError": {
-    "defaultMessage": "暫停／取消暫停錯誤"
-  },
   "scheduleDetailView.paused": {
     "defaultMessage": "已暫停"
   },
@@ -3349,6 +3355,12 @@
   },
   "scheduleDetailView.pausedWarning": {
     "defaultMessage": "此排程已暫停，將不會自動執行。請使用「立即執行排程」手動觸發，或取消暫停以恢復自動執行。"
+  },
+  "scheduleDetailView.pauseSchedule": {
+    "defaultMessage": "暫停排程"
+  },
+  "scheduleDetailView.pauseUnpauseError": {
+    "defaultMessage": "暫停／取消暫停錯誤"
   },
   "scheduleDetailView.processStarted": {
     "defaultMessage": "程序已啟動："
@@ -3395,17 +3407,17 @@
   "scheduleDetailView.sessionId": {
     "defaultMessage": "工作階段 ID：{id}"
   },
-  "scheduleDetailView.unpauseSchedule": {
-    "defaultMessage": "取消暫停排程"
-  },
   "scheduleDetailView.unpausedMsg": {
     "defaultMessage": "已取消暫停「{id}」"
   },
-  "scheduleDetailView.updateScheduleError": {
-    "defaultMessage": "更新排程錯誤"
+  "scheduleDetailView.unpauseSchedule": {
+    "defaultMessage": "取消暫停排程"
   },
   "scheduleDetailView.updatedMsg": {
     "defaultMessage": "已更新「{id}」"
+  },
+  "scheduleDetailView.updateScheduleError": {
+    "defaultMessage": "更新排程錯誤"
   },
   "scheduleDetailView.viewingScheduleId": {
     "defaultMessage": "正在檢視排程 ID：{id}"
@@ -3530,11 +3542,11 @@
   "schedulesView.pause": {
     "defaultMessage": "暫停"
   },
-  "schedulesView.pauseError": {
-    "defaultMessage": "暫停排程錯誤"
-  },
   "schedulesView.paused": {
     "defaultMessage": "已暫停"
+  },
+  "schedulesView.pauseError": {
+    "defaultMessage": "暫停排程錯誤"
   },
   "schedulesView.refresh": {
     "defaultMessage": "重新整理"
@@ -3554,6 +3566,9 @@
   "schedulesView.schedulePausedMsg": {
     "defaultMessage": "已成功暫停排程「{id}」"
   },
+  "schedulesView.scheduler": {
+    "defaultMessage": "排程器"
+  },
   "schedulesView.scheduleUnpaused": {
     "defaultMessage": "排程已取消暫停"
   },
@@ -3565,9 +3580,6 @@
   },
   "schedulesView.scheduleUpdatedMsg": {
     "defaultMessage": "已成功更新排程「{id}」"
-  },
-  "schedulesView.scheduler": {
-    "defaultMessage": "排程器"
   },
   "schedulesView.unpauseError": {
     "defaultMessage": "取消暫停排程錯誤"
@@ -3674,14 +3686,14 @@
   "sessionActionsHeader.copyText": {
     "defaultMessage": "複製文字"
   },
+  "sessionActionsHeader.duplicated": {
+    "defaultMessage": "工作階段已複製"
+  },
   "sessionActionsHeader.duplicateFailed": {
     "defaultMessage": "複製工作階段失敗：{error}"
   },
   "sessionActionsHeader.duplicateSession": {
     "defaultMessage": "複製工作階段"
-  },
-  "sessionActionsHeader.duplicated": {
-    "defaultMessage": "工作階段已複製"
   },
   "sessionActionsHeader.fullTextTitle": {
     "defaultMessage": "文字值"
@@ -3701,6 +3713,9 @@
   "sessionActionsHeader.modelInteractionsTitle": {
     "defaultMessage": "Recent model interactions"
   },
+  "sessionActionsHeader.renamed": {
+    "defaultMessage": "工作階段已重新命名"
+  },
   "sessionActionsHeader.renameFailed": {
     "defaultMessage": "重新命名工作階段失敗：{error}"
   },
@@ -3712,9 +3727,6 @@
   },
   "sessionActionsHeader.renameTitle": {
     "defaultMessage": "重新命名工作階段"
-  },
-  "sessionActionsHeader.renamed": {
-    "defaultMessage": "工作階段已重新命名"
   },
   "sessionActionsHeader.save": {
     "defaultMessage": "儲存"
@@ -3736,24 +3748,6 @@
   },
   "sessionIndicators.streaming": {
     "defaultMessage": "串流中"
-  },
-  "sessionViewComponents.empty.description": {
-    "defaultMessage": "此工作階段不包含任何訊息"
-  },
-  "sessionViewComponents.empty.title": {
-    "defaultMessage": "找不到訊息"
-  },
-  "sessionViewComponents.error.loading": {
-    "defaultMessage": "載入工作階段詳細資料時發生錯誤"
-  },
-  "sessionViewComponents.error.tryAgain": {
-    "defaultMessage": "再試一次"
-  },
-  "sessionViewComponents.role.assistant": {
-    "defaultMessage": "Goose"
-  },
-  "sessionViewComponents.role.user": {
-    "defaultMessage": "您"
   },
   "sessions.action.delete": {
     "defaultMessage": "刪除工作階段"
@@ -3812,6 +3806,9 @@
   "sessions.import": {
     "defaultMessage": "匯入工作階段"
   },
+  "sessions.importing": {
+    "defaultMessage": "正在匯入…"
+  },
   "sessions.importNostr": {
     "defaultMessage": "匯入連結"
   },
@@ -3823,9 +3820,6 @@
   },
   "sessions.importNostr.title": {
     "defaultMessage": "匯入 Nostr 工作階段"
-  },
-  "sessions.importing": {
-    "defaultMessage": "正在匯入…"
   },
   "sessions.loadingMore": {
     "defaultMessage": "正在載入更多工作階段…"
@@ -3854,26 +3848,26 @@
   "sessions.toast.copied": {
     "defaultMessage": "已複製到剪貼簿"
   },
-  "sessions.toast.deleteFailed": {
-    "defaultMessage": "無法刪除工作階段「{name}」：{error}"
-  },
   "sessions.toast.deleted": {
     "defaultMessage": "已成功刪除工作階段"
   },
-  "sessions.toast.duplicateFailed": {
-    "defaultMessage": "無法複製工作階段：{error}"
+  "sessions.toast.deleteFailed": {
+    "defaultMessage": "無法刪除工作階段「{name}」：{error}"
   },
   "sessions.toast.duplicated": {
     "defaultMessage": "已成功複製工作階段「{name}」"
   },
+  "sessions.toast.duplicateFailed": {
+    "defaultMessage": "無法複製工作階段：{error}"
+  },
   "sessions.toast.exported": {
     "defaultMessage": "已成功匯出工作階段"
   },
-  "sessions.toast.importFailed": {
-    "defaultMessage": "無法匯入工作階段：{error}"
-  },
   "sessions.toast.imported": {
     "defaultMessage": "已成功匯入工作階段"
+  },
+  "sessions.toast.importFailed": {
+    "defaultMessage": "無法匯入工作階段：{error}"
   },
   "sessions.toast.shareNostr": {
     "defaultMessage": "已建立加密的 Nostr 分享連結"
@@ -3881,11 +3875,29 @@
   "sessions.toast.shareNostrFailed": {
     "defaultMessage": "無法建立 Nostr 分享連結：{error}"
   },
+  "sessions.toast.updated": {
+    "defaultMessage": "已成功更新工作階段描述"
+  },
   "sessions.toast.updateFailed": {
     "defaultMessage": "無法更新工作階段描述：{error}"
   },
-  "sessions.toast.updated": {
-    "defaultMessage": "已成功更新工作階段描述"
+  "sessionViewComponents.empty.description": {
+    "defaultMessage": "此工作階段不包含任何訊息"
+  },
+  "sessionViewComponents.empty.title": {
+    "defaultMessage": "找不到訊息"
+  },
+  "sessionViewComponents.error.loading": {
+    "defaultMessage": "載入工作階段詳細資料時發生錯誤"
+  },
+  "sessionViewComponents.error.tryAgain": {
+    "defaultMessage": "再試一次"
+  },
+  "sessionViewComponents.role.assistant": {
+    "defaultMessage": "Goose"
+  },
+  "sessionViewComponents.role.user": {
+    "defaultMessage": "您"
   },
   "settings.appearance.description": {
     "defaultMessage": "設定 goose 在您系統上的顯示方式"
@@ -4078,6 +4090,9 @@
   },
   "settingsView.tabPrompts": {
     "defaultMessage": "提示"
+  },
+  "settingsView.tabVoice": {
+    "defaultMessage": "Voice"
   },
   "settingsView.title": {
     "defaultMessage": "設定"
@@ -4427,11 +4442,11 @@
   "themeSelector.theme": {
     "defaultMessage": "佈景主題"
   },
-  "toolApprovalButtons.allowOnce": {
-    "defaultMessage": "允許一次"
-  },
   "toolApprovalButtons.allowedOnce": {
     "defaultMessage": "已允許一次"
+  },
+  "toolApprovalButtons.allowOnce": {
+    "defaultMessage": "允許一次"
   },
   "toolApprovalButtons.alwaysAllow": {
     "defaultMessage": "一律允許"
@@ -4514,17 +4529,17 @@
   "updateSection.disableAutoDownloadDesc": {
     "defaultMessage": "啟用後，Goose 會通知您有新版本，但不會自動下載。"
   },
-  "updateSection.downloadNow": {
-    "defaultMessage": "立即下載"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "更新已下載完成並可供安裝！"
-  },
   "updateSection.downloadingProgress": {
     "defaultMessage": "正在下載更新... {percent}%"
   },
   "updateSection.downloadingUpdate": {
     "defaultMessage": "正在下載更新..."
+  },
+  "updateSection.downloadNow": {
+    "defaultMessage": "立即下載"
+  },
+  "updateSection.downloadReady": {
+    "defaultMessage": "更新已下載完成並可供安裝！"
   },
   "updateSection.installAndRestart": {
     "defaultMessage": "安裝並重新啟動"
@@ -4550,11 +4565,11 @@
   "updateSection.readyInstallManual": {
     "defaultMessage": "✓ 更新已就緒！請點選「安裝並重新啟動」以取得安裝指示。"
   },
-  "updateSection.upToDate": {
-    "defaultMessage": "（為最新版本）"
-  },
   "updateSection.updateAvailable": {
     "defaultMessage": "有可用的更新！"
+  },
+  "updateSection.upToDate": {
+    "defaultMessage": "（為最新版本）"
   },
   "updateSection.versionAvailable": {
     "defaultMessage": "→ 有可用的 {version}"
@@ -4606,5 +4621,68 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "以編輯後的訊息建立新的工作階段"
+  },
+  "voiceSettings.autoSpeakLabel": {
+    "defaultMessage": "Auto-speak responses"
+  },
+  "voiceSettings.autoSpeakTooltip": {
+    "defaultMessage": "Automatically read out AI responses using text-to-speech."
+  },
+  "voiceSettings.dictationDescription": {
+    "defaultMessage": "Configure voice dictation provider and microphone settings"
+  },
+  "voiceSettings.dictationTitle": {
+    "defaultMessage": "Voice Input"
+  },
+  "voiceSettings.modeHonk": {
+    "defaultMessage": "HONK! Enabled"
+  },
+  "voiceSettings.modeHonkDescription": {
+    "defaultMessage": "HONK button appears in chat when enabled. Press HONK to activate conversational style and auto-speak."
+  },
+  "voiceSettings.modeStandard": {
+    "defaultMessage": "Standard"
+  },
+  "voiceSettings.modeStandardDescription": {
+    "defaultMessage": "Microphone dictation only. Text appears in input box for review before sending."
+  },
+  "voiceSettings.silenceDescription": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting"
+  },
+  "voiceSettings.silenceTitle": {
+    "defaultMessage": "Silence Detection Threshold"
+  },
+  "voiceSettings.silenceTooltip": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting in conversation mode. Longer values are more forgiving for natural pauses. (500ms–3000ms)"
+  },
+  "voiceSettings.silenceValue": {
+    "defaultMessage": "{value}ms"
+  },
+  "voiceSettings.splitNone": {
+    "defaultMessage": "None"
+  },
+  "voiceSettings.splitParagraph": {
+    "defaultMessage": "Paragraph"
+  },
+  "voiceSettings.splitPunctuation": {
+    "defaultMessage": "Punctuation"
+  },
+  "voiceSettings.splitStrategyLabel": {
+    "defaultMessage": "Split Strategy"
+  },
+  "voiceSettings.splitStrategyTooltip": {
+    "defaultMessage": "Controls how text is broken into audio chunks for speech. 'Punctuation' gives faster first-word playback. 'None' synthesizes the full response at once."
+  },
+  "voiceSettings.ttsDescription": {
+    "defaultMessage": "Configure how Goose speaks responses aloud"
+  },
+  "voiceSettings.ttsTitle": {
+    "defaultMessage": "Text-to-Speech"
+  },
+  "voiceSettings.voiceModeDescription": {
+    "defaultMessage": "Choose how voice input behaves"
+  },
+  "voiceSettings.voiceModeTitle": {
+    "defaultMessage": "Voice Mode"
   }
 }

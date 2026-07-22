@@ -600,8 +600,9 @@ fn prepare_voice_tts_format(
     value: &serde_json::Value,
 ) -> Result<serde_json::Value, agent_client_protocol::Error> {
     let Some(value) = value.as_str() else {
-        return Err(agent_client_protocol::Error::invalid_params()
-            .data("voiceTtsFormat must be a string"));
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsFormat must be a string")
+        );
     };
     let allowed = ["opus", "wav", "mp3", "pcm", "ogg", "flac", ""];
     if !allowed.contains(&value) {
@@ -615,8 +616,9 @@ fn prepare_voice_tts_quality(
     value: &serde_json::Value,
 ) -> Result<serde_json::Value, agent_client_protocol::Error> {
     let Some(value) = value.as_str() else {
-        return Err(agent_client_protocol::Error::invalid_params()
-            .data("voiceTtsQuality must be a string"));
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsQuality must be a string")
+        );
     };
     let allowed = ["low", "medium", "high", ""];
     if !allowed.contains(&value) {

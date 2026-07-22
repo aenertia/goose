@@ -1,8 +1,10 @@
 import type { MediaControlService } from './types';
 
 export class MprisMediaControlBackend implements MediaControlService {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dbus-next session bus is untyped
   private bus: any = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dbus-next session bus is untyped
   private async getBus(): Promise<any> {
     if (!this.bus) {
       const dbus = await import('dbus-next');
