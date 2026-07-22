@@ -130,6 +130,9 @@ export const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, no mark
 
 let streamCursor = 0;
 let streamActive = false;
+let latestMessages: any[] = [];
+let streamIntervalId: ReturnType<typeof setInterval> | null = null;
+let streamMsgCount = 0;
 
 const i18n = defineMessages({
   dictationError: {
@@ -632,6 +635,7 @@ export default function ChatInput({
   const isConversationActive = honkActive;
   conversationAutoSubmitRef.current = conversationAutoSubmit;
   honkIsListeningRef.current = honkIsListening;
+  latestMessages = messages;
 
   useEffect(() => {
     if (!honkActive) {
@@ -644,49 +648,93 @@ export default function ChatInput({
       if (streamActive) {
         streamActive = false;
         streamCursor = 0;
-      }
-      return;
-    }
-
-    if (isLoading && !streamActive) {
-      streamActive = true;
-      streamCursor = 0;
-      snapshotListeningState();
-      startStreamingSpeak();
-      return;
-    }
-
-    if (isLoading && streamActive) {
-      const lastMsg = [...messages].reverse().find((m) => m.role === 'assistant');
-      if (!lastMsg) return;
-      const { textContent } = getTextAndImageContent(lastMsg);
-      const unspoken = textContent.slice(streamCursor);
-
-      const sentenceEnd = unspoken.search(/[.!?](?:\s|$)/);
-      if (sentenceEnd >= 0) {
-        const chunk = unspoken.slice(0, sentenceEnd + 1).trim();
-        if (chunk) {
-          void enqueueStreamChunk(chunk);
-          const charAfter = unspoken[sentenceEnd + 1];
-          streamCursor += sentenceEnd + (charAfter === ' ' ? 2 : 1);
+        if (streamIntervalId !== null) {
+          clearInterval(streamIntervalId);
+          streamIntervalId = null;
         }
       }
-      return;
-    }
+    } else if (isLoading && !streamActive) {
+      // Stream just started
+      streamActive = true;
+      streamCursor = 0;
+      streamMsgCount = messages.length;
+      snapshotListeningState();
+      void startStreamingSpeak();
 
-    if (!isLoading && streamActive) {
+      // Start polling interval for sentence detection
+      streamIntervalId = setInterval(() => {
+        if (!streamActive) return;
+
+        // Find the last assistant message that appeared AFTER streaming started
+        const msgs = latestMessages;
+        let targetMsg = null;
+        for (let i = msgs.length - 1; i >= streamMsgCount; i--) {
+          if (msgs[i]?.role === 'assistant') {
+            targetMsg = msgs[i];
+            break;
+          }
+        }
+        if (!targetMsg) return; // New assistant message hasn't appeared yet
+
+        const { textContent } = getTextAndImageContent(targetMsg);
+        const unspoken = textContent.slice(streamCursor);
+
+        // Find ALL complete sentences in the unspoken text
+        let searchPos = 0;
+        while (searchPos < unspoken.length) {
+          const remaining = unspoken.slice(searchPos);
+          const sentenceEnd = remaining.search(/[.!?](?:\s|$)/);
+          if (sentenceEnd < 0) break;
+
+          const chunk = remaining.slice(0, sentenceEnd + 1).trim();
+          if (chunk) {
+            void enqueueStreamChunk(chunk);
+          }
+          const charAfter = remaining[sentenceEnd + 1];
+          searchPos += sentenceEnd + (charAfter === ' ' ? 2 : 1);
+        }
+
+        if (searchPos > 0) {
+          streamCursor += searchPos;
+        }
+      }, 300);
+    } else if (!isLoading && streamActive) {
+      // Stream finished — flush remaining text
       streamActive = false;
-      const lastMsg = [...messages].reverse().find((m) => m.role === 'assistant');
-      if (lastMsg) {
-        const { textContent } = getTextAndImageContent(lastMsg);
+
+      if (streamIntervalId !== null) {
+        clearInterval(streamIntervalId);
+        streamIntervalId = null;
+      }
+
+      // Find the correct assistant message (appeared after streaming started)
+      const msgs = messages;
+      let targetMsg = null;
+      for (let i = msgs.length - 1; i >= streamMsgCount; i--) {
+        if (msgs[i]?.role === 'assistant') {
+          targetMsg = msgs[i];
+          break;
+        }
+      }
+
+      if (targetMsg) {
+        const { textContent } = getTextAndImageContent(targetMsg);
         const remaining = textContent.slice(streamCursor).trim();
         if (remaining) {
           void enqueueStreamChunk(remaining);
         }
       }
+
       streamCursor = 0;
     }
-  }, [isLoading, honkActive, messages, startStreamingSpeak, enqueueStreamChunk, snapshotListeningState]);
+
+    return () => {
+      if (streamIntervalId !== null) {
+        clearInterval(streamIntervalId);
+        streamIntervalId = null;
+      }
+    };
+  }, [isLoading, honkActive, startStreamingSpeak, enqueueStreamChunk, snapshotListeningState]);
 
   const textAreaRef = inputRef || internalTextAreaRef;
   const timeoutRefsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
