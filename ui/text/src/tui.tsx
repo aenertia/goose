@@ -62,7 +62,7 @@ import {
   SCROLL_FAST_MULTIPLIER,
 } from "./constants.js";
 import { tryRunSlashCommand } from "./slashCommands.js";
-import { setTtsCapabilities, getTtsEnabled as getTtsEnabledState, setTtsEnabled as setTtsEnabledState } from "./ttsState.js";
+import { setTtsCapabilities, getTtsEnabled as getTtsEnabledState, setTtsEnabled as setTtsEnabledState, setTtsFormat as setTtsFormatState, getTtsFormat as getTtsFormatState, setTtsVoice as setTtsVoiceState, getTtsVoice as getTtsVoiceState, setTtsSpeed as setTtsSpeedState, getTtsSpeed as getTtsSpeedState } from "./ttsState.js";
 import {
   detectAndCreateAudioPlayer,
   type AudioPlayer,
@@ -197,6 +197,11 @@ async function ensureTtsReady(client: GooseClient): Promise<boolean> {
     }
   }
 
+  // Sync config-read values to shared state (slash commands may override later)
+  if (!getTtsFormatState()) setTtsFormatState(ttsFormat);
+  if (!getTtsVoiceState()) setTtsVoiceState(ttsVoiceId);
+  if (getTtsSpeedState() === 1.0 && ttsSpeed !== 1.0) setTtsSpeedState(ttsSpeed);
+
   // Connect player if provider is configured
   if (audioPlayer && ttsVoiceProvider && ttsVoiceProvider !== '__disabled__') {
     try {
@@ -215,16 +220,17 @@ async function speakChunk(client: GooseClient, text: string): Promise<void> {
   if (!ready) return;
   try {
     currentVoicePhase = 'speaking';
+    const fmt = getTtsFormatState() || ttsFormat;
     const resp = await client.extMethod('_goose/unstable/tts/synthesize', {
       text,
       provider: ttsVoiceProvider,
-      voice: ttsVoiceId,
-      speed: ttsSpeed,
-      responseFormat: ttsFormat,
+      voice: getTtsVoiceState() || ttsVoiceId,
+      speed: getTtsSpeedState() || ttsSpeed,
+      responseFormat: fmt,
     });
     const audioB64 = resp.audio as string;
     const audioBuf = Buffer.from(audioB64, 'base64');
-    audioPlayer!.pushChunk(audioBuf, ttsFormat);
+    audioPlayer!.pushChunk(audioBuf, fmt);
   } catch (err) {
     console.error('[tts] synthesis failed:', err);
   } finally {

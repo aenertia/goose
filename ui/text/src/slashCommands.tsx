@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { getTtsEnabled, setTtsEnabled, getTtsCapabilities } from "./ttsState.js";
+import { getTtsEnabled, setTtsEnabled, getTtsCapabilities, setTtsFormat, getTtsFormat, setTtsVoice, getTtsVoice, setTtsSpeed, getTtsSpeed } from "./ttsState.js";
 
 export interface SlashCommandContext {
   cwd: string;
@@ -76,9 +76,12 @@ const diffCommand: SlashCommand = {
 
 const ttsCommand: SlashCommand = {
   name: "tts",
-  description: "enable/disable text-to-speech (on|off)",
+  description: "voice settings (on|off|format|voice|speed)",
   run: (ctx) => {
     const caps = getTtsCapabilities();
+    const parts = ctx.args.trim().split(/\s+/);
+    const sub = parts[0]?.toLowerCase() ?? "";
+    const val = parts.slice(1).join(" ");
 
     if (!caps || !caps.audioPlayback) {
       const reason = !caps
@@ -87,27 +90,53 @@ const ttsCommand: SlashCommand = {
       return { handled: true, message: `[tts] ${reason}` };
     }
 
-    const arg = ctx.args.trim().toLowerCase();
-
-    if (arg === "on") {
+    if (sub === "on") {
       setTtsEnabled(true);
-      const fmts = caps.supportedFormats.join(", ");
-      return {
-        handled: true,
-        message: `[tts] enabled — backend: ${caps.backend}, formats: ${fmts}`,
-      };
+      return { handled: true, message: `[tts] enabled — format: ${getTtsFormat() || "auto"}, voice: ${getTtsVoice() || "default"}, speed: ${getTtsSpeed()}` };
     }
 
-    if (arg === "off") {
+    if (sub === "off") {
       setTtsEnabled(false);
       return { handled: true, message: "[tts] disabled" };
+    }
+
+    if (sub === "format") {
+      if (!val) {
+        const fmts = caps.supportedFormats.join(", ");
+        return { handled: true, message: `[tts] format: ${getTtsFormat() || "auto"} — available: ${fmts}` };
+      }
+      if (!caps.supportedFormats.includes(val)) {
+        return { handled: true, message: `[tts] unsupported format '${val}' — available: ${caps.supportedFormats.join(", ")}` };
+      }
+      setTtsFormat(val);
+      return { handled: true, message: `[tts] format set to ${val}` };
+    }
+
+    if (sub === "voice") {
+      if (!val) {
+        return { handled: true, message: `[tts] voice: ${getTtsVoice() || "default"}` };
+      }
+      setTtsVoice(val);
+      return { handled: true, message: `[tts] voice set to ${val}` };
+    }
+
+    if (sub === "speed") {
+      if (!val) {
+        return { handled: true, message: `[tts] speed: ${getTtsSpeed()}` };
+      }
+      const n = parseFloat(val);
+      if (isNaN(n) || n < 0.25 || n > 4.0) {
+        return { handled: true, message: "[tts] speed must be 0.25–4.0" };
+      }
+      setTtsSpeed(n);
+      return { handled: true, message: `[tts] speed set to ${n}` };
     }
 
     const state = getTtsEnabled() ? "on" : "off";
     const fmts = caps.supportedFormats.join(", ");
     return {
       handled: true,
-      message: `[tts] ${state} — backend: ${caps.backend} (${caps.gstreamerVersion ?? "n/a"}), formats: ${fmts || "none"}, persistent: ${caps.persistentStreams}`,
+      message: `[tts] ${state} — backend: ${caps.backend}, format: ${getTtsFormat() || "auto"}, voice: ${getTtsVoice() || "default"}, speed: ${getTtsSpeed()}, formats: ${fmts}`,
     };
   },
 };
