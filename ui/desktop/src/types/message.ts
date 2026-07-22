@@ -314,6 +314,15 @@ export function getTextAndImageContent(message: Message): {
     }
   }
 
+  // Strip HONK voice-mode XML from user message display
+  // (kept in LLM context but not shown in chat bubbles)
+  if (message.role === 'user') {
+    textContent = textContent
+      .replace(/<voice-conversation>[\s\S]*?<\/voice-conversation>/g, '')
+      .replace(/\[HONK![\s\S]*?\]/g, '')
+      .trim();
+  }
+
   // Strip assistant-only markup that shouldn't appear in rendered text
   if (message.role === 'assistant') {
     textContent = stripToolCallMarkers(textContent);

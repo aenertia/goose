@@ -126,7 +126,7 @@ If the user asks for code: describe it verbally and offer to switch to text mode
  * Short reinforcement tag — appended to every voice message after the first.
  * Prevents LLM compliance drift back to markdown formatting.
  */
-const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, no markdown/code blocks, concise]';
+export const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, no markdown/code blocks, concise]';
 
 const i18n = defineMessages({
   dictationError: {
@@ -662,12 +662,13 @@ export default function ChatInput({
       const { textContent } = getTextAndImageContent(lastMsg);
       const unspoken = textContent.slice(streamCursorRef.current);
 
-      const sentenceEnd = unspoken.search(/[.!?]\s/);
+      const sentenceEnd = unspoken.search(/[.!?](?:\s|$)/);
       if (sentenceEnd >= 0) {
         const chunk = unspoken.slice(0, sentenceEnd + 1).trim();
         if (chunk) {
-          enqueueStreamChunk(chunk);
-          streamCursorRef.current += sentenceEnd + 2;
+          void enqueueStreamChunk(chunk);
+          const charAfter = unspoken[sentenceEnd + 1];
+          streamCursorRef.current += sentenceEnd + (charAfter === ' ' ? 2 : 1);
         }
       }
       return;
@@ -680,7 +681,7 @@ export default function ChatInput({
         const { textContent } = getTextAndImageContent(lastMsg);
         const remaining = textContent.slice(streamCursorRef.current).trim();
         if (remaining) {
-          enqueueStreamChunk(remaining);
+          void enqueueStreamChunk(remaining);
         }
       }
       streamCursorRef.current = 0;
@@ -1283,10 +1284,10 @@ export default function ChatInput({
         }
 
         let finalMsg = textToSend;
-        if (honkActive && finalMsg) {
-          finalMsg = conversationTurnRef.current === 0
-            ? `${finalMsg}\n\n<voice-conversation>\n${HONK_FULL_CONTEXT}\n</voice-conversation>`
-            : `${finalMsg}\n\n${HONK_REINFORCEMENT}`;
+        if (honkActive && finalMsg && conversationTurnRef.current === 0) {
+          finalMsg = `${finalMsg}\n\n<voice-conversation>\n${HONK_FULL_CONTEXT}\n</voice-conversation>`;
+        }
+        if (honkActive) {
           conversationTurnRef.current += 1;
         }
 

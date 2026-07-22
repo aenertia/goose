@@ -60,7 +60,7 @@ interface UseAudioPlayerReturn {
   stop: () => void;
   isPlaying: boolean;
   startStreamingSpeak: () => Promise<void>;
-  enqueueStreamChunk: (text: string) => void;
+  enqueueStreamChunk: (text: string) => Promise<void>;
 }
 
 export function useAudioPlayer(): UseAudioPlayerReturn {
@@ -68,13 +68,26 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
   const playingRef = useRef(false);
   const { read } = useConfig();
 
+  // Streaming TTS refs — declared before stop() so it can close over them
+  const streamProviderRef = useRef('');
+  const streamVoiceRef = useRef('');
+  const streamSpeedRef = useRef(1.0);
+  const streamProfileRef = useRef<string | undefined>(undefined);
+  const streamQueueRef = useRef<Promise<AudioBuffer | null>[]>([]);
+  const drainingRef = useRef(false);
+  const streamInitPromiseRef = useRef<Promise<void>>(Promise.resolve());
+  const streamEpochRef = useRef(0);
+
   const stop = useCallback(() => {
+    streamEpochRef.current += 1;
+    streamQueueRef.current = [];
+    drainingRef.current = false;
     globalStopped = true;
     if (globalSource) {
       try {
         globalSource.stop();
       } catch {
-        // already stopped
+        /* already stopped */
       }
       globalSource = null;
     }
@@ -231,44 +244,45 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
     [read, stop, synthesizeChunk, playBuffer]
   );
 
-  // === STREAMING TTS ===
-  const streamProviderRef = useRef('');
-  const streamVoiceRef = useRef('');
-  const streamSpeedRef = useRef(1.0);
-  const streamProfileRef = useRef<string | undefined>(undefined);
-  const streamQueueRef = useRef<Promise<AudioBuffer | null>[]>([]);
-  const drainingRef = useRef(false);
-
   const startStreamingSpeak = useCallback(async () => {
+    streamEpochRef.current += 1;
     stop();
     globalStopped = false;
     streamQueueRef.current = [];
     drainingRef.current = false;
 
-    streamProviderRef.current = ((await read('voice_tts_provider', false)) as string) || '__disabled__';
-    streamVoiceRef.current = ((await read('voice_tts_voice', false)) as string) || '';
-    const speedStr = ((await read('voice_tts_speed', false)) as string) || '1.00';
-    streamSpeedRef.current = parseFloat(speedStr) || 1.0;
-    streamProfileRef.current = ((await read('voice_tts_active_profile', false)) as string) || undefined;
+    const initPromise = (async () => {
+      streamProviderRef.current = ((await read('voice_tts_provider', false)) as string) || '__disabled__';
+      streamVoiceRef.current = ((await read('voice_tts_voice', false)) as string) || '';
+      const speedStr = ((await read('voice_tts_speed', false)) as string) || '1.00';
+      streamSpeedRef.current = parseFloat(speedStr) || 1.0;
+      streamProfileRef.current = ((await read('voice_tts_active_profile', false)) as string) || undefined;
+    })();
+    streamInitPromiseRef.current = initPromise;
+    await initPromise;
   }, [read, stop]);
 
   const drainStreamingQueue = useCallback(async () => {
+    const myEpoch = streamEpochRef.current;
     while (streamQueueRef.current.length > 0) {
-      if (globalStopped) break;
+      if (globalStopped || streamEpochRef.current !== myEpoch) break;
       const bufPromise = streamQueueRef.current.shift()!;
       const buf = await bufPromise;
-      if (!buf || globalStopped) continue;
+      if (!buf || globalStopped || streamEpochRef.current !== myEpoch) continue;
       await playBuffer(buf);
     }
-    drainingRef.current = false;
-    if (!globalStopped) {
-      playingRef.current = false;
-      setIsPlaying(false);
+    if (streamEpochRef.current === myEpoch) {
+      drainingRef.current = false;
+      if (!globalStopped) {
+        playingRef.current = false;
+        setIsPlaying(false);
+      }
     }
   }, [playBuffer]);
 
   const enqueueStreamChunk = useCallback(
-    (text: string) => {
+    async (text: string) => {
+      await streamInitPromiseRef.current;
       const provider = streamProviderRef.current;
       if (!provider || provider === '__disabled__' || globalStopped) return;
 
@@ -281,7 +295,7 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
         drainingRef.current = true;
         playingRef.current = true;
         setIsPlaying(true);
-        drainStreamingQueue();
+        void drainStreamingQueue();
       }
     },
     [synthesizeChunk, drainStreamingQueue]

@@ -39,7 +39,7 @@ export interface UseConversationModeReturn {
   /** Call when the LLM stream finishes (from onStreamFinish). */
   handleStreamFinish: (responseText: string) => void;
   startStreamingSpeak: () => Promise<void>;
-  enqueueStreamChunk: (text: string) => void;
+  enqueueStreamChunk: (text: string) => Promise<void>;
   snapshotListeningState: () => void;
 }
 
