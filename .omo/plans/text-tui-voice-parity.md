@@ -558,7 +558,7 @@ When the Kitty audio protocol ships (APC-based streaming PCM):
 - [x] Hook into text TUI `sessionUpdate` → `agent_message_chunk` for streaming TTS
 - [x] Add `/tts on|off` slash command (gated: hidden when `!capabilities.audioPlayback`)
 - [x] Add 🔊 status indicator in Header
-- [ ] Format selector populated from `capabilities.supportedFormats` only
+- [x] Format selector populated from `capabilities.supportedFormats` only
 - [x] Test on RHEL 10.2 and Fedora 42+ with opus and wav
 
 ### Phase 2: GStreamer Mic Capture (STT Input)
@@ -574,8 +574,8 @@ When the Kitty audio protocol ships (APC-based streaming PCM):
 - [ ] Port state machine from useConversationMode.ts (pure logic, zero deps)
 - [ ] `/honk` slash command (gated: requires BOTH `audioPlayback` AND `audioCapture`)
 - [ ] Full listen→transcribe→submit→speak→listen loop
-- [ ] Streaming TTS during LLM response (150ms polling, adaptive chunking)
-- [ ] HONK prompt injection (HONK_FULL_CONTEXT on turn 0)
+- [x] Streaming TTS during LLM response (150ms polling, adaptive chunking)
+- [x] HONK prompt injection (HONK_FULL_CONTEXT on turn 0)
 
 ### Phase 4: Capability-Gated Settings + Polish
 - [ ] Voice settings overlay — every element gated on MediaCapabilities
