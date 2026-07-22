@@ -1266,6 +1266,14 @@ function App({
           setOverlay({ screen: "extensions" });
           return;
         }
+        if (key.ctrl && (ch === "t" || ch === "T")) {
+          const next = !getTtsEnabledState();
+          setTtsEnabled(next);
+          if (next) ttsTurnCount = 0;
+          setStatus(next ? 'tts on' : 'tts off');
+          setTimeout(() => { if (!loading) setStatus('ready'); }, 1500);
+          return;
+        }
         if (ch === "g" && key.ctrl) {
           setOverlay({ screen: "configure", intent: "provider" });
           return;
@@ -1442,6 +1450,7 @@ function App({
                 ? { current: effectiveTurnIdx + 1, total: turns.length }
                 : undefined
             }
+            voicePhase={getTtsEnabledState() ? (loading ? 'speaking' : 'idle') : undefined}
           />
 
           {toolCallExpanded && selectedToolCallInfo ? (
