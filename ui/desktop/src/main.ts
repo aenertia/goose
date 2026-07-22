@@ -403,6 +403,10 @@ app.whenReady().then(() => {
   });
 });
 
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('enable-speech-dispatcher');
+}
+
 if (process.env.ENABLE_PLAYWRIGHT) {
   const debugPort = process.env.PLAYWRIGHT_DEBUG_PORT || '9222';
   console.log(`[Main] Enabling Playwright remote debugging on port ${debugPort}`);
