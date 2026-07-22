@@ -665,7 +665,6 @@ export default function ChatInput({
       streamIntervalId = setInterval(() => {
         if (!streamActive) return;
 
-        // Find the last assistant message that appeared AFTER streaming started
         const msgs = latestMessages;
         let targetMsg = null;
         for (let i = msgs.length - 1; i >= streamMsgCount; i--) {
@@ -674,30 +673,64 @@ export default function ChatInput({
             break;
           }
         }
-        if (!targetMsg) return; // New assistant message hasn't appeared yet
+        if (!targetMsg) return;
 
         const { textContent } = getTextAndImageContent(targetMsg);
         const unspoken = textContent.slice(streamCursor);
+        if (!unspoken) return;
 
-        // Find ALL complete sentences in the unspoken text
-        let searchPos = 0;
-        while (searchPos < unspoken.length) {
-          const remaining = unspoken.slice(searchPos);
-          const sentenceEnd = remaining.search(/[.!?](?:\s|$)/);
-          if (sentenceEnd < 0) break;
+        // Adaptive chunking: find the best break point in unspoken text
+        let splitPos = -1;
 
-          const chunk = remaining.slice(0, sentenceEnd + 1).trim();
+        // Tier 1: Sentence-ending punctuation followed by space, newline, or end-of-string
+        // Includes CJK (。！？), Devanagari (।), Arabic (؟), full-width (.！？)
+        const sentenceMatch = unspoken.search(/[.!?。！？।؟\u104A\u104B](?:\s|$)/);
+        if (sentenceMatch >= 0) {
+          splitPos = sentenceMatch + 1;
+        }
+
+        // Tier 2: Clause/list breaks when enough text accumulated (>60 chars)
+        // Includes CJK commas/colons (、，；：), Arabic (،؛), full-width, newlines
+        if (splitPos < 0 && unspoken.length > 60) {
+          const clauseBreaks = /[,;:、，；：،؛]\s?|\n/g;
+          let lastBreak = -1;
+          let m;
+          while ((m = clauseBreaks.exec(unspoken)) !== null) {
+            lastBreak = m.index + m[0].length;
+          }
+          if (lastBreak > 20) {
+            splitPos = lastBreak;
+          }
+        }
+
+        // Tier 3: Force split on word/character boundary when very long (>120 chars)
+        // Uses space for Latin scripts, or any CJK character boundary
+        if (splitPos < 0 && unspoken.length > 120) {
+          const lastSpace = unspoken.lastIndexOf(' ', 120);
+          if (lastSpace > 20) {
+            splitPos = lastSpace + 1;
+          } else {
+            // CJK/Thai: no spaces — split between any CJK characters or at 120
+            const cjkBoundary = unspoken.slice(0, 120).search(/.[\u3000-\u9FFF\uF900-\uFAFF\uAC00-\uD7AF]/);
+            if (cjkBoundary > 20) {
+              splitPos = cjkBoundary + 1;
+            } else {
+              splitPos = 120;
+            }
+          }
+        }
+
+        if (splitPos > 0) {
+          const chunk = unspoken.slice(0, splitPos).trim();
           if (chunk) {
             void enqueueStreamChunk(chunk);
+            // Advance cursor past the split point, skipping trailing whitespace
+            let advance = splitPos;
+            while (advance < unspoken.length && unspoken[advance] === ' ') advance++;
+            streamCursor += advance;
           }
-          const charAfter = remaining[sentenceEnd + 1];
-          searchPos += sentenceEnd + (charAfter === ' ' ? 2 : 1);
         }
-
-        if (searchPos > 0) {
-          streamCursor += searchPos;
-        }
-      }, 300);
+      }, 150);
     } else if (!isLoading && streamActive) {
       // Stream finished — flush remaining text
       streamActive = false;
