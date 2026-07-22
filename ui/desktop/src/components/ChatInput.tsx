@@ -1307,13 +1307,6 @@ export default function ChatInput({
     return true;
   };
 
-  const canSubmit =
-    !isLoading &&
-    !queueProcessingBlocked &&
-    (displayValue.trim() ||
-      pastedImages.some((img) => img.dataUrl && !img.error && !img.isLoading) ||
-      allDroppedFiles.some((file) => !file.error && !file.isLoading));
-
   const performSubmit = useCallback(
     (text?: string) => {
       const imageData = convertImagesToImageData();
@@ -1425,7 +1418,14 @@ export default function ChatInput({
         return;
       }
 
-      if (canSubmit) {
+      // Compute canSubmit inline (not render-time value) to match onFormSubmit behavior
+      const canSubmitNow =
+        !isLoading &&
+        !queueProcessingBlocked &&
+        (displayValue.trim() ||
+          pastedImages.some((img) => img.dataUrl && !img.error && !img.isLoading) ||
+          allDroppedFiles.some((file) => !file.error && !file.isLoading));
+      if (canSubmitNow) {
         performSubmit();
       }
     }
