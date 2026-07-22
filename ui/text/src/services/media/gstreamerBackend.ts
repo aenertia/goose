@@ -1,9 +1,18 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import type { AudioPlayer } from "./types.js";
 
-const PW_PROPS = JSON.stringify({
+const LOOPBACK_NAME = "goose-tts";
+
+const CAPTURE_PROPS = JSON.stringify({
+  "media.class": "Audio/Sink",
+  "node.name": LOOPBACK_NAME,
+  "node.description": "Goose",
   "media.name": "Goose TTS",
   "application.name": "Goose",
+});
+
+const PLAYBACK_PROPS = JSON.stringify({
+  "media.role": "Communication",
 });
 
 export class GStreamerAudioPlayer implements AudioPlayer {
@@ -11,6 +20,7 @@ export class GStreamerAudioPlayer implements AudioPlayer {
   readonly persistent = true as const;
   readonly supportedFormats: readonly string[];
 
+  private loopback: ChildProcess | null = null;
   private queue: Buffer[] = [];
   private playing = false;
   private currentProc: ChildProcess | null = null;
@@ -21,7 +31,34 @@ export class GStreamerAudioPlayer implements AudioPlayer {
   }
 
   async connect(): Promise<void> {
+    if (this.loopback !== null) return;
     this.stopped = false;
+
+    const child = spawn(
+      "pw-loopback",
+      [
+        `--name=${LOOPBACK_NAME}`,
+        "--channels=1",
+        "-i", CAPTURE_PROPS,
+        "-o", PLAYBACK_PROPS,
+      ],
+      { stdio: "ignore" },
+    );
+
+    child.on("error", (err) => {
+      console.error("[pw-loopback] spawn error:", err.message);
+      this.loopback = null;
+    });
+
+    child.on("exit", (code) => {
+      if (code !== null && code !== 0) {
+        console.error(`[pw-loopback] exited: ${code}`);
+      }
+      this.loopback = null;
+    });
+
+    this.loopback = child;
+    await new Promise((r) => setTimeout(r, 200));
   }
 
   pushChunk(audio: Buffer, _format: string): void {
@@ -46,11 +83,10 @@ export class GStreamerAudioPlayer implements AudioPlayer {
       const child = spawn(
         "pw-play",
         [
-          "--media-role=Communication",
-          "-P", PW_PROPS,
+          `--target=${LOOPBACK_NAME}`,
           "-",
         ],
-        { stdio: ["pipe", "ignore", "pipe"] },
+        { stdio: ["pipe", "ignore", "ignore"] },
       );
 
       this.currentProc = child;
@@ -61,7 +97,7 @@ export class GStreamerAudioPlayer implements AudioPlayer {
       });
 
       child.on("error", (err) => {
-        console.error("[pw-play] spawn error:", err.message);
+        console.error("[pw-play] error:", err.message);
         this.currentProc = null;
         resolve();
       });
@@ -72,7 +108,7 @@ export class GStreamerAudioPlayer implements AudioPlayer {
   }
 
   setVolume(_level: number): void {
-    // user adjusts via DE mixer
+    // user adjusts via DE mixer on the persistent Goose node
   }
 
   stop(): void {
@@ -92,5 +128,9 @@ export class GStreamerAudioPlayer implements AudioPlayer {
 
   async dispose(): Promise<void> {
     this.stop();
+    if (this.loopback) {
+      this.loopback.kill("SIGTERM");
+      this.loopback = null;
+    }
   }
 }
