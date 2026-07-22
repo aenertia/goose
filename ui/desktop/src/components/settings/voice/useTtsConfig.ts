@@ -137,15 +137,13 @@ export function useTtsConfig(): UseTtsConfigReturn {
       setBrowserTtsAvailable(false);
       return;
     }
-    const check = () => setBrowserTtsAvailable(window.speechSynthesis.getVoices().length > 0);
+    const check = () => {
+      if (window.speechSynthesis.getVoices().length > 0) setBrowserTtsAvailable(true);
+    };
     check();
     window.speechSynthesis.addEventListener('voiceschanged', check);
-    const fallbackTimer = window.setTimeout(() => {
-      if (window.speechSynthesis.getVoices().length === 0) setBrowserTtsAvailable(false);
-    }, 3000);
     return () => {
       window.speechSynthesis.removeEventListener('voiceschanged', check);
-      window.clearTimeout(fallbackTimer);
     };
   }, []);
 

@@ -183,10 +183,6 @@ export function useAudioPlayer(): UseAudioPlayerReturn {
 
       if (provider === 'browser') {
         if (!window.speechSynthesis) return;
-        if (window.speechSynthesis.getVoices().length === 0) {
-          console.warn('[TTS] Browser provider selected but no voices available (speech-dispatcher not installed?)');
-          return;
-        }
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.rate = speed;
         if (voice) {
