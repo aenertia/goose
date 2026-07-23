@@ -304,9 +304,11 @@ export class GStreamerAudioRecorder implements AudioRecorder {
     this.silenceStart = 0;
     this.speechStart = 0;
 
-    this.useLoopback = ensureMicLoopback();
-    if (this.useLoopback) {
-      await new Promise(r => setTimeout(r, 250));
+    if (!opts.grdSession) {
+      this.useLoopback = ensureMicLoopback();
+      if (this.useLoopback) {
+        await new Promise(r => setTimeout(r, 250));
+      }
     }
 
     if (opts.vadEngine === 'silero-v6') {
@@ -327,8 +329,10 @@ export class GStreamerAudioRecorder implements AudioRecorder {
       '-P', PW_MIC_PROPS,
       '-',
     ];
-    const target = (this.useLoopback && ecModuleId !== null) ? EC_SOURCE_NODE : MIC_SOURCE_NODE;
-    if (this.useLoopback) args.splice(1, 0, `--target=${target}`);
+    const target = opts.grdSession
+      ? 'grd_remote_audio_source'
+      : (this.useLoopback && ecModuleId !== null) ? EC_SOURCE_NODE : MIC_SOURCE_NODE;
+    if (opts.grdSession || this.useLoopback) args.splice(1, 0, `--target=${target}`);
     const child = spawn('pw-cat', args, { stdio: ['ignore', 'pipe', 'ignore'] });
 
     child.stdout!.on('data', (chunk: Buffer) => {

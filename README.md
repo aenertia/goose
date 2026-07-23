@@ -149,6 +149,37 @@ Fallback chain: GStreamer/PipeWire → PulseAudio `pacat` → noop (silent)
 
 Detection is automatic — run `goose session` and voice capabilities are probed at startup.
 
+### Terminal (TUI) — gnome-remote-desktop (RDP sessions)
+
+HONK voice I/O works transparently over [gnome-remote-desktop](https://gitlab.gnome.org/GNOME/gnome-remote-desktop) (grd), including **headless servers with no physical display**. No code changes or extra configuration needed beyond installing grd.
+
+**How it works**: grd uses FreeRDP as its RDP library and integrates with PipeWire for audio. When an RDP client connects with microphone and audio redirection enabled:
+
+- **Playback** (server → client): grd monitors all PipeWire sinks and sends their audio via the RDPSND RDP channel (AAC/Opus/PCM negotiated). TTS audio playing through `pw-cat` flows to the client's speakers automatically.
+- **Recording** (client → server): grd injects client microphone audio via the AUDIN RDP channel into a PipeWire node named `grd_remote_audio_source`. The TUI detects this node at startup and records from it directly.
+
+**Automatic grd detection**: `detectMediaCapabilities()` probes `pactl list sources short` for `grd_remote_audio_source`. When found (`grdSession: true`):
+
+- The PipeWire loopback (`goose-tts-sink`, `goose-mic-src`) is **not** created — unnecessary in RDP sessions
+- `module-echo-cancel` is **not** loaded — server-side AEC can't cancel the client-side echo loop; the RDP client handles AEC
+- `pw-cat --record` targets `grd_remote_audio_source` directly
+
+**Requirements**: RHEL 10 / Fedora 41+ with gnome-remote-desktop ≥ 46, FreeRDP ≥ 3.24.1 (FreeRDP 3.24.0 had an AUDIN regression), PipeWire ≥ 1.2.0.
+
+**Headless setup** (no physical monitor):
+```bash
+# System-level multi-user mode (GDM integration):
+sudo dnf install gnome-remote-desktop gdm freerdp
+sudo -u gnome-remote-desktop winpr-makecert -silent -rdp -path ~gnome-remote-desktop rdp-tls
+sudo grdctl --system rdp set-tls-key ~gnome-remote-desktop/rdp-tls.key
+sudo grdctl --system rdp set-tls-cert ~gnome-remote-desktop/rdp-tls.crt
+sudo grdctl --system rdp set-credentials "username" "password"
+sudo grdctl --system rdp enable
+sudo systemctl enable --now gnome-remote-desktop.service
+```
+
+Connect from any RDP client with **audio playback** and **audio input (microphone)** redirection enabled, then run `goose session` → `/honk on`.
+
 ### Terminal (TUI) — macOS + Windows (⚠️ UNTESTED)
 
 Both macOS and Windows TUI voice use `ffmpegBackend.ts` — a unified backend requiring `ffmpeg`/`ffplay` installed:

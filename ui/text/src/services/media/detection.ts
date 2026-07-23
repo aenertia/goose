@@ -41,6 +41,15 @@ function hasEchoCancel(): boolean {
   return (result.stdout ?? '').includes('module-echo-cancel');
 }
 
+function hasGrdAudioSource(): boolean {
+  const result = spawnSync('pactl', ['list', 'sources', 'short'], {
+    stdio: ['ignore', 'pipe', 'ignore'],
+    encoding: 'utf-8',
+  });
+  if (result.status !== 0) return false;
+  return (result.stdout ?? '').includes('grd_remote_audio_source');
+}
+
 function detectDarwin(): MediaCapabilities {
   if (probe('ffplay', ['-version'])) {
     return {
@@ -54,6 +63,7 @@ function detectDarwin(): MediaCapabilities {
       pipewire: false,
       loopbackAvailable: false,
       echoCancelAvailable: false,
+      grdSession: false,
     };
   }
   return {
@@ -67,6 +77,7 @@ function detectDarwin(): MediaCapabilities {
     pipewire: false,
     loopbackAvailable: false,
     echoCancelAvailable: false,
+    grdSession: false,
   };
 }
 
@@ -83,6 +94,7 @@ function detectWin32(): MediaCapabilities {
       pipewire: false,
       loopbackAvailable: false,
       echoCancelAvailable: false,
+      grdSession: false,
     };
   }
   return {
@@ -96,6 +108,7 @@ function detectWin32(): MediaCapabilities {
     pipewire: false,
     loopbackAvailable: false,
     echoCancelAvailable: false,
+    grdSession: false,
   };
 }
 
@@ -145,6 +158,7 @@ function detectLinux(): MediaCapabilities {
       pipewire: hasPWSink || hasPWSrc || pwCatAvailable,
       loopbackAvailable: pwLoopback,
       echoCancelAvailable: hasEchoCancel(),
+      grdSession: hasGrdAudioSource(),
     };
   }
 
@@ -160,6 +174,7 @@ function detectLinux(): MediaCapabilities {
       pipewire: false,
       loopbackAvailable: false,
       echoCancelAvailable: false,
+      grdSession: false,
     };
   }
 
@@ -174,6 +189,7 @@ function detectLinux(): MediaCapabilities {
     pipewire: false,
     loopbackAvailable: false,
     echoCancelAvailable: false,
+    grdSession: false,
   };
 }
 

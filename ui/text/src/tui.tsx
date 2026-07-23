@@ -314,6 +314,7 @@ async function startRecording(client: GooseClient): Promise<void> {
     channels: 1,
     vadEngine: voiceSession.capabilities?.echoCancelAvailable ? 'silero-v6' : 'rms-energy',
     silenceThresholdMs: SILENCE_THRESHOLD_MS,
+    grdSession: voiceSession.capabilities?.grdSession,
   });
 }
 

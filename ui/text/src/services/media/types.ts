@@ -18,6 +18,7 @@ export interface RecordOpts {
   channels: number;
   vadEngine: VadEngineId;
   silenceThresholdMs: number;
+  grdSession?: boolean;
 }
 
 export interface AudioRecorder {
@@ -42,4 +43,5 @@ export interface MediaCapabilities {
   pipewire: boolean;
   loopbackAvailable: boolean;
   echoCancelAvailable: boolean;
+  grdSession: boolean;
 }
