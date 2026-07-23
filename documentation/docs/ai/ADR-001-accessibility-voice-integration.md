@@ -2,7 +2,7 @@
 
 **Status**: Proposed  
 **Date**: 2026-07-23  
-**Author**: aenertia (via Sisyphus research session)  
+**Author**: Voice Pipeline Contributors  
 **Scope**: Voice pipeline (TUI + Electron), Platform Extensions, HONK Conversation Skill  
 **Depends on**: pw-loopback architecture, Silero VAD, module-echo-cancel, voice.rs Platform Extension
 

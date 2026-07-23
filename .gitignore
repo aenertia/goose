@@ -41,6 +41,9 @@ ui/desktop/src/bin/goose_llm.dll
 # OpenCode / OMO
 .omo/
 
+# Internal planning documents
+REVISION_PLAN.md
+
 debug_*.txt
 
 # Docs

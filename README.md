@@ -285,14 +285,14 @@ Source: [snakers4/silero-vad Quality Metrics](https://github.com/snakers4/silero
 
 ### Device Testing
 
-| Role | Host | Hardware | GPU | OS | Status |
-|------|------|----------|-----|----|--------|
-| Build host | koero | HPE ProLiant DL360 Gen10, 2× Xeon Gold 6130 (32C/64T), 377GB RAM | — (headless) | RHEL 10.2 | Release binary built, CI gates run here |
-| Test server | awa | Dell PowerEdge R730XD, 2× Xeon E5-2683 v4 (32C/64T), 252GB RAM | AMD RX 9060 XT (RDNA 4) | RHEL 10.2, SELinux enforcing | goose-serve deployed, SSH audio tested, gnome-remote-desktop installed |
-| Dev workstation | z20 | AMD Ryzen 7 9700X (8C/16T), 32GB DDR5 | AMD RX 9070 XT (RDNA 4) | Fedora 45 (bootc) | Voice pipeline testing, local LLM (Qwen 3.6 MoE via llama-server) |
-| Desktop (Electron) | — | Any x86_64 | — | Linux / macOS / Windows | Electron voice UI (cross-platform via Web Audio API) |
-| TUI macOS | — | — | — | macOS | ⚠️ UNTESTED — ffmpeg backend |
-| TUI Windows | — | — | — | Windows | ⚠️ UNTESTED — ffmpeg backend |
+| Role | Hardware | GPU | OS | Status |
+|------|----------|-----|----|--------|
+| Build host | Xeon Gold 6130 (2S/32C/64T), 377GB RAM | — (headless) | RHEL 10.2 | Release binary built, CI gates |
+| Test server | Xeon E5-2683 v4 (2S/32C/64T), 252GB RAM | AMD RX 9060 XT | RHEL 10.2, SELinux enforcing | goose-serve, SSH audio, gnome-remote-desktop |
+| Dev workstation | Ryzen 7 9700X (8C/16T), 32GB DDR5 | AMD RX 9070 XT | Fedora 45 | Voice pipeline, local LLM inference |
+| Desktop (Electron) | Any x86_64 | — | Linux / macOS / Windows | Electron voice UI (cross-platform) |
+| TUI macOS | — | — | macOS | ⚠️ UNTESTED — ffmpeg backend |
+| TUI Windows | — | — | Windows | ⚠️ UNTESTED — ffmpeg backend |
 
 ### Test Coverage Gaps
 
@@ -327,7 +327,7 @@ Source: [snakers4/silero-vad Quality Metrics](https://github.com/snakers4/silero
 | P0-7 | ~~High~~ | ~~`unwrap()` panic in `get_tts_provider_def`~~ | ✅ FIXED — exhaustive match |
 | P1-2 | Low | ElevenLabs speed parameter silently dropped | ⚠️ DOCUMENTED — speed slider disabled when ElevenLabs selected |
 
-All critical and high-severity issues from the Gemini and Qwen 3.6 code reviews have been resolved. See [`REVISION_PLAN.md`](REVISION_PLAN.md) for the full revision history.
+All critical and high-severity issues identified during code review have been resolved.
 
 ### Upstream PR Strategy (5 PRs)
 
@@ -384,7 +384,6 @@ scp target/release/goose <user>@<test-host>:~/goose/target/release/goose
 ### When to Update This README
 
 - New voice feature implemented → add to Feature Matrix
-- Bug fixed from REVISION_PLAN.md → update Known Issues
 - Tested on new device → add to Device Testing table
 - CI gate results change → update Testing section
 - Commits squashed or PRs submitted → update Branch Status
