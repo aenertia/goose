@@ -32,7 +32,7 @@ export interface AudioRecorder {
 }
 
 export interface MediaCapabilities {
-  backend: 'gstreamer' | 'pacat' | 'afplay' | 'powershell' | 'noop';
+  backend: 'gstreamer' | 'pacat' | 'afplay' | 'powershell' | 'ffmpeg' | 'noop';
   audioPlayback: boolean;
   audioCapture: boolean;
   persistentStreams: boolean;

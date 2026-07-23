@@ -9,6 +9,7 @@ import { detectMediaCapabilities } from './detection.js';
 import { NoopAudioPlayer, NoopAudioRecorder } from './noopBackend.js';
 import { GStreamerAudioPlayer, GStreamerAudioRecorder, loadEchoCancel } from './gstreamerBackend.js';
 import { PacatAudioPlayer } from './pacatBackend.js';
+import { FfmpegAudioPlayer, FfmpegAudioRecorder } from './ffmpegBackend.js';
 
 export async function createAudioPlayer(
   caps: MediaCapabilities,
@@ -21,6 +22,8 @@ export async function createAudioPlayer(
     case 'afplay':
       console.warn('[audio] afplay backend not yet implemented, using noop');
       return new NoopAudioPlayer();
+    case 'ffmpeg':
+      return new FfmpegAudioPlayer();
     case 'powershell':
       console.warn('[audio] powershell backend not yet implemented, using noop');
       return new NoopAudioPlayer();
@@ -37,6 +40,8 @@ export function createAudioRecorder(
   switch (caps.backend) {
     case 'gstreamer':
       return new GStreamerAudioRecorder();
+    case 'ffmpeg':
+      return new FfmpegAudioRecorder();
     case 'pacat':
     case 'afplay':
     case 'powershell':

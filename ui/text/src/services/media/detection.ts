@@ -42,6 +42,20 @@ function hasEchoCancel(): boolean {
 }
 
 function detectDarwin(): MediaCapabilities {
+  if (probe('ffplay', ['-version'])) {
+    return {
+      backend: 'ffmpeg',
+      audioPlayback: true,
+      audioCapture: true,
+      persistentStreams: false,
+      screenCapture: false,
+      supportedFormats: ['wav', 'mp3', 'opus', 'ogg', 'flac'],
+      gstreamerVersion: null,
+      pipewire: false,
+      loopbackAvailable: false,
+      echoCancelAvailable: false,
+    };
+  }
   return {
     backend: 'afplay',
     audioPlayback: true,
@@ -57,6 +71,20 @@ function detectDarwin(): MediaCapabilities {
 }
 
 function detectWin32(): MediaCapabilities {
+  if (probe('ffplay', ['-version'])) {
+    return {
+      backend: 'ffmpeg',
+      audioPlayback: true,
+      audioCapture: true,
+      persistentStreams: false,
+      screenCapture: false,
+      supportedFormats: ['wav', 'mp3', 'opus', 'ogg', 'flac'],
+      gstreamerVersion: null,
+      pipewire: false,
+      loopbackAvailable: false,
+      echoCancelAvailable: false,
+    };
+  }
   return {
     backend: 'powershell',
     audioPlayback: true,
