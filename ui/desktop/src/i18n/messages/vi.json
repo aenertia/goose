@@ -74,14 +74,14 @@
   "authSettings.deleteCredential": {
     "defaultMessage": "Xóa thông tin xác thực"
   },
+  "authSettings.deleted": {
+    "defaultMessage": "Đã xóa thông tin xác thực"
+  },
   "authSettings.deleteMessage": {
     "defaultMessage": "Xóa thông tin xác thực {name} cho {provider}?"
   },
   "authSettings.deleteTitle": {
     "defaultMessage": "Xóa thông tin xác thực"
-  },
-  "authSettings.deleted": {
-    "defaultMessage": "Đã xóa thông tin xác thực"
   },
   "authSettings.description": {
     "defaultMessage": "Quản lý thông tin xác thực nhà cung cấp được goose lưu trữ cục bộ."
@@ -107,11 +107,11 @@
   "authSettings.reauthorize": {
     "defaultMessage": "Cấp quyền lại"
   },
-  "authSettings.signIn": {
-    "defaultMessage": "Đăng nhập"
-  },
   "authSettings.signedIn": {
     "defaultMessage": "Đã cấu hình thông tin xác thực"
+  },
+  "authSettings.signIn": {
+    "defaultMessage": "Đăng nhập"
   },
   "authSettings.storageProviderCache": {
     "defaultMessage": "Bộ nhớ đệm nhà cung cấp"
@@ -134,6 +134,12 @@
   "baseChat.reconnecting": {
     "defaultMessage": "Mất kết nối. Đang kết nối lại…"
   },
+  "bottomMenuExtensionSelection.extensionsForNewChats": {
+    "defaultMessage": "Tiện ích mở rộng cho các cuộc trò chuyện mới"
+  },
+  "bottomMenuExtensionSelection.extensionsForThisSession": {
+    "defaultMessage": "Tiện ích mở rộng cho phiên trò chuyện này"
+  },
   "bottomMenuExtensionSelection.extensionUpdated": {
     "defaultMessage": "Đã cập nhật tiện ích mở rộng"
   },
@@ -142,12 +148,6 @@
   },
   "bottomMenuExtensionSelection.extensionWillBeEnabled": {
     "defaultMessage": "{name} sẽ được bật trong các cuộc trò chuyện mới"
-  },
-  "bottomMenuExtensionSelection.extensionsForNewChats": {
-    "defaultMessage": "Tiện ích mở rộng cho các cuộc trò chuyện mới"
-  },
-  "bottomMenuExtensionSelection.extensionsForThisSession": {
-    "defaultMessage": "Tiện ích mở rộng cho phiên trò chuyện này"
   },
   "bottomMenuExtensionSelection.manageExtensions": {
     "defaultMessage": "quản lý tiện ích mở rộng"
@@ -175,6 +175,18 @@
   },
   "chatInput.contextWindow": {
     "defaultMessage": "Cửa sổ ngữ cảnh"
+  },
+  "chatInput.conversationListening": {
+    "defaultMessage": "Listening..."
+  },
+  "chatInput.conversationMode": {
+    "defaultMessage": "Conversation mode"
+  },
+  "chatInput.conversationSpeaking": {
+    "defaultMessage": "Speaking..."
+  },
+  "chatInput.conversationSubmitting": {
+    "defaultMessage": "Thinking..."
   },
   "chatInput.dictationError": {
     "defaultMessage": "Lỗi đọc chính tả"
@@ -650,11 +662,11 @@
   "customProviderForm.attachments": {
     "defaultMessage": "Tệp đính kèm"
   },
-  "customProviderForm.authHint": {
-    "defaultMessage": "Các LLM cục bộ như Ollama thường không yêu cầu khóa API."
-  },
   "customProviderForm.authentication": {
     "defaultMessage": "Xác thực"
+  },
+  "customProviderForm.authHint": {
+    "defaultMessage": "Các LLM cục bộ như Ollama thường không yêu cầu khóa API."
   },
   "customProviderForm.availableModels": {
     "defaultMessage": "Các mô hình khả dụng (phân tách bằng dấu phẩy)"
@@ -953,17 +965,20 @@
   "elicitationRequest.waitingForResponse": {
     "defaultMessage": "Đang chờ phản hồi của bạn (còn {timeRemaining})"
   },
+  "environmentBadge.dev": {
+    "defaultMessage": "Dev"
+  },
   "envVarsSection.add": {
     "defaultMessage": "Thêm"
   },
   "envVarsSection.bothRequired": {
     "defaultMessage": "Phải nhập cả tên biến và giá trị"
   },
-  "envVarsSection.envVarsDescription": {
-    "defaultMessage": "Thêm các cặp khóa-giá trị cho biến môi trường. Nhấp vào nút \"+\" để thêm sau khi đã điền cả hai trường. Đối với các giá trị bí mật hiện có, nhấp vào nút chỉnh sửa để sửa đổi."
-  },
   "envVarsSection.environmentVariables": {
     "defaultMessage": "Biến môi trường"
+  },
+  "envVarsSection.envVarsDescription": {
+    "defaultMessage": "Thêm các cặp khóa-giá trị cho biến môi trường. Nhấp vào nút \"+\" để thêm sau khi đã điền cả hai trường. Đối với các giá trị bí mật hiện có, nhấp vào nút chỉnh sửa để sửa đổi."
   },
   "envVarsSection.noSpaces": {
     "defaultMessage": "Tên biến không được chứa khoảng trắng"
@@ -973,9 +988,6 @@
   },
   "envVarsSection.variableName": {
     "defaultMessage": "Tên biến"
-  },
-  "environmentBadge.dev": {
-    "defaultMessage": "Dev"
   },
   "errorBoundary.errorGeneric": {
     "defaultMessage": "Đã xảy ra lỗi."
@@ -1136,9 +1148,6 @@
   "extensionModal.unsavedChangesTitle": {
     "defaultMessage": "Thay đổi chưa lưu"
   },
-  "extensionTimeoutField.timeoutLabel": {
-    "defaultMessage": "Thời gian chờ"
-  },
   "extensionsSection.addCustomExtension": {
     "defaultMessage": "Thêm tiện ích mở rộng tùy chỉnh"
   },
@@ -1174,6 +1183,9 @@
   },
   "extensionsView.searchPlaceholder": {
     "defaultMessage": "Tìm kiếm tiện ích mở rộng..."
+  },
+  "extensionTimeoutField.timeoutLabel": {
+    "defaultMessage": "Thời gian chờ"
   },
   "externalBackendSection.certFingerprint": {
     "defaultMessage": "Dấu vân tay chứng chỉ (tùy chọn)"
@@ -1394,11 +1406,11 @@
   "huggingFaceSignInPrompt.failedToConfigure": {
     "defaultMessage": "Không thể đăng nhập vào Hugging Face: {error}"
   },
-  "huggingFaceSignInPrompt.signIn": {
-    "defaultMessage": "Đăng nhập"
-  },
   "huggingFaceSignInPrompt.signedIn": {
     "defaultMessage": "Đã đăng nhập Hugging Face"
+  },
+  "huggingFaceSignInPrompt.signIn": {
+    "defaultMessage": "Đăng nhập"
   },
   "huggingFaceSignInPrompt.signingIn": {
     "defaultMessage": "Đang đăng nhập..."
@@ -1433,14 +1445,14 @@
   "importRecipeForm.expectedRecipeStructure": {
     "defaultMessage": "Cấu trúc công thức dự kiến"
   },
+  "importRecipeForm.importing": {
+    "defaultMessage": "Đang nhập..."
+  },
   "importRecipeForm.importRecipeButton": {
     "defaultMessage": "Nhập công thức"
   },
   "importRecipeForm.importRecipeTitle": {
     "defaultMessage": "Nhập công thức"
-  },
-  "importRecipeForm.importing": {
-    "defaultMessage": "Đang nhập..."
   },
   "importRecipeForm.or": {
     "defaultMessage": "HOẶC"
@@ -1540,18 +1552,6 @@
   },
   "jsonSchemaForm.submit": {
     "defaultMessage": "Gửi"
-  },
-  "keyValueEditor.addValue": {
-    "defaultMessage": "Thêm giá trị được cấu hình sẵn"
-  },
-  "keyValueEditor.defaultKeyPlaceholder": {
-    "defaultMessage": "Tên tham số..."
-  },
-  "keyValueEditor.defaultValuePlaceholder": {
-    "defaultMessage": "Giá trị tham số..."
-  },
-  "keyValueEditor.removeValue": {
-    "defaultMessage": "Xóa giá trị được cấu hình sẵn {key}"
   },
   "keyboardShortcuts.alwaysOnTopDescription": {
     "defaultMessage": "Bật/tắt cửa sổ luôn ở trên cùng"
@@ -1697,6 +1697,18 @@
   "keyboardShortcuts.toggleNavigationLabel": {
     "defaultMessage": "Bật/tắt điều hướng"
   },
+  "keyValueEditor.addValue": {
+    "defaultMessage": "Thêm giá trị được cấu hình sẵn"
+  },
+  "keyValueEditor.defaultKeyPlaceholder": {
+    "defaultMessage": "Tên tham số..."
+  },
+  "keyValueEditor.defaultValuePlaceholder": {
+    "defaultMessage": "Giá trị tham số..."
+  },
+  "keyValueEditor.removeValue": {
+    "defaultMessage": "Xóa giá trị được cấu hình sẵn {key}"
+  },
   "launcher.placeholder": {
     "defaultMessage": "Hỏi goose bất cứ điều gì..."
   },
@@ -1736,17 +1748,17 @@
   "localInferenceSettings.downloadCancelled": {
     "defaultMessage": "Đã hủy tải xuống"
   },
-  "localInferenceSettings.downloadFailed": {
-    "defaultMessage": "Tải xuống thất bại"
-  },
-  "localInferenceSettings.downloadProgress": {
-    "defaultMessage": "{downloaded} / {total} ({percent}%)"
-  },
   "localInferenceSettings.downloadedModels": {
     "defaultMessage": "Các mô hình đã tải xuống"
   },
+  "localInferenceSettings.downloadFailed": {
+    "defaultMessage": "Tải xuống thất bại"
+  },
   "localInferenceSettings.downloading": {
     "defaultMessage": "Đang tải xuống"
+  },
+  "localInferenceSettings.downloadProgress": {
+    "defaultMessage": "{downloaded} / {total} ({percent}%)"
   },
   "localInferenceSettings.evictFromMemory": {
     "defaultMessage": "Evict from memory"
@@ -1835,11 +1847,11 @@
   "localModelPicker.checkingModels": {
     "defaultMessage": "Đang kiểm tra các mô hình khả dụng..."
   },
-  "localModelPicker.downloadModel": {
-    "defaultMessage": "Tải xuống {modelId} ({size})"
-  },
   "localModelPicker.downloading": {
     "defaultMessage": "Đang tải xuống {modelId}"
+  },
+  "localModelPicker.downloadModel": {
+    "defaultMessage": "Tải xuống {modelId} ({size})"
   },
   "localModelPicker.failedToLoad": {
     "defaultMessage": "Không tải được các mô hình khả dụng. Vui lòng thử lại."
@@ -2003,6 +2015,9 @@
   "messageQueue.paused": {
     "defaultMessage": "Đã tạm dừng"
   },
+  "messageQueue.queued": {
+    "defaultMessage": "đã xếp hàng"
+  },
   "messageQueue.queuePaused": {
     "defaultMessage": "Hàng đợi đã tạm dừng"
   },
@@ -2011,9 +2026,6 @@
   },
   "messageQueue.queuePausedExpanded": {
     "defaultMessage": "Hàng đợi bị tạm dừng do gián đoạn. Sử dụng \"Gửi ngay\" hoặc thêm tin nhắn mới để tiếp tục."
-  },
-  "messageQueue.queued": {
-    "defaultMessage": "đã xếp hàng"
   },
   "messageQueue.removeFromQueue": {
     "defaultMessage": "Xóa tin nhắn này khỏi hàng đợi"
@@ -2063,11 +2075,11 @@
   "messageUsageStats.speed": {
     "defaultMessage": "Tốc độ"
   },
-  "messageUsageStats.tokenUnit": {
-    "defaultMessage": "tok"
-  },
   "messageUsageStats.tokensPerSecondUnit": {
     "defaultMessage": "tok/s"
+  },
+  "messageUsageStats.tokenUnit": {
+    "defaultMessage": "tok"
   },
   "messageUsageStats.total": {
     "defaultMessage": "Tổng"
@@ -2105,35 +2117,11 @@
   "microphoneSelector.test": {
     "defaultMessage": "Kiểm tra"
   },
-  "modeSelectionItem.autonomousDescription": {
-    "defaultMessage": "Khả năng chỉnh sửa tệp đầy đủ, chỉnh sửa, tạo và xóa tệp một cách tự do."
-  },
-  "modeSelectionItem.autonomousLabel": {
-    "defaultMessage": "Tự động"
-  },
-  "modeSelectionItem.chatOnlyDescription": {
-    "defaultMessage": "Tương tác với nhà cung cấp đã chọn mà không sử dụng công cụ hoặc tiện ích mở rộng."
-  },
-  "modeSelectionItem.chatOnlyLabel": {
-    "defaultMessage": "Chỉ trò chuyện"
-  },
-  "modeSelectionItem.manualDescription": {
-    "defaultMessage": "Tất cả công cụ, tiện ích mở rộng và chỉnh sửa tệp sẽ yêu cầu sự phê duyệt của con người"
-  },
-  "modeSelectionItem.manualLabel": {
-    "defaultMessage": "Thủ công"
-  },
-  "modeSelectionItem.smartDescription": {
-    "defaultMessage": "Tự động xác định một cách thông minh những hành động nào cần phê duyệt dựa trên mức độ rủi ro"
-  },
-  "modeSelectionItem.smartLabel": {
-    "defaultMessage": "Thông minh"
+  "modelAndProviderContext.modelChangedTitle": {
+    "defaultMessage": "Đã thay đổi mô hình"
   },
   "modelAndProviderContext.modelChangeFailed": {
     "defaultMessage": "{provider}/{model} thất bại"
-  },
-  "modelAndProviderContext.modelChangedTitle": {
-    "defaultMessage": "Đã thay đổi mô hình"
   },
   "modelAndProviderContext.selectModel": {
     "defaultMessage": "Chọn mô hình"
@@ -2146,6 +2134,27 @@
   },
   "modelAndProviderContext.unknownProviderTitle": {
     "defaultMessage": "Tra cứu tên nhà cung cấp"
+  },
+  "modelsBottomBar.changeModel": {
+    "defaultMessage": "Thay đổi mô hình"
+  },
+  "modelsBottomBar.currentModel": {
+    "defaultMessage": "Mô hình hiện tại"
+  },
+  "modelsBottomBar.loadingModel": {
+    "defaultMessage": "Đang tải mô hình..."
+  },
+  "modelsBottomBar.localModelSettings": {
+    "defaultMessage": "Cài đặt mô hình cục bộ"
+  },
+  "modelsBottomBar.localModelSettingsTitle": {
+    "defaultMessage": "Cài đặt mô hình cục bộ — {modelName}"
+  },
+  "modelsBottomBar.resolvedModel": {
+    "defaultMessage": "Mô hình đã phân giải"
+  },
+  "modelsBottomBar.selectModel": {
+    "defaultMessage": "Chọn mô hình"
   },
   "modelSettingsButtons.configureProviders": {
     "defaultMessage": "Cấu hình nhà cung cấp"
@@ -2306,32 +2315,35 @@
   "modelSettingsPanel.topP": {
     "defaultMessage": "Top P"
   },
-  "modelsBottomBar.changeModel": {
-    "defaultMessage": "Thay đổi mô hình"
-  },
-  "modelsBottomBar.currentModel": {
-    "defaultMessage": "Mô hình hiện tại"
-  },
-  "modelsBottomBar.loadingModel": {
-    "defaultMessage": "Đang tải mô hình..."
-  },
-  "modelsBottomBar.localModelSettings": {
-    "defaultMessage": "Cài đặt mô hình cục bộ"
-  },
-  "modelsBottomBar.localModelSettingsTitle": {
-    "defaultMessage": "Cài đặt mô hình cục bộ — {modelName}"
-  },
-  "modelsBottomBar.resolvedModel": {
-    "defaultMessage": "Mô hình đã phân giải"
-  },
-  "modelsBottomBar.selectModel": {
-    "defaultMessage": "Chọn mô hình"
-  },
   "modelsSection.resetDescription": {
     "defaultMessage": "Xóa các cài đặt mô hình và nhà cung cấp đã chọn để bắt đầu lại từ đầu"
   },
   "modelsSection.resetTitle": {
     "defaultMessage": "Đặt lại nhà cung cấp và mô hình"
+  },
+  "modeSelectionItem.autonomousDescription": {
+    "defaultMessage": "Khả năng chỉnh sửa tệp đầy đủ, chỉnh sửa, tạo và xóa tệp một cách tự do."
+  },
+  "modeSelectionItem.autonomousLabel": {
+    "defaultMessage": "Tự động"
+  },
+  "modeSelectionItem.chatOnlyDescription": {
+    "defaultMessage": "Tương tác với nhà cung cấp đã chọn mà không sử dụng công cụ hoặc tiện ích mở rộng."
+  },
+  "modeSelectionItem.chatOnlyLabel": {
+    "defaultMessage": "Chỉ trò chuyện"
+  },
+  "modeSelectionItem.manualDescription": {
+    "defaultMessage": "Tất cả công cụ, tiện ích mở rộng và chỉnh sửa tệp sẽ yêu cầu sự phê duyệt của con người"
+  },
+  "modeSelectionItem.manualLabel": {
+    "defaultMessage": "Thủ công"
+  },
+  "modeSelectionItem.smartDescription": {
+    "defaultMessage": "Tự động xác định một cách thông minh những hành động nào cần phê duyệt dựa trên mức độ rủi ro"
+  },
+  "modeSelectionItem.smartLabel": {
+    "defaultMessage": "Thông minh"
   },
   "navigation.itemApps": {
     "defaultMessage": "Ứng dụng"
@@ -2612,11 +2624,11 @@
   "promptsSettings.edit": {
     "defaultMessage": "Chỉnh sửa"
   },
-  "promptsSettings.editPromptTitle": {
-    "defaultMessage": "Chỉnh sửa: {name}"
-  },
   "promptsSettings.editingLabel": {
     "defaultMessage": "Đang chỉnh sửa: {name}"
+  },
+  "promptsSettings.editPromptTitle": {
+    "defaultMessage": "Chỉnh sửa: {name}"
   },
   "promptsSettings.enterPromptContent": {
     "defaultMessage": "Nhập nội dung lời nhắc..."
@@ -2726,11 +2738,11 @@
   "providerConfigForm.noApiKey": {
     "defaultMessage": "Bạn chưa có khóa API?"
   },
-  "providerConfigForm.signInWith": {
-    "defaultMessage": "Đăng nhập bằng {providerName}"
-  },
   "providerConfigForm.signingIn": {
     "defaultMessage": "Đang đăng nhập..."
+  },
+  "providerConfigForm.signInWith": {
+    "defaultMessage": "Đăng nhập bằng {providerName}"
   },
   "providerConfigurationModal.addApiKeyDescription": {
     "defaultMessage": "Thêm khóa API của bạn cho nhà cung cấp này để tích hợp vào goose"
@@ -2792,11 +2804,11 @@
   "providerConfigurationModal.seeDocumentation": {
     "defaultMessage": "Xem <link>tài liệu</link> để biết thêm chi tiết."
   },
-  "providerConfigurationModal.signInWith": {
-    "defaultMessage": "Đăng nhập bằng {providerName}"
-  },
   "providerConfigurationModal.signingIn": {
     "defaultMessage": "Đang đăng nhập..."
+  },
+  "providerConfigurationModal.signInWith": {
+    "defaultMessage": "Đăng nhập bằng {providerName}"
   },
   "providerGrid.addProvider": {
     "defaultMessage": "Thêm nhà cung cấp"
@@ -3032,39 +3044,6 @@
   "recipeNameField.formatHint": {
     "defaultMessage": "Sẽ được định dạng tự động (chữ thường, dấu gạch ngang thay cho khoảng trắng)"
   },
-  "recipeWarningModal.cancel": {
-    "defaultMessage": "Hủy"
-  },
-  "recipeWarningModal.descriptionLabel": {
-    "defaultMessage": "Mô tả:"
-  },
-  "recipeWarningModal.firstTimeDescription": {
-    "defaultMessage": "Bạn sắp thực thi một công thức mà bạn chưa từng chạy trước đây."
-  },
-  "recipeWarningModal.hiddenCharsWarning": {
-    "defaultMessage": "Công thức này chứa các ký tự ẩn sẽ bị bỏ qua vì sự an toàn của bạn, vì chúng có thể được sử dụng cho mục đích độc hại."
-  },
-  "recipeWarningModal.instructionsLabel": {
-    "defaultMessage": "Hướng dẫn:"
-  },
-  "recipeWarningModal.newRecipeWarningTitle": {
-    "defaultMessage": "⚠️ Cảnh báo công thức mới"
-  },
-  "recipeWarningModal.recipePreview": {
-    "defaultMessage": "Xem trước công thức:"
-  },
-  "recipeWarningModal.securityWarningTitle": {
-    "defaultMessage": "⚠️ Cảnh báo bảo mật"
-  },
-  "recipeWarningModal.titleLabel": {
-    "defaultMessage": "Tiêu đề:"
-  },
-  "recipeWarningModal.trustAndExecute": {
-    "defaultMessage": "Tin cậy và thực thi"
-  },
-  "recipeWarningModal.trustSource": {
-    "defaultMessage": "Chỉ tiếp tục nếu bạn tin cậy nguồn của công thức này."
-  },
   "recipesView.addSchedule": {
     "defaultMessage": "Thêm lịch"
   },
@@ -3239,6 +3218,39 @@
   "recipesView.yamlFiles": {
     "defaultMessage": "Tệp YAML"
   },
+  "recipeWarningModal.cancel": {
+    "defaultMessage": "Hủy"
+  },
+  "recipeWarningModal.descriptionLabel": {
+    "defaultMessage": "Mô tả:"
+  },
+  "recipeWarningModal.firstTimeDescription": {
+    "defaultMessage": "Bạn sắp thực thi một công thức mà bạn chưa từng chạy trước đây."
+  },
+  "recipeWarningModal.hiddenCharsWarning": {
+    "defaultMessage": "Công thức này chứa các ký tự ẩn sẽ bị bỏ qua vì sự an toàn của bạn, vì chúng có thể được sử dụng cho mục đích độc hại."
+  },
+  "recipeWarningModal.instructionsLabel": {
+    "defaultMessage": "Hướng dẫn:"
+  },
+  "recipeWarningModal.newRecipeWarningTitle": {
+    "defaultMessage": "⚠️ Cảnh báo công thức mới"
+  },
+  "recipeWarningModal.recipePreview": {
+    "defaultMessage": "Xem trước công thức:"
+  },
+  "recipeWarningModal.securityWarningTitle": {
+    "defaultMessage": "⚠️ Cảnh báo bảo mật"
+  },
+  "recipeWarningModal.titleLabel": {
+    "defaultMessage": "Tiêu đề:"
+  },
+  "recipeWarningModal.trustAndExecute": {
+    "defaultMessage": "Tin cậy và thực thi"
+  },
+  "recipeWarningModal.trustSource": {
+    "defaultMessage": "Chỉ tiếp tục nếu bạn tin cậy nguồn của công thức này."
+  },
   "resetProviderSection.resetButton": {
     "defaultMessage": "Đặt lại nhà cung cấp và mô hình"
   },
@@ -3272,11 +3284,11 @@
   "scheduleDetailView.cronExpression": {
     "defaultMessage": "Biểu thức Cron:"
   },
-  "scheduleDetailView.currentSession": {
-    "defaultMessage": "Phiên hiện tại:"
-  },
   "scheduleDetailView.currentlyRunning": {
     "defaultMessage": "Đang chạy"
+  },
+  "scheduleDetailView.currentSession": {
+    "defaultMessage": "Phiên hiện tại:"
   },
   "scheduleDetailView.dir": {
     "defaultMessage": "Thư mục: {path}"
@@ -3335,12 +3347,6 @@
   "scheduleDetailView.noSessions": {
     "defaultMessage": "Không tìm thấy phiên nào cho lịch trình này."
   },
-  "scheduleDetailView.pauseSchedule": {
-    "defaultMessage": "Tạm dừng lịch trình"
-  },
-  "scheduleDetailView.pauseUnpauseError": {
-    "defaultMessage": "Lỗi tạm dừng/tiếp tục"
-  },
   "scheduleDetailView.paused": {
     "defaultMessage": "Đã tạm dừng"
   },
@@ -3349,6 +3355,12 @@
   },
   "scheduleDetailView.pausedWarning": {
     "defaultMessage": "Lịch trình này đang tạm dừng và sẽ không chạy tự động. Dùng \"Chạy lịch trình ngay\" để kích hoạt thủ công hoặc tiếp tục để khôi phục chạy tự động."
+  },
+  "scheduleDetailView.pauseSchedule": {
+    "defaultMessage": "Tạm dừng lịch trình"
+  },
+  "scheduleDetailView.pauseUnpauseError": {
+    "defaultMessage": "Lỗi tạm dừng/tiếp tục"
   },
   "scheduleDetailView.processStarted": {
     "defaultMessage": "Tiến trình đã bắt đầu:"
@@ -3395,17 +3407,17 @@
   "scheduleDetailView.sessionId": {
     "defaultMessage": "ID phiên: {id}"
   },
-  "scheduleDetailView.unpauseSchedule": {
-    "defaultMessage": "Tiếp tục lịch trình"
-  },
   "scheduleDetailView.unpausedMsg": {
     "defaultMessage": "Đã tiếp tục \"{id}\""
   },
-  "scheduleDetailView.updateScheduleError": {
-    "defaultMessage": "Lỗi cập nhật lịch trình"
+  "scheduleDetailView.unpauseSchedule": {
+    "defaultMessage": "Tiếp tục lịch trình"
   },
   "scheduleDetailView.updatedMsg": {
     "defaultMessage": "Đã cập nhật \"{id}\""
+  },
+  "scheduleDetailView.updateScheduleError": {
+    "defaultMessage": "Lỗi cập nhật lịch trình"
   },
   "scheduleDetailView.viewingScheduleId": {
     "defaultMessage": "Đang xem ID lịch trình: {id}"
@@ -3530,11 +3542,11 @@
   "schedulesView.pause": {
     "defaultMessage": "Tạm dừng"
   },
-  "schedulesView.pauseError": {
-    "defaultMessage": "Lỗi tạm dừng lịch trình"
-  },
   "schedulesView.paused": {
     "defaultMessage": "Đã tạm dừng"
+  },
+  "schedulesView.pauseError": {
+    "defaultMessage": "Lỗi tạm dừng lịch trình"
   },
   "schedulesView.refresh": {
     "defaultMessage": "Làm mới"
@@ -3554,6 +3566,9 @@
   "schedulesView.schedulePausedMsg": {
     "defaultMessage": "Đã tạm dừng lịch trình \"{id}\" thành công"
   },
+  "schedulesView.scheduler": {
+    "defaultMessage": "Bộ lập lịch"
+  },
   "schedulesView.scheduleUnpaused": {
     "defaultMessage": "Đã tiếp tục lịch trình"
   },
@@ -3565,9 +3580,6 @@
   },
   "schedulesView.scheduleUpdatedMsg": {
     "defaultMessage": "Đã cập nhật lịch trình \"{id}\" thành công"
-  },
-  "schedulesView.scheduler": {
-    "defaultMessage": "Bộ lập lịch"
   },
   "schedulesView.unpauseError": {
     "defaultMessage": "Lỗi tiếp tục lịch trình"
@@ -3674,14 +3686,14 @@
   "sessionActionsHeader.copyText": {
     "defaultMessage": "Sao chép văn bản"
   },
+  "sessionActionsHeader.duplicated": {
+    "defaultMessage": "Đã nhân bản phiên"
+  },
   "sessionActionsHeader.duplicateFailed": {
     "defaultMessage": "Không thể nhân bản phiên: {error}"
   },
   "sessionActionsHeader.duplicateSession": {
     "defaultMessage": "Nhân bản phiên"
-  },
-  "sessionActionsHeader.duplicated": {
-    "defaultMessage": "Đã nhân bản phiên"
   },
   "sessionActionsHeader.fullTextTitle": {
     "defaultMessage": "Giá trị văn bản"
@@ -3701,6 +3713,9 @@
   "sessionActionsHeader.modelInteractionsTitle": {
     "defaultMessage": "Recent model interactions"
   },
+  "sessionActionsHeader.renamed": {
+    "defaultMessage": "Đã đổi tên phiên"
+  },
   "sessionActionsHeader.renameFailed": {
     "defaultMessage": "Không thể đổi tên phiên: {error}"
   },
@@ -3712,9 +3727,6 @@
   },
   "sessionActionsHeader.renameTitle": {
     "defaultMessage": "Đổi tên phiên"
-  },
-  "sessionActionsHeader.renamed": {
-    "defaultMessage": "Đã đổi tên phiên"
   },
   "sessionActionsHeader.save": {
     "defaultMessage": "Lưu"
@@ -3736,24 +3748,6 @@
   },
   "sessionIndicators.streaming": {
     "defaultMessage": "Đang truyền phát"
-  },
-  "sessionViewComponents.empty.description": {
-    "defaultMessage": "Phiên này không chứa tin nhắn nào"
-  },
-  "sessionViewComponents.empty.title": {
-    "defaultMessage": "Không tìm thấy tin nhắn nào"
-  },
-  "sessionViewComponents.error.loading": {
-    "defaultMessage": "Lỗi khi tải chi tiết phiên"
-  },
-  "sessionViewComponents.error.tryAgain": {
-    "defaultMessage": "Thử lại"
-  },
-  "sessionViewComponents.role.assistant": {
-    "defaultMessage": "Goose"
-  },
-  "sessionViewComponents.role.user": {
-    "defaultMessage": "Bạn"
   },
   "sessions.action.delete": {
     "defaultMessage": "Xóa phiên"
@@ -3812,6 +3806,9 @@
   "sessions.import": {
     "defaultMessage": "Nhập phiên"
   },
+  "sessions.importing": {
+    "defaultMessage": "Đang nhập..."
+  },
   "sessions.importNostr": {
     "defaultMessage": "Nhập liên kết"
   },
@@ -3823,9 +3820,6 @@
   },
   "sessions.importNostr.title": {
     "defaultMessage": "Nhập phiên Nostr"
-  },
-  "sessions.importing": {
-    "defaultMessage": "Đang nhập..."
   },
   "sessions.loadingMore": {
     "defaultMessage": "Đang tải thêm phiên..."
@@ -3854,26 +3848,26 @@
   "sessions.toast.copied": {
     "defaultMessage": "Đã sao chép vào bộ nhớ tạm"
   },
-  "sessions.toast.deleteFailed": {
-    "defaultMessage": "Không thể xóa phiên làm việc \"{name}\": {error}"
-  },
   "sessions.toast.deleted": {
     "defaultMessage": "Đã xóa phiên làm việc thành công"
   },
-  "sessions.toast.duplicateFailed": {
-    "defaultMessage": "Không thể nhân bản phiên làm việc: {error}"
+  "sessions.toast.deleteFailed": {
+    "defaultMessage": "Không thể xóa phiên làm việc \"{name}\": {error}"
   },
   "sessions.toast.duplicated": {
     "defaultMessage": "Đã nhân bản phiên làm việc \"{name}\" thành công"
   },
+  "sessions.toast.duplicateFailed": {
+    "defaultMessage": "Không thể nhân bản phiên làm việc: {error}"
+  },
   "sessions.toast.exported": {
     "defaultMessage": "Đã xuất phiên làm việc thành công"
   },
-  "sessions.toast.importFailed": {
-    "defaultMessage": "Không thể nhập phiên làm việc: {error}"
-  },
   "sessions.toast.imported": {
     "defaultMessage": "Đã nhập phiên làm việc thành công"
+  },
+  "sessions.toast.importFailed": {
+    "defaultMessage": "Không thể nhập phiên làm việc: {error}"
   },
   "sessions.toast.shareNostr": {
     "defaultMessage": "Đã tạo liên kết chia sẻ Nostr được mã hóa"
@@ -3881,11 +3875,29 @@
   "sessions.toast.shareNostrFailed": {
     "defaultMessage": "Không thể tạo liên kết chia sẻ Nostr: {error}"
   },
+  "sessions.toast.updated": {
+    "defaultMessage": "Đã cập nhật mô tả phiên làm việc thành công"
+  },
   "sessions.toast.updateFailed": {
     "defaultMessage": "Không thể cập nhật mô tả phiên làm việc: {error}"
   },
-  "sessions.toast.updated": {
-    "defaultMessage": "Đã cập nhật mô tả phiên làm việc thành công"
+  "sessionViewComponents.empty.description": {
+    "defaultMessage": "Phiên này không chứa tin nhắn nào"
+  },
+  "sessionViewComponents.empty.title": {
+    "defaultMessage": "Không tìm thấy tin nhắn nào"
+  },
+  "sessionViewComponents.error.loading": {
+    "defaultMessage": "Lỗi khi tải chi tiết phiên"
+  },
+  "sessionViewComponents.error.tryAgain": {
+    "defaultMessage": "Thử lại"
+  },
+  "sessionViewComponents.role.assistant": {
+    "defaultMessage": "Goose"
+  },
+  "sessionViewComponents.role.user": {
+    "defaultMessage": "Bạn"
   },
   "settings.appearance.description": {
     "defaultMessage": "Định cấu hình cách goose hiển thị trên hệ thống của bạn"
@@ -4078,6 +4090,9 @@
   },
   "settingsView.tabPrompts": {
     "defaultMessage": "Lời nhắc"
+  },
+  "settingsView.tabVoice": {
+    "defaultMessage": "Voice"
   },
   "settingsView.title": {
     "defaultMessage": "Cài đặt"
@@ -4427,11 +4442,11 @@
   "themeSelector.theme": {
     "defaultMessage": "Chủ đề"
   },
-  "toolApprovalButtons.allowOnce": {
-    "defaultMessage": "Cho phép một lần"
-  },
   "toolApprovalButtons.allowedOnce": {
     "defaultMessage": "Đã cho phép một lần"
+  },
+  "toolApprovalButtons.allowOnce": {
+    "defaultMessage": "Cho phép một lần"
   },
   "toolApprovalButtons.alwaysAllow": {
     "defaultMessage": "Luôn cho phép"
@@ -4514,17 +4529,17 @@
   "updateSection.disableAutoDownloadDesc": {
     "defaultMessage": "Khi được bật, Goose sẽ thông báo cho bạn về các phiên bản mới nhưng sẽ không tự động tải xuống."
   },
-  "updateSection.downloadNow": {
-    "defaultMessage": "Tải ngay"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "Bản cập nhật đã được tải về và sẵn sàng cài đặt!"
-  },
   "updateSection.downloadingProgress": {
     "defaultMessage": "Đang tải bản cập nhật... {percent}%"
   },
   "updateSection.downloadingUpdate": {
     "defaultMessage": "Đang tải bản cập nhật..."
+  },
+  "updateSection.downloadNow": {
+    "defaultMessage": "Tải ngay"
+  },
+  "updateSection.downloadReady": {
+    "defaultMessage": "Bản cập nhật đã được tải về và sẵn sàng cài đặt!"
   },
   "updateSection.installAndRestart": {
     "defaultMessage": "Cài đặt & khởi động lại"
@@ -4550,11 +4565,11 @@
   "updateSection.readyInstallManual": {
     "defaultMessage": "✓ Bản cập nhật đã sẵn sàng! Nhấp vào \"Cài đặt & khởi động lại\" để xem hướng dẫn cài đặt."
   },
-  "updateSection.upToDate": {
-    "defaultMessage": "(đã cập nhật)"
-  },
   "updateSection.updateAvailable": {
     "defaultMessage": "Có bản cập nhật!"
+  },
+  "updateSection.upToDate": {
+    "defaultMessage": "(đã cập nhật)"
   },
   "updateSection.versionAvailable": {
     "defaultMessage": "→ {version} có sẵn"
@@ -4606,5 +4621,68 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "Tạo một phiên làm việc mới với tin nhắn đã chỉnh sửa"
+  },
+  "voiceSettings.autoSpeakLabel": {
+    "defaultMessage": "Auto-speak responses"
+  },
+  "voiceSettings.autoSpeakTooltip": {
+    "defaultMessage": "Automatically read out AI responses using text-to-speech."
+  },
+  "voiceSettings.dictationDescription": {
+    "defaultMessage": "Configure voice dictation provider and microphone settings"
+  },
+  "voiceSettings.dictationTitle": {
+    "defaultMessage": "Voice Input"
+  },
+  "voiceSettings.modeHonk": {
+    "defaultMessage": "HONK! Enabled"
+  },
+  "voiceSettings.modeHonkDescription": {
+    "defaultMessage": "HONK button appears in chat when enabled. Press HONK to activate conversational style and auto-speak."
+  },
+  "voiceSettings.modeStandard": {
+    "defaultMessage": "Standard"
+  },
+  "voiceSettings.modeStandardDescription": {
+    "defaultMessage": "Microphone dictation only. Text appears in input box for review before sending."
+  },
+  "voiceSettings.silenceDescription": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting"
+  },
+  "voiceSettings.silenceTitle": {
+    "defaultMessage": "Silence Detection Threshold"
+  },
+  "voiceSettings.silenceTooltip": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting in conversation mode. Longer values are more forgiving for natural pauses. (500ms–3000ms)"
+  },
+  "voiceSettings.silenceValue": {
+    "defaultMessage": "{value}ms"
+  },
+  "voiceSettings.splitNone": {
+    "defaultMessage": "None"
+  },
+  "voiceSettings.splitParagraph": {
+    "defaultMessage": "Paragraph"
+  },
+  "voiceSettings.splitPunctuation": {
+    "defaultMessage": "Punctuation"
+  },
+  "voiceSettings.splitStrategyLabel": {
+    "defaultMessage": "Split Strategy"
+  },
+  "voiceSettings.splitStrategyTooltip": {
+    "defaultMessage": "Controls how text is broken into audio chunks for speech. 'Punctuation' gives faster first-word playback. 'None' synthesizes the full response at once."
+  },
+  "voiceSettings.ttsDescription": {
+    "defaultMessage": "Configure how Goose speaks responses aloud"
+  },
+  "voiceSettings.ttsTitle": {
+    "defaultMessage": "Text-to-Speech"
+  },
+  "voiceSettings.voiceModeDescription": {
+    "defaultMessage": "Choose how voice input behaves"
+  },
+  "voiceSettings.voiceModeTitle": {
+    "defaultMessage": "Voice Mode"
   }
 }

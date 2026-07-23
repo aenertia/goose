@@ -202,7 +202,8 @@ export type MessageContent =
   | (FrontendToolRequest & { type: 'frontendToolRequest' })
   | (ThinkingContent & { type: 'thinking' })
   | (RedactedThinkingContent & { type: 'redactedThinking' })
-  | (SystemNotificationContent & { type: 'systemNotification' });
+  | (SystemNotificationContent & { type: 'systemNotification' })
+  | (RawAudioContent & { type: 'audio' });
 
 export type Message = {
   content: MessageContent[];
@@ -313,12 +314,31 @@ export function getTextAndImageContent(message: Message): {
     }
   }
 
+  // Strip HONK voice-mode XML from user message display
+  // (kept in LLM context but not shown in chat bubbles)
+  if (message.role === 'user') {
+    textContent = textContent
+      .replace(/<voice-conversation>[\s\S]*?<\/voice-conversation>/g, '')
+      .replace(/\[HONK![\s\S]*?\]/g, '')
+      .trim();
+  }
+
   // Strip assistant-only markup that shouldn't appear in rendered text
   if (message.role === 'assistant') {
     textContent = stripToolCallMarkers(textContent);
   }
 
   return { textContent, imagePaths };
+}
+
+export function getAudioContent(message: Message): Array<{ data: string; mimeType: string }> {
+  const audioBlocks: Array<{ data: string; mimeType: string }> = [];
+  for (const block of message.content) {
+    if (block.type === 'audio') {
+      audioBlocks.push({ data: block.data, mimeType: block.mimeType });
+    }
+  }
+  return audioBlocks;
 }
 
 function stripToolCallMarkers(text: string): string {

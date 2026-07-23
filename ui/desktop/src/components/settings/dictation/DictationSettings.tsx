@@ -92,6 +92,7 @@ export const DictationSettings = () => {
   const [preferredMic, setPreferredMic] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [isEditingKey, setIsEditingKey] = useState(false);
+  const [sttEndpoint, setSttEndpoint] = useState('');
   const { read, upsert, remove } = useConfig();
 
   const refreshStatuses = async () => {
@@ -125,6 +126,9 @@ export const DictationSettings = () => {
       const micValue = await read('voice_dictation_preferred_mic', false);
       setPreferredMic((micValue as string) || null);
 
+      const endpointValue = await read('voice_stt_endpoint', false);
+      setSttEndpoint((endpointValue as string) || '');
+
       await refreshStatuses();
     };
 
@@ -142,6 +146,12 @@ export const DictationSettings = () => {
     setPreferredMic(deviceId);
     upsert('voice_dictation_preferred_mic', deviceId || '', false);
   };
+
+  const handleSttEndpointBlur = () => {
+    upsert('voice_stt_endpoint', sttEndpoint.trim(), false);
+  };
+
+  const showSttEndpoint = provider === 'model' || provider === 'openai' || provider === 'groq';
 
   const handleSaveKey = async () => {
     if (!provider) return;
@@ -177,6 +187,7 @@ export const DictationSettings = () => {
 
   const getProviderLabel = (p: DictationProvider | null): string => {
     if (!p) return intl.formatMessage(i18n.disabled);
+    if (p === "model") return "Model (Native Audio)";
     return p.charAt(0).toUpperCase() + p.slice(1);
   };
 
@@ -278,6 +289,25 @@ export const DictationSettings = () => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {showSttEndpoint && (
+            <div className="py-2 px-2 bg-background-secondary rounded-lg">
+              <div className="mb-2">
+                <h4 className="text-text-primary text-sm">STT Endpoint URL</h4>
+                <p className="text-xs text-text-secondary mt-[2px]">
+                  Override the default transcription endpoint (OpenAI-compatible Whisper API)
+                </p>
+              </div>
+              <Input
+                type="url"
+                value={sttEndpoint}
+                onChange={(e) => setSttEndpoint(e.target.value)}
+                onBlur={handleSttEndpointBlur}
+                placeholder="https://localhost:8080/v1"
+                className="max-w-md"
+              />
             </div>
           )}
 

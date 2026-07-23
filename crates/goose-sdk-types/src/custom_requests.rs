@@ -557,6 +557,18 @@ pub enum PreferenceKey {
     VoiceAutoSubmitPhrases,
     VoiceDictationProvider,
     VoiceDictationPreferredMic,
+    VoiceSilenceThreshold,
+    VoiceTtsProvider,
+    VoiceTtsVoice,
+    VoiceTtsSplitOn,
+    VoiceTtsSpeed,
+    VoiceAutoSpeak,
+    VoiceMode,
+    VoiceTtsEndpointUrl,
+    VoiceTtsActiveProfile,
+    VoiceTtsFormat,
+    VoiceTtsQuality,
+    VoiceSttEndpoint,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema)]
@@ -2232,6 +2244,165 @@ pub struct DictationModelDeleteRequest {
 pub struct DictationModelSelectRequest {
     pub provider: String,
     pub model_id: String,
+}
+
+/// Synthesize text to speech via a TTS provider.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcRequest)]
+#[request(method = "_goose/unstable/tts/synthesize", response = TtsSynthesizeResponse)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsSynthesizeRequest {
+    pub text: String,
+    pub provider: String,
+    #[serde(default)]
+    pub voice: String,
+    #[serde(default = "default_tts_speed")]
+    pub speed: f32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub profile_id: Option<String>,
+    #[serde(default = "default_tts_format")]
+    pub response_format: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quality: Option<String>,
+}
+
+fn default_tts_speed() -> f32 {
+    1.0
+}
+
+fn default_tts_format() -> String {
+    String::new()
+}
+
+/// TTS synthesis result with base64 audio data.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcResponse)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsSynthesizeResponse {
+    pub audio: String,
+    pub mime_type: String,
+}
+
+/// Get the configuration status of all TTS providers.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcRequest)]
+#[request(method = "_goose/unstable/tts/config", response = TtsConfigResponse)]
+pub struct TtsConfigRequest {}
+
+/// Per-provider TTS configuration status.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsProviderStatusEntry {
+    pub configured: bool,
+    pub description: String,
+    pub uses_provider_config: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub settings_path: Option<String>,
+}
+
+/// TTS config response -- map of provider name to status.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcResponse)]
+pub struct TtsConfigResponse {
+    pub providers: HashMap<String, TtsProviderStatusEntry>,
+}
+
+/// List available voices for a TTS provider.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcRequest)]
+#[request(method = "_goose/unstable/tts/voices", response = TtsVoicesResponse)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsVoicesRequest {
+    pub provider: String,
+}
+
+/// Voice information for a TTS provider.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsVoiceInfo {
+    pub id: String,
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub preview_url: Option<String>,
+}
+
+/// TTS voices response.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcResponse)]
+pub struct TtsVoicesResponse {
+    pub voices: Vec<TtsVoiceInfo>,
+}
+
+/// Set a TTS provider secret value.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcRequest)]
+#[request(method = "_goose/unstable/tts/secret/save", response = EmptyResponse)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsSecretSaveRequest {
+    pub provider: String,
+    pub value: String,
+}
+
+/// Remove a TTS provider secret value.
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcRequest)]
+#[request(method = "_goose/unstable/tts/secret/delete", response = EmptyResponse)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsSecretDeleteRequest {
+    pub provider: String,
+}
+
+// ---------------------------------------------------------------------------
+// TTS voice profiles
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsProfileEntry {
+    pub id: String,
+    pub name: String,
+    pub provider: String,
+    #[serde(default)]
+    pub endpoint_url: String,
+    #[serde(default)]
+    pub api_key_env: String,
+    #[serde(default)]
+    pub voice: String,
+    #[serde(default = "default_tts_speed")]
+    pub speed: f32,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcRequest)]
+#[request(method = "_goose/unstable/tts/profiles/list", response = TtsProfileListResponse)]
+pub struct TtsProfileListRequest {}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcResponse)]
+pub struct TtsProfileListResponse {
+    pub profiles: Vec<TtsProfileEntry>,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcRequest)]
+#[request(method = "_goose/unstable/tts/profiles/get", response = TtsProfileGetResponse)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsProfileGetRequest {
+    pub profile_id: String,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcResponse)]
+pub struct TtsProfileGetResponse {
+    pub profile: Option<TtsProfileEntry>,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcRequest)]
+#[request(method = "_goose/unstable/tts/profiles/save", response = TtsProfileSaveResponse)]
+pub struct TtsProfileSaveRequest {
+    pub profile: TtsProfileEntry,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcResponse)]
+pub struct TtsProfileSaveResponse {
+    pub profile: TtsProfileEntry,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize, JsonSchema, JsonRpcRequest)]
+#[request(method = "_goose/unstable/tts/profiles/delete", response = EmptyResponse)]
+#[serde(rename_all = "camelCase")]
+pub struct TtsProfileDeleteRequest {
+    pub profile_id: String,
 }
 
 /// Permission level for a tool.

@@ -296,18 +296,78 @@ const PREFERENCE_DEFS: &[PreferenceDef] = &[
     },
     PreferenceDef {
         key: PreferenceKey::VoiceAutoSubmitPhrases,
-        config_key: "VOICE_AUTO_SUBMIT_PHRASES",
+        config_key: "voice_auto_submit_phrases",
         prepare: prepare_voice_auto_submit_phrases,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceDictationProvider,
-        config_key: "VOICE_DICTATION_PROVIDER",
+        config_key: "voice_dictation_provider",
         prepare: prepare_voice_dictation_provider,
     },
     PreferenceDef {
         key: PreferenceKey::VoiceDictationPreferredMic,
-        config_key: "VOICE_DICTATION_PREFERRED_MIC",
+        config_key: "voice_dictation_preferred_mic",
         prepare: prepare_voice_dictation_preferred_mic,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceSilenceThreshold,
+        config_key: "voice_silence_threshold",
+        prepare: prepare_voice_silence_threshold,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsProvider,
+        config_key: "voice_tts_provider",
+        prepare: prepare_voice_tts_provider,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsVoice,
+        config_key: "voice_tts_voice",
+        prepare: prepare_voice_tts_voice,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsSpeed,
+        config_key: "voice_tts_speed",
+        prepare: prepare_voice_tts_speed,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsSplitOn,
+        config_key: "voice_tts_split_on",
+        prepare: prepare_voice_tts_split_on,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceAutoSpeak,
+        config_key: "voice_auto_speak",
+        prepare: prepare_voice_auto_speak,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceMode,
+        config_key: "voice_mode",
+        prepare: prepare_voice_mode,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsEndpointUrl,
+        config_key: "voice_tts_endpoint_url",
+        prepare: prepare_voice_tts_endpoint_url,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsActiveProfile,
+        config_key: "voice_tts_active_profile",
+        prepare: prepare_voice_tts_active_profile,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsFormat,
+        config_key: "voice_tts_format",
+        prepare: prepare_voice_tts_format,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceTtsQuality,
+        config_key: "voice_tts_quality",
+        prepare: prepare_voice_tts_quality,
+    },
+    PreferenceDef {
+        key: PreferenceKey::VoiceSttEndpoint,
+        config_key: "voice_stt_endpoint",
+        prepare: prepare_voice_stt_endpoint,
     },
 ];
 
@@ -394,8 +454,195 @@ fn prepare_voice_dictation_preferred_mic(
     Ok(serde_json::Value::String(value.to_string()))
 }
 
+fn prepare_voice_silence_threshold(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(s) = value.as_str() else {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceSilenceThreshold must be a string"));
+    };
+    let ms: u32 = s.parse().map_err(|_| {
+        agent_client_protocol::Error::invalid_params()
+            .data("voiceSilenceThreshold must be a string containing an integer")
+    })?;
+    if !(500..=3000).contains(&ms) {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceSilenceThreshold must be between 500 and 3000"));
+    }
+    Ok(serde_json::Value::String(ms.to_string()))
+}
+
+fn prepare_voice_tts_provider(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsProvider must be a string"));
+    };
+    if !matches!(
+        value,
+        "openai" | "elevenlabs" | "browser" | "model" | "__disabled__"
+    ) {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsProvider is not supported"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_tts_voice(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsVoice must be a string")
+        );
+    };
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_tts_speed(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(s) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsSpeed must be a string")
+        );
+    };
+    let speed: f32 = s.parse().map_err(|_| {
+        agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsSpeed must be a string containing a number")
+    })?;
+    if !(0.25..=4.0).contains(&speed) {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsSpeed must be between 0.25 and 4.0"));
+    }
+    Ok(serde_json::Value::String(format!("{:.2}", speed)))
+}
+
+fn prepare_voice_tts_split_on(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsSplitOn must be a string")
+        );
+    };
+    if !matches!(value, "none" | "punctuation" | "paragraph") {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsSplitOn must be none, punctuation, or paragraph"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_auto_speak(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceAutoSpeak must be a string")
+        );
+    };
+    if !matches!(value, "true" | "false") {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceAutoSpeak must be true or false"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_mode(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceMode must be a string")
+        );
+    };
+    if !matches!(value, "dictation" | "conversation") {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceMode must be dictation or conversation"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_tts_endpoint_url(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsEndpointUrl must be a string"));
+    };
+    if !value.is_empty() {
+        let _ = url::Url::parse(value).map_err(|_| {
+            agent_client_protocol::Error::invalid_params()
+                .data("voiceTtsEndpointUrl must be a valid URL or empty")
+        })?;
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_stt_endpoint(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceSttEndpoint must be a string"));
+    };
+    if !value.is_empty() {
+        let _ = url::Url::parse(value).map_err(|_| {
+            agent_client_protocol::Error::invalid_params()
+                .data("voiceSttEndpoint must be a valid URL or empty")
+        })?;
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_tts_format(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsFormat must be a string")
+        );
+    };
+    let allowed = ["opus", "wav", "mp3", "pcm", "ogg", "flac", ""];
+    if !allowed.contains(&value) {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsFormat must be one of: opus, wav, mp3, pcm, ogg, flac"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_tts_quality(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(
+            agent_client_protocol::Error::invalid_params().data("voiceTtsQuality must be a string")
+        );
+    };
+    let allowed = ["low", "medium", "high", ""];
+    if !allowed.contains(&value) {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsQuality must be: low, medium, or high"));
+    }
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
+fn prepare_voice_tts_active_profile(
+    value: &serde_json::Value,
+) -> Result<serde_json::Value, agent_client_protocol::Error> {
+    let Some(value) = value.as_str() else {
+        return Err(agent_client_protocol::Error::invalid_params()
+            .data("voiceTtsActiveProfile must be a string"));
+    };
+    Ok(serde_json::Value::String(value.to_string()))
+}
+
 fn is_supported_voice_dictation_provider(value: &str) -> bool {
-    matches!(value, "openai" | "groq" | "elevenlabs" | "__disabled__") || {
+    matches!(
+        value,
+        "openai" | "groq" | "elevenlabs" | "model" | "__disabled__"
+    ) || {
         #[cfg(feature = "local-inference")]
         {
             value == "local"

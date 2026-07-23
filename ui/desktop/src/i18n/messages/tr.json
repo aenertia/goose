@@ -74,14 +74,14 @@
   "authSettings.deleteCredential": {
     "defaultMessage": "Kimlik bilgisini sil"
   },
+  "authSettings.deleted": {
+    "defaultMessage": "Kimlik bilgisi silindi"
+  },
   "authSettings.deleteMessage": {
     "defaultMessage": "{provider} için {name} kimlik bilgisi silinsin mi?"
   },
   "authSettings.deleteTitle": {
     "defaultMessage": "Kimlik bilgisini sil"
-  },
-  "authSettings.deleted": {
-    "defaultMessage": "Kimlik bilgisi silindi"
   },
   "authSettings.description": {
     "defaultMessage": "goose tarafından yerel olarak saklanan sağlayıcı kimlik bilgilerini yönetin."
@@ -107,11 +107,11 @@
   "authSettings.reauthorize": {
     "defaultMessage": "Yeniden yetkilendir"
   },
-  "authSettings.signIn": {
-    "defaultMessage": "Oturum aç"
-  },
   "authSettings.signedIn": {
     "defaultMessage": "Kimlik bilgisi yapılandırıldı"
+  },
+  "authSettings.signIn": {
+    "defaultMessage": "Oturum aç"
   },
   "authSettings.storageProviderCache": {
     "defaultMessage": "Sağlayıcı önbelleği"
@@ -134,6 +134,12 @@
   "baseChat.reconnecting": {
     "defaultMessage": "Bağlantı kesildi. Yeniden bağlanılıyor…"
   },
+  "bottomMenuExtensionSelection.extensionsForNewChats": {
+    "defaultMessage": "Yeni sohbetler için uzantılar"
+  },
+  "bottomMenuExtensionSelection.extensionsForThisSession": {
+    "defaultMessage": "Bu sohbet oturumunun uzantıları"
+  },
   "bottomMenuExtensionSelection.extensionUpdated": {
     "defaultMessage": "Uzantı Güncellendi"
   },
@@ -142,12 +148,6 @@
   },
   "bottomMenuExtensionSelection.extensionWillBeEnabled": {
     "defaultMessage": "{name} yeni sohbetlerde etkinleştirilecek"
-  },
-  "bottomMenuExtensionSelection.extensionsForNewChats": {
-    "defaultMessage": "Yeni sohbetler için uzantılar"
-  },
-  "bottomMenuExtensionSelection.extensionsForThisSession": {
-    "defaultMessage": "Bu sohbet oturumunun uzantıları"
   },
   "bottomMenuExtensionSelection.manageExtensions": {
     "defaultMessage": "uzantıları yönet"
@@ -175,6 +175,18 @@
   },
   "chatInput.contextWindow": {
     "defaultMessage": "Bağlam penceresi"
+  },
+  "chatInput.conversationListening": {
+    "defaultMessage": "Listening..."
+  },
+  "chatInput.conversationMode": {
+    "defaultMessage": "Conversation mode"
+  },
+  "chatInput.conversationSpeaking": {
+    "defaultMessage": "Speaking..."
+  },
+  "chatInput.conversationSubmitting": {
+    "defaultMessage": "Thinking..."
   },
   "chatInput.dictationError": {
     "defaultMessage": "Dikte Hatası"
@@ -650,11 +662,11 @@
   "customProviderForm.attachments": {
     "defaultMessage": "Ekler"
   },
-  "customProviderForm.authHint": {
-    "defaultMessage": "Ollama gibi yerel LLM'ler genellikle API anahtarı gerektirmez."
-  },
   "customProviderForm.authentication": {
     "defaultMessage": "Kimlik doğrulama"
+  },
+  "customProviderForm.authHint": {
+    "defaultMessage": "Ollama gibi yerel LLM'ler genellikle API anahtarı gerektirmez."
   },
   "customProviderForm.availableModels": {
     "defaultMessage": "Mevcut Modeller (virgülle ayrılmış)"
@@ -953,17 +965,20 @@
   "elicitationRequest.waitingForResponse": {
     "defaultMessage": "Yanıtınızı bekliyorum ({timeRemaining} kaldı)"
   },
+  "environmentBadge.dev": {
+    "defaultMessage": "Geliştirici"
+  },
   "envVarsSection.add": {
     "defaultMessage": "Ekle"
   },
   "envVarsSection.bothRequired": {
     "defaultMessage": "Hem değişken adı hem de değer girilmelidir"
   },
-  "envVarsSection.envVarsDescription": {
-    "defaultMessage": "Ortam değişkenleri için anahtar/değer çiftleri ekleyin. Her iki alanı da doldurduktan sonra eklemek için \"+\" butonuna tıklayın. Mevcut gizli değerleri değiştirmek için düzenle düğmesine tıklayın."
-  },
   "envVarsSection.environmentVariables": {
     "defaultMessage": "Ortam Değişkenleri"
+  },
+  "envVarsSection.envVarsDescription": {
+    "defaultMessage": "Ortam değişkenleri için anahtar/değer çiftleri ekleyin. Her iki alanı da doldurduktan sonra eklemek için \"+\" butonuna tıklayın. Mevcut gizli değerleri değiştirmek için düzenle düğmesine tıklayın."
   },
   "envVarsSection.noSpaces": {
     "defaultMessage": "Değişken adı boşluk içeremez"
@@ -973,9 +988,6 @@
   },
   "envVarsSection.variableName": {
     "defaultMessage": "Değişken adı"
-  },
-  "environmentBadge.dev": {
-    "defaultMessage": "Geliştirici"
   },
   "errorBoundary.errorGeneric": {
     "defaultMessage": "Bir hata oluştu."
@@ -1136,9 +1148,6 @@
   "extensionModal.unsavedChangesTitle": {
     "defaultMessage": "Kaydedilmemiş Değişiklikler"
   },
-  "extensionTimeoutField.timeoutLabel": {
-    "defaultMessage": "Zaman aşımı"
-  },
   "extensionsSection.addCustomExtension": {
     "defaultMessage": "Özel uzantı ekle"
   },
@@ -1174,6 +1183,9 @@
   },
   "extensionsView.searchPlaceholder": {
     "defaultMessage": "Uzantıları ara..."
+  },
+  "extensionTimeoutField.timeoutLabel": {
+    "defaultMessage": "Zaman aşımı"
   },
   "externalBackendSection.certFingerprint": {
     "defaultMessage": "Sertifika Parmak İzi (isteğe bağlı)"
@@ -1394,11 +1406,11 @@
   "huggingFaceSignInPrompt.failedToConfigure": {
     "defaultMessage": "Hugging Face oturumu açılamadı: {error}"
   },
-  "huggingFaceSignInPrompt.signIn": {
-    "defaultMessage": "Oturum aç"
-  },
   "huggingFaceSignInPrompt.signedIn": {
     "defaultMessage": "Hugging Face oturumu açıldı"
+  },
+  "huggingFaceSignInPrompt.signIn": {
+    "defaultMessage": "Oturum aç"
   },
   "huggingFaceSignInPrompt.signingIn": {
     "defaultMessage": "Oturum açılıyor..."
@@ -1433,14 +1445,14 @@
   "importRecipeForm.expectedRecipeStructure": {
     "defaultMessage": "Beklenen Tarif Yapısı"
   },
+  "importRecipeForm.importing": {
+    "defaultMessage": "İçe aktarılıyor..."
+  },
   "importRecipeForm.importRecipeButton": {
     "defaultMessage": "Tarifi İçe Aktar"
   },
   "importRecipeForm.importRecipeTitle": {
     "defaultMessage": "Tarifi İçe Aktar"
-  },
-  "importRecipeForm.importing": {
-    "defaultMessage": "İçe aktarılıyor..."
   },
   "importRecipeForm.or": {
     "defaultMessage": "VEYA"
@@ -1540,18 +1552,6 @@
   },
   "jsonSchemaForm.submit": {
     "defaultMessage": "Gönder"
-  },
-  "keyValueEditor.addValue": {
-    "defaultMessage": "Önceden yapılandırılmış değer ekleyin"
-  },
-  "keyValueEditor.defaultKeyPlaceholder": {
-    "defaultMessage": "Parametre adı..."
-  },
-  "keyValueEditor.defaultValuePlaceholder": {
-    "defaultMessage": "Parametre değeri..."
-  },
-  "keyValueEditor.removeValue": {
-    "defaultMessage": "Önceden yapılandırılmış değeri kaldır {key}"
   },
   "keyboardShortcuts.alwaysOnTopDescription": {
     "defaultMessage": "Pencereyi her zaman üstte değiştir"
@@ -1697,6 +1697,18 @@
   "keyboardShortcuts.toggleNavigationLabel": {
     "defaultMessage": "Gezinmeyi Değiştir"
   },
+  "keyValueEditor.addValue": {
+    "defaultMessage": "Önceden yapılandırılmış değer ekleyin"
+  },
+  "keyValueEditor.defaultKeyPlaceholder": {
+    "defaultMessage": "Parametre adı..."
+  },
+  "keyValueEditor.defaultValuePlaceholder": {
+    "defaultMessage": "Parametre değeri..."
+  },
+  "keyValueEditor.removeValue": {
+    "defaultMessage": "Önceden yapılandırılmış değeri kaldır {key}"
+  },
   "launcher.placeholder": {
     "defaultMessage": "goose'a herhangi bir şey sorun..."
   },
@@ -1736,17 +1748,17 @@
   "localInferenceSettings.downloadCancelled": {
     "defaultMessage": "İndirme iptal edildi"
   },
-  "localInferenceSettings.downloadFailed": {
-    "defaultMessage": "İndirme başarısız oldu"
-  },
-  "localInferenceSettings.downloadProgress": {
-    "defaultMessage": "{downloaded} / {total} (%{percent})"
-  },
   "localInferenceSettings.downloadedModels": {
     "defaultMessage": "İndirilen Modeller"
   },
+  "localInferenceSettings.downloadFailed": {
+    "defaultMessage": "İndirme başarısız oldu"
+  },
   "localInferenceSettings.downloading": {
     "defaultMessage": "İndiriliyor"
+  },
+  "localInferenceSettings.downloadProgress": {
+    "defaultMessage": "{downloaded} / {total} (%{percent})"
   },
   "localInferenceSettings.evictFromMemory": {
     "defaultMessage": "Evict from memory"
@@ -1835,11 +1847,11 @@
   "localModelPicker.checkingModels": {
     "defaultMessage": "Mevcut modeller kontrol ediliyor..."
   },
-  "localModelPicker.downloadModel": {
-    "defaultMessage": "{modelId}'yi ({size}) indirin"
-  },
   "localModelPicker.downloading": {
     "defaultMessage": "{modelId} indiriliyor"
+  },
+  "localModelPicker.downloadModel": {
+    "defaultMessage": "{modelId}'yi ({size}) indirin"
   },
   "localModelPicker.failedToLoad": {
     "defaultMessage": "Mevcut modeller yüklenemedi. Lütfen tekrar deneyin."
@@ -2003,6 +2015,9 @@
   "messageQueue.paused": {
     "defaultMessage": "Duraklatıldı"
   },
+  "messageQueue.queued": {
+    "defaultMessage": "sıraya alınmış"
+  },
   "messageQueue.queuePaused": {
     "defaultMessage": "Sıra Duraklatıldı"
   },
@@ -2011,9 +2026,6 @@
   },
   "messageQueue.queuePausedExpanded": {
     "defaultMessage": "Kuyruk kesinti nedeniyle duraklatıldı. Devam etmek için \"Şimdi Gönder\" seçeneğini kullanın veya yeni bir mesaj ekleyin."
-  },
-  "messageQueue.queued": {
-    "defaultMessage": "sıraya alınmış"
   },
   "messageQueue.removeFromQueue": {
     "defaultMessage": "Bu mesajı sıradan kaldır"
@@ -2063,11 +2075,11 @@
   "messageUsageStats.speed": {
     "defaultMessage": "Hız"
   },
-  "messageUsageStats.tokenUnit": {
-    "defaultMessage": "tok"
-  },
   "messageUsageStats.tokensPerSecondUnit": {
     "defaultMessage": "tok/s"
+  },
+  "messageUsageStats.tokenUnit": {
+    "defaultMessage": "tok"
   },
   "messageUsageStats.total": {
     "defaultMessage": "Toplam"
@@ -2105,35 +2117,11 @@
   "microphoneSelector.test": {
     "defaultMessage": "testi"
   },
-  "modeSelectionItem.autonomousDescription": {
-    "defaultMessage": "Tam dosya değiştirme yetenekleri, dosyaları özgürce düzenleyin, oluşturun ve silin."
-  },
-  "modeSelectionItem.autonomousLabel": {
-    "defaultMessage": "Özerk"
-  },
-  "modeSelectionItem.chatOnlyDescription": {
-    "defaultMessage": "Araç veya uzantı kullanmadan seçilen sağlayıcıyla etkileşime geçin."
-  },
-  "modeSelectionItem.chatOnlyLabel": {
-    "defaultMessage": "Yalnızca sohbet"
-  },
-  "modeSelectionItem.manualDescription": {
-    "defaultMessage": "Tüm araçlar, uzantılar ve dosya değişiklikleri insan onayı gerektirecektir"
-  },
-  "modeSelectionItem.manualLabel": {
-    "defaultMessage": "Manuel"
-  },
-  "modeSelectionItem.smartDescription": {
-    "defaultMessage": "Risk düzeyine göre hangi eylemlerin onaylanması gerektiğini akıllıca belirleyin"
-  },
-  "modeSelectionItem.smartLabel": {
-    "defaultMessage": "Akıllı"
+  "modelAndProviderContext.modelChangedTitle": {
+    "defaultMessage": "Model değiştirildi"
   },
   "modelAndProviderContext.modelChangeFailed": {
     "defaultMessage": "{provider}/{model} başarısız oldu"
-  },
-  "modelAndProviderContext.modelChangedTitle": {
-    "defaultMessage": "Model değiştirildi"
   },
   "modelAndProviderContext.selectModel": {
     "defaultMessage": "Modeli Seçin"
@@ -2146,6 +2134,27 @@
   },
   "modelAndProviderContext.unknownProviderTitle": {
     "defaultMessage": "Sağlayıcı adı araması"
+  },
+  "modelsBottomBar.changeModel": {
+    "defaultMessage": "Modeli Değiştir"
+  },
+  "modelsBottomBar.currentModel": {
+    "defaultMessage": "Mevcut model"
+  },
+  "modelsBottomBar.loadingModel": {
+    "defaultMessage": "Model yükleniyor..."
+  },
+  "modelsBottomBar.localModelSettings": {
+    "defaultMessage": "Yerel Model Ayarları"
+  },
+  "modelsBottomBar.localModelSettingsTitle": {
+    "defaultMessage": "Yerel Model Ayarları — {modelName}"
+  },
+  "modelsBottomBar.resolvedModel": {
+    "defaultMessage": "Çözümlenen model"
+  },
+  "modelsBottomBar.selectModel": {
+    "defaultMessage": "Modeli Seçin"
   },
   "modelSettingsButtons.configureProviders": {
     "defaultMessage": "Sağlayıcıları yapılandırma"
@@ -2306,32 +2315,35 @@
   "modelSettingsPanel.topP": {
     "defaultMessage": "Üst P"
   },
-  "modelsBottomBar.changeModel": {
-    "defaultMessage": "Modeli Değiştir"
-  },
-  "modelsBottomBar.currentModel": {
-    "defaultMessage": "Mevcut model"
-  },
-  "modelsBottomBar.loadingModel": {
-    "defaultMessage": "Model yükleniyor..."
-  },
-  "modelsBottomBar.localModelSettings": {
-    "defaultMessage": "Yerel Model Ayarları"
-  },
-  "modelsBottomBar.localModelSettingsTitle": {
-    "defaultMessage": "Yerel Model Ayarları — {modelName}"
-  },
-  "modelsBottomBar.resolvedModel": {
-    "defaultMessage": "Çözümlenen model"
-  },
-  "modelsBottomBar.selectModel": {
-    "defaultMessage": "Modeli Seçin"
-  },
   "modelsSection.resetDescription": {
     "defaultMessage": "Yeni bir başlangıç yapmak için seçtiğiniz model ve sağlayıcı ayarlarını temizleyin"
   },
   "modelsSection.resetTitle": {
     "defaultMessage": "Sağlayıcıyı ve Modeli Sıfırla"
+  },
+  "modeSelectionItem.autonomousDescription": {
+    "defaultMessage": "Tam dosya değiştirme yetenekleri, dosyaları özgürce düzenleyin, oluşturun ve silin."
+  },
+  "modeSelectionItem.autonomousLabel": {
+    "defaultMessage": "Özerk"
+  },
+  "modeSelectionItem.chatOnlyDescription": {
+    "defaultMessage": "Araç veya uzantı kullanmadan seçilen sağlayıcıyla etkileşime geçin."
+  },
+  "modeSelectionItem.chatOnlyLabel": {
+    "defaultMessage": "Yalnızca sohbet"
+  },
+  "modeSelectionItem.manualDescription": {
+    "defaultMessage": "Tüm araçlar, uzantılar ve dosya değişiklikleri insan onayı gerektirecektir"
+  },
+  "modeSelectionItem.manualLabel": {
+    "defaultMessage": "Manuel"
+  },
+  "modeSelectionItem.smartDescription": {
+    "defaultMessage": "Risk düzeyine göre hangi eylemlerin onaylanması gerektiğini akıllıca belirleyin"
+  },
+  "modeSelectionItem.smartLabel": {
+    "defaultMessage": "Akıllı"
   },
   "navigation.itemApps": {
     "defaultMessage": "Uygulamalar"
@@ -2612,10 +2624,10 @@
   "promptsSettings.edit": {
     "defaultMessage": "Düzenle"
   },
-  "promptsSettings.editPromptTitle": {
+  "promptsSettings.editingLabel": {
     "defaultMessage": "Düzenleme: {name}"
   },
-  "promptsSettings.editingLabel": {
+  "promptsSettings.editPromptTitle": {
     "defaultMessage": "Düzenleme: {name}"
   },
   "promptsSettings.enterPromptContent": {
@@ -2726,11 +2738,11 @@
   "providerConfigForm.noApiKey": {
     "defaultMessage": "API anahtarınız yok mu?"
   },
-  "providerConfigForm.signInWith": {
-    "defaultMessage": "{providerName} ile oturum açın"
-  },
   "providerConfigForm.signingIn": {
     "defaultMessage": "Oturum açılıyor..."
+  },
+  "providerConfigForm.signInWith": {
+    "defaultMessage": "{providerName} ile oturum açın"
   },
   "providerConfigurationModal.addApiKeyDescription": {
     "defaultMessage": "Bu sağlayıcının goose'a entegre olması için API anahtarlarınızı ekleyin"
@@ -2792,11 +2804,11 @@
   "providerConfigurationModal.seeDocumentation": {
     "defaultMessage": "Daha fazla ayrıntı için <link>belgelere</link> bakın."
   },
-  "providerConfigurationModal.signInWith": {
-    "defaultMessage": "{providerName} ile oturum açın"
-  },
   "providerConfigurationModal.signingIn": {
     "defaultMessage": "Oturum açılıyor..."
+  },
+  "providerConfigurationModal.signInWith": {
+    "defaultMessage": "{providerName} ile oturum açın"
   },
   "providerGrid.addProvider": {
     "defaultMessage": "Sağlayıcı Ekle"
@@ -3032,39 +3044,6 @@
   "recipeNameField.formatHint": {
     "defaultMessage": "Otomatik olarak biçimlendirilecektir (küçük harf, boşluklar için kısa çizgiler)"
   },
-  "recipeWarningModal.cancel": {
-    "defaultMessage": "İptal"
-  },
-  "recipeWarningModal.descriptionLabel": {
-    "defaultMessage": "Açıklama:"
-  },
-  "recipeWarningModal.firstTimeDescription": {
-    "defaultMessage": "Daha önce çalıştırmadığınız bir tarifi uygulamak üzeresiniz."
-  },
-  "recipeWarningModal.hiddenCharsWarning": {
-    "defaultMessage": "Bu tarif, kötü amaçlarla kullanılabilecekleri için güvenliğiniz açısından göz ardı edilecek gizli karakterler içermektedir."
-  },
-  "recipeWarningModal.instructionsLabel": {
-    "defaultMessage": "Talimatlar:"
-  },
-  "recipeWarningModal.newRecipeWarningTitle": {
-    "defaultMessage": "⚠️ Yeni Tarif Uyarısı"
-  },
-  "recipeWarningModal.recipePreview": {
-    "defaultMessage": "Tarif Önizlemesi:"
-  },
-  "recipeWarningModal.securityWarningTitle": {
-    "defaultMessage": "⚠️ Güvenlik Uyarısı"
-  },
-  "recipeWarningModal.titleLabel": {
-    "defaultMessage": "Başlık:"
-  },
-  "recipeWarningModal.trustAndExecute": {
-    "defaultMessage": "Güvenin ve Uygulayın"
-  },
-  "recipeWarningModal.trustSource": {
-    "defaultMessage": "Yalnızca bu tarifin kaynağına güveniyorsanız devam edin."
-  },
   "recipesView.addSchedule": {
     "defaultMessage": "Program ekle"
   },
@@ -3239,6 +3218,39 @@
   "recipesView.yamlFiles": {
     "defaultMessage": "YAML Dosyaları"
   },
+  "recipeWarningModal.cancel": {
+    "defaultMessage": "İptal"
+  },
+  "recipeWarningModal.descriptionLabel": {
+    "defaultMessage": "Açıklama:"
+  },
+  "recipeWarningModal.firstTimeDescription": {
+    "defaultMessage": "Daha önce çalıştırmadığınız bir tarifi uygulamak üzeresiniz."
+  },
+  "recipeWarningModal.hiddenCharsWarning": {
+    "defaultMessage": "Bu tarif, kötü amaçlarla kullanılabilecekleri için güvenliğiniz açısından göz ardı edilecek gizli karakterler içermektedir."
+  },
+  "recipeWarningModal.instructionsLabel": {
+    "defaultMessage": "Talimatlar:"
+  },
+  "recipeWarningModal.newRecipeWarningTitle": {
+    "defaultMessage": "⚠️ Yeni Tarif Uyarısı"
+  },
+  "recipeWarningModal.recipePreview": {
+    "defaultMessage": "Tarif Önizlemesi:"
+  },
+  "recipeWarningModal.securityWarningTitle": {
+    "defaultMessage": "⚠️ Güvenlik Uyarısı"
+  },
+  "recipeWarningModal.titleLabel": {
+    "defaultMessage": "Başlık:"
+  },
+  "recipeWarningModal.trustAndExecute": {
+    "defaultMessage": "Güvenin ve Uygulayın"
+  },
+  "recipeWarningModal.trustSource": {
+    "defaultMessage": "Yalnızca bu tarifin kaynağına güveniyorsanız devam edin."
+  },
   "resetProviderSection.resetButton": {
     "defaultMessage": "Sağlayıcıyı ve Modeli Sıfırla"
   },
@@ -3272,11 +3284,11 @@
   "scheduleDetailView.cronExpression": {
     "defaultMessage": "Cron İfadesi:"
   },
-  "scheduleDetailView.currentSession": {
-    "defaultMessage": "Mevcut Oturum:"
-  },
   "scheduleDetailView.currentlyRunning": {
     "defaultMessage": "Şu anda Çalışıyor"
+  },
+  "scheduleDetailView.currentSession": {
+    "defaultMessage": "Mevcut Oturum:"
   },
   "scheduleDetailView.dir": {
     "defaultMessage": "Yön: {path}"
@@ -3335,12 +3347,6 @@
   "scheduleDetailView.noSessions": {
     "defaultMessage": "Bu program için oturum bulunamadı."
   },
-  "scheduleDetailView.pauseSchedule": {
-    "defaultMessage": "Programı Duraklat"
-  },
-  "scheduleDetailView.pauseUnpauseError": {
-    "defaultMessage": "Duraklatma/Duraklatmayı Kaldırma Hatası"
-  },
   "scheduleDetailView.paused": {
     "defaultMessage": "Duraklatıldı"
   },
@@ -3349,6 +3355,12 @@
   },
   "scheduleDetailView.pausedWarning": {
     "defaultMessage": "Bu program duraklatıldı ve otomatik olarak çalışmayacak. Manuel olarak tetiklemek için \"Şimdi Programlamayı Çalıştır\" seçeneğini kullanın veya otomatik yürütmeye devam etmek için duraklatmayı kaldırın."
+  },
+  "scheduleDetailView.pauseSchedule": {
+    "defaultMessage": "Programı Duraklat"
+  },
+  "scheduleDetailView.pauseUnpauseError": {
+    "defaultMessage": "Duraklatma/Duraklatmayı Kaldırma Hatası"
   },
   "scheduleDetailView.processStarted": {
     "defaultMessage": "İşlem Başlatıldı:"
@@ -3395,17 +3407,17 @@
   "scheduleDetailView.sessionId": {
     "defaultMessage": "Oturum Kimliği: {id}"
   },
-  "scheduleDetailView.unpauseSchedule": {
-    "defaultMessage": "Programı Duraklatmayı Kaldır"
-  },
   "scheduleDetailView.unpausedMsg": {
     "defaultMessage": "Duraklatılmamış \"{id}\""
   },
-  "scheduleDetailView.updateScheduleError": {
-    "defaultMessage": "Güncelleme Zamanlaması Hatası"
+  "scheduleDetailView.unpauseSchedule": {
+    "defaultMessage": "Programı Duraklatmayı Kaldır"
   },
   "scheduleDetailView.updatedMsg": {
     "defaultMessage": "\"{id}\" güncellendi"
+  },
+  "scheduleDetailView.updateScheduleError": {
+    "defaultMessage": "Güncelleme Zamanlaması Hatası"
   },
   "scheduleDetailView.viewingScheduleId": {
     "defaultMessage": "Program Kimliğini Görüntüleme: {id}"
@@ -3530,11 +3542,11 @@
   "schedulesView.pause": {
     "defaultMessage": "Duraklat"
   },
-  "schedulesView.pauseError": {
-    "defaultMessage": "Zamanlamayı Duraklat Hatası"
-  },
   "schedulesView.paused": {
     "defaultMessage": "Duraklatıldı"
+  },
+  "schedulesView.pauseError": {
+    "defaultMessage": "Zamanlamayı Duraklat Hatası"
   },
   "schedulesView.refresh": {
     "defaultMessage": "Yenile"
@@ -3554,6 +3566,9 @@
   "schedulesView.schedulePausedMsg": {
     "defaultMessage": "\"{id}\" programı başarıyla duraklatıldı"
   },
+  "schedulesView.scheduler": {
+    "defaultMessage": "Zamanlayıcı"
+  },
   "schedulesView.scheduleUnpaused": {
     "defaultMessage": "Duraklatmayı Kaldırmayı Planla"
   },
@@ -3565,9 +3580,6 @@
   },
   "schedulesView.scheduleUpdatedMsg": {
     "defaultMessage": "\"{id}\" programı başarıyla güncellendi"
-  },
-  "schedulesView.scheduler": {
-    "defaultMessage": "Zamanlayıcı"
   },
   "schedulesView.unpauseError": {
     "defaultMessage": "Duraklatmayı Kaldırma Programı Hatası"
@@ -3674,14 +3686,14 @@
   "sessionActionsHeader.copyText": {
     "defaultMessage": "Copy text"
   },
+  "sessionActionsHeader.duplicated": {
+    "defaultMessage": "Session duplicated"
+  },
   "sessionActionsHeader.duplicateFailed": {
     "defaultMessage": "Failed to duplicate session: {error}"
   },
   "sessionActionsHeader.duplicateSession": {
     "defaultMessage": "Duplicate session"
-  },
-  "sessionActionsHeader.duplicated": {
-    "defaultMessage": "Session duplicated"
   },
   "sessionActionsHeader.fullTextTitle": {
     "defaultMessage": "Text value"
@@ -3701,6 +3713,9 @@
   "sessionActionsHeader.modelInteractionsTitle": {
     "defaultMessage": "Recent model interactions"
   },
+  "sessionActionsHeader.renamed": {
+    "defaultMessage": "Session renamed"
+  },
   "sessionActionsHeader.renameFailed": {
     "defaultMessage": "Failed to rename session: {error}"
   },
@@ -3712,9 +3727,6 @@
   },
   "sessionActionsHeader.renameTitle": {
     "defaultMessage": "Rename Session"
-  },
-  "sessionActionsHeader.renamed": {
-    "defaultMessage": "Session renamed"
   },
   "sessionActionsHeader.save": {
     "defaultMessage": "Save"
@@ -3736,24 +3748,6 @@
   },
   "sessionIndicators.streaming": {
     "defaultMessage": "Akış"
-  },
-  "sessionViewComponents.empty.description": {
-    "defaultMessage": "Bu oturum herhangi bir mesaj içermiyor"
-  },
-  "sessionViewComponents.empty.title": {
-    "defaultMessage": "Mesaj bulunamadı"
-  },
-  "sessionViewComponents.error.loading": {
-    "defaultMessage": "Oturum Ayrıntıları Yüklenirken Hata Oluştu"
-  },
-  "sessionViewComponents.error.tryAgain": {
-    "defaultMessage": "Tekrar Deneyin"
-  },
-  "sessionViewComponents.role.assistant": {
-    "defaultMessage": "Goose"
-  },
-  "sessionViewComponents.role.user": {
-    "defaultMessage": "sen"
   },
   "sessions.action.delete": {
     "defaultMessage": "Oturumu sil"
@@ -3812,6 +3806,9 @@
   "sessions.import": {
     "defaultMessage": "Oturumu İçe Aktar"
   },
+  "sessions.importing": {
+    "defaultMessage": "İçe aktarılıyor..."
+  },
   "sessions.importNostr": {
     "defaultMessage": "Bağlantıyı İçe Aktar"
   },
@@ -3823,9 +3820,6 @@
   },
   "sessions.importNostr.title": {
     "defaultMessage": "Nostr Oturumunu İçe Aktar"
-  },
-  "sessions.importing": {
-    "defaultMessage": "İçe aktarılıyor..."
   },
   "sessions.loadingMore": {
     "defaultMessage": "Daha fazla oturum yükleniyor..."
@@ -3854,26 +3848,26 @@
   "sessions.toast.copied": {
     "defaultMessage": "Panoya kopyalandı"
   },
-  "sessions.toast.deleteFailed": {
-    "defaultMessage": "\"{name}\" oturumu silinemedi: {error}"
-  },
   "sessions.toast.deleted": {
     "defaultMessage": "Oturum başarıyla silindi"
   },
-  "sessions.toast.duplicateFailed": {
-    "defaultMessage": "Oturum kopyalanamadı: {error}"
+  "sessions.toast.deleteFailed": {
+    "defaultMessage": "\"{name}\" oturumu silinemedi: {error}"
   },
   "sessions.toast.duplicated": {
     "defaultMessage": "\"{name}\" oturumu başarıyla kopyalandı"
   },
+  "sessions.toast.duplicateFailed": {
+    "defaultMessage": "Oturum kopyalanamadı: {error}"
+  },
   "sessions.toast.exported": {
     "defaultMessage": "Oturum başarıyla dışa aktarıldı"
   },
-  "sessions.toast.importFailed": {
-    "defaultMessage": "Oturum içe aktarılamadı: {error}"
-  },
   "sessions.toast.imported": {
     "defaultMessage": "Oturum başarıyla içe aktarıldı"
+  },
+  "sessions.toast.importFailed": {
+    "defaultMessage": "Oturum içe aktarılamadı: {error}"
   },
   "sessions.toast.shareNostr": {
     "defaultMessage": "Şifrelenmiş Nostr paylaşım bağlantısı oluşturuldu"
@@ -3881,11 +3875,29 @@
   "sessions.toast.shareNostrFailed": {
     "defaultMessage": "Nostr paylaşım bağlantısı oluşturulamadı: {error}"
   },
+  "sessions.toast.updated": {
+    "defaultMessage": "Oturum açıklaması başarıyla güncellendi"
+  },
   "sessions.toast.updateFailed": {
     "defaultMessage": "Oturum açıklaması güncellenemedi: {error}"
   },
-  "sessions.toast.updated": {
-    "defaultMessage": "Oturum açıklaması başarıyla güncellendi"
+  "sessionViewComponents.empty.description": {
+    "defaultMessage": "Bu oturum herhangi bir mesaj içermiyor"
+  },
+  "sessionViewComponents.empty.title": {
+    "defaultMessage": "Mesaj bulunamadı"
+  },
+  "sessionViewComponents.error.loading": {
+    "defaultMessage": "Oturum Ayrıntıları Yüklenirken Hata Oluştu"
+  },
+  "sessionViewComponents.error.tryAgain": {
+    "defaultMessage": "Tekrar Deneyin"
+  },
+  "sessionViewComponents.role.assistant": {
+    "defaultMessage": "Goose"
+  },
+  "sessionViewComponents.role.user": {
+    "defaultMessage": "sen"
   },
   "settings.appearance.description": {
     "defaultMessage": "goose'nin sisteminizde nasıl görüneceğini yapılandırın"
@@ -4078,6 +4090,9 @@
   },
   "settingsView.tabPrompts": {
     "defaultMessage": "İstemler"
+  },
+  "settingsView.tabVoice": {
+    "defaultMessage": "Voice"
   },
   "settingsView.title": {
     "defaultMessage": "Ayarlar"
@@ -4427,11 +4442,11 @@
   "themeSelector.theme": {
     "defaultMessage": "Tema"
   },
-  "toolApprovalButtons.allowOnce": {
-    "defaultMessage": "Bir Kez İzin Ver"
-  },
   "toolApprovalButtons.allowedOnce": {
     "defaultMessage": "Bir kez izin verildi"
+  },
+  "toolApprovalButtons.allowOnce": {
+    "defaultMessage": "Bir Kez İzin Ver"
   },
   "toolApprovalButtons.alwaysAllow": {
     "defaultMessage": "Her Zaman İzin Ver"
@@ -4514,17 +4529,17 @@
   "updateSection.disableAutoDownloadDesc": {
     "defaultMessage": "Etkinleştirildiğinde, Goose yeni sürümleri bildirir ancak bunları otomatik olarak indirmez."
   },
-  "updateSection.downloadNow": {
-    "defaultMessage": "Şimdi İndir"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "Güncelleme indirildi ve kuruluma hazır!"
-  },
   "updateSection.downloadingProgress": {
     "defaultMessage": "Güncelleme indiriliyor... {percent}%"
   },
   "updateSection.downloadingUpdate": {
     "defaultMessage": "Güncelleme indiriliyor..."
+  },
+  "updateSection.downloadNow": {
+    "defaultMessage": "Şimdi İndir"
+  },
+  "updateSection.downloadReady": {
+    "defaultMessage": "Güncelleme indirildi ve kuruluma hazır!"
   },
   "updateSection.installAndRestart": {
     "defaultMessage": "Yükle ve Yeniden Başlat"
@@ -4550,11 +4565,11 @@
   "updateSection.readyInstallManual": {
     "defaultMessage": "✓ Güncelleme hazır! Kurulum talimatları için \"Yükle ve Yeniden Başlat\"a tıklayın."
   },
-  "updateSection.upToDate": {
-    "defaultMessage": "(güncel)"
-  },
   "updateSection.updateAvailable": {
     "defaultMessage": "Güncelleme mevcut!"
+  },
+  "updateSection.upToDate": {
+    "defaultMessage": "(güncel)"
   },
   "updateSection.versionAvailable": {
     "defaultMessage": "→ {version} mevcut"
@@ -4606,5 +4621,68 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "Düzenlenen mesajla yeni bir oturum oluşturun"
+  },
+  "voiceSettings.autoSpeakLabel": {
+    "defaultMessage": "Auto-speak responses"
+  },
+  "voiceSettings.autoSpeakTooltip": {
+    "defaultMessage": "Automatically read out AI responses using text-to-speech."
+  },
+  "voiceSettings.dictationDescription": {
+    "defaultMessage": "Configure voice dictation provider and microphone settings"
+  },
+  "voiceSettings.dictationTitle": {
+    "defaultMessage": "Voice Input"
+  },
+  "voiceSettings.modeHonk": {
+    "defaultMessage": "HONK! Enabled"
+  },
+  "voiceSettings.modeHonkDescription": {
+    "defaultMessage": "HONK button appears in chat when enabled. Press HONK to activate conversational style and auto-speak."
+  },
+  "voiceSettings.modeStandard": {
+    "defaultMessage": "Standard"
+  },
+  "voiceSettings.modeStandardDescription": {
+    "defaultMessage": "Microphone dictation only. Text appears in input box for review before sending."
+  },
+  "voiceSettings.silenceDescription": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting"
+  },
+  "voiceSettings.silenceTitle": {
+    "defaultMessage": "Silence Detection Threshold"
+  },
+  "voiceSettings.silenceTooltip": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting in conversation mode. Longer values are more forgiving for natural pauses. (500ms–3000ms)"
+  },
+  "voiceSettings.silenceValue": {
+    "defaultMessage": "{value}ms"
+  },
+  "voiceSettings.splitNone": {
+    "defaultMessage": "None"
+  },
+  "voiceSettings.splitParagraph": {
+    "defaultMessage": "Paragraph"
+  },
+  "voiceSettings.splitPunctuation": {
+    "defaultMessage": "Punctuation"
+  },
+  "voiceSettings.splitStrategyLabel": {
+    "defaultMessage": "Split Strategy"
+  },
+  "voiceSettings.splitStrategyTooltip": {
+    "defaultMessage": "Controls how text is broken into audio chunks for speech. 'Punctuation' gives faster first-word playback. 'None' synthesizes the full response at once."
+  },
+  "voiceSettings.ttsDescription": {
+    "defaultMessage": "Configure how Goose speaks responses aloud"
+  },
+  "voiceSettings.ttsTitle": {
+    "defaultMessage": "Text-to-Speech"
+  },
+  "voiceSettings.voiceModeDescription": {
+    "defaultMessage": "Choose how voice input behaves"
+  },
+  "voiceSettings.voiceModeTitle": {
+    "defaultMessage": "Voice Mode"
   }
 }

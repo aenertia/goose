@@ -74,14 +74,14 @@
   "authSettings.deleteCredential": {
     "defaultMessage": "Hapus kredensial"
   },
+  "authSettings.deleted": {
+    "defaultMessage": "Kredensial dihapus"
+  },
   "authSettings.deleteMessage": {
     "defaultMessage": "Hapus kredensial {name} untuk {provider}?"
   },
   "authSettings.deleteTitle": {
     "defaultMessage": "Hapus kredensial"
-  },
-  "authSettings.deleted": {
-    "defaultMessage": "Kredensial dihapus"
   },
   "authSettings.description": {
     "defaultMessage": "Kelola kredensial penyedia yang disimpan secara lokal oleh goose."
@@ -107,11 +107,11 @@
   "authSettings.reauthorize": {
     "defaultMessage": "Otorisasi ulang"
   },
-  "authSettings.signIn": {
-    "defaultMessage": "Masuk"
-  },
   "authSettings.signedIn": {
     "defaultMessage": "Kredensial dikonfigurasi"
+  },
+  "authSettings.signIn": {
+    "defaultMessage": "Masuk"
   },
   "authSettings.storageProviderCache": {
     "defaultMessage": "Cache penyedia"
@@ -134,6 +134,12 @@
   "baseChat.reconnecting": {
     "defaultMessage": "Koneksi terputus. Menghubungkan kembali…"
   },
+  "bottomMenuExtensionSelection.extensionsForNewChats": {
+    "defaultMessage": "Ekstensi untuk obrolan baru"
+  },
+  "bottomMenuExtensionSelection.extensionsForThisSession": {
+    "defaultMessage": "Ekstensi untuk sesi obrolan ini"
+  },
   "bottomMenuExtensionSelection.extensionUpdated": {
     "defaultMessage": "Ekstensi Diperbarui"
   },
@@ -142,12 +148,6 @@
   },
   "bottomMenuExtensionSelection.extensionWillBeEnabled": {
     "defaultMessage": "{name} akan diaktifkan di obrolan baru"
-  },
-  "bottomMenuExtensionSelection.extensionsForNewChats": {
-    "defaultMessage": "Ekstensi untuk obrolan baru"
-  },
-  "bottomMenuExtensionSelection.extensionsForThisSession": {
-    "defaultMessage": "Ekstensi untuk sesi obrolan ini"
   },
   "bottomMenuExtensionSelection.manageExtensions": {
     "defaultMessage": "kelola ekstensi"
@@ -175,6 +175,18 @@
   },
   "chatInput.contextWindow": {
     "defaultMessage": "Jendela konteks"
+  },
+  "chatInput.conversationListening": {
+    "defaultMessage": "Listening..."
+  },
+  "chatInput.conversationMode": {
+    "defaultMessage": "Conversation mode"
+  },
+  "chatInput.conversationSpeaking": {
+    "defaultMessage": "Speaking..."
+  },
+  "chatInput.conversationSubmitting": {
+    "defaultMessage": "Thinking..."
   },
   "chatInput.dictationError": {
     "defaultMessage": "Kesalahan Dikte"
@@ -650,11 +662,11 @@
   "customProviderForm.attachments": {
     "defaultMessage": "Lampiran"
   },
-  "customProviderForm.authHint": {
-    "defaultMessage": "LLM lokal seperti Ollama biasanya tidak memerlukan kunci API."
-  },
   "customProviderForm.authentication": {
     "defaultMessage": "Autentikasi"
+  },
+  "customProviderForm.authHint": {
+    "defaultMessage": "LLM lokal seperti Ollama biasanya tidak memerlukan kunci API."
   },
   "customProviderForm.availableModels": {
     "defaultMessage": "Model yang Tersedia (dipisahkan koma)"
@@ -953,17 +965,20 @@
   "elicitationRequest.waitingForResponse": {
     "defaultMessage": "Menunggu respons Anda ({timeRemaining} tersisa)"
   },
+  "environmentBadge.dev": {
+    "defaultMessage": "Dev"
+  },
   "envVarsSection.add": {
     "defaultMessage": "Tambah"
   },
   "envVarsSection.bothRequired": {
     "defaultMessage": "Nama variabel dan nilai harus diisi"
   },
-  "envVarsSection.envVarsDescription": {
-    "defaultMessage": "Tambahkan pasangan kunci-nilai untuk variabel lingkungan. Klik tombol \"+\" untuk menambahkan setelah mengisi kedua bidang. Untuk nilai rahasia yang sudah ada, klik tombol edit untuk mengubahnya."
-  },
   "envVarsSection.environmentVariables": {
     "defaultMessage": "Variabel Lingkungan"
+  },
+  "envVarsSection.envVarsDescription": {
+    "defaultMessage": "Tambahkan pasangan kunci-nilai untuk variabel lingkungan. Klik tombol \"+\" untuk menambahkan setelah mengisi kedua bidang. Untuk nilai rahasia yang sudah ada, klik tombol edit untuk mengubahnya."
   },
   "envVarsSection.noSpaces": {
     "defaultMessage": "Nama variabel tidak boleh mengandung spasi"
@@ -973,9 +988,6 @@
   },
   "envVarsSection.variableName": {
     "defaultMessage": "Nama variabel"
-  },
-  "environmentBadge.dev": {
-    "defaultMessage": "Dev"
   },
   "errorBoundary.errorGeneric": {
     "defaultMessage": "Terjadi kesalahan."
@@ -1136,9 +1148,6 @@
   "extensionModal.unsavedChangesTitle": {
     "defaultMessage": "Perubahan Belum Disimpan"
   },
-  "extensionTimeoutField.timeoutLabel": {
-    "defaultMessage": "Batas Waktu"
-  },
   "extensionsSection.addCustomExtension": {
     "defaultMessage": "Tambah ekstensi khusus"
   },
@@ -1174,6 +1183,9 @@
   },
   "extensionsView.searchPlaceholder": {
     "defaultMessage": "Cari ekstensi..."
+  },
+  "extensionTimeoutField.timeoutLabel": {
+    "defaultMessage": "Batas Waktu"
   },
   "externalBackendSection.certFingerprint": {
     "defaultMessage": "Sidik Jari Sertifikat (opsional)"
@@ -1394,11 +1406,11 @@
   "huggingFaceSignInPrompt.failedToConfigure": {
     "defaultMessage": "Gagal masuk ke Hugging Face: {error}"
   },
-  "huggingFaceSignInPrompt.signIn": {
-    "defaultMessage": "Masuk"
-  },
   "huggingFaceSignInPrompt.signedIn": {
     "defaultMessage": "Hugging Face telah masuk"
+  },
+  "huggingFaceSignInPrompt.signIn": {
+    "defaultMessage": "Masuk"
   },
   "huggingFaceSignInPrompt.signingIn": {
     "defaultMessage": "Sedang masuk..."
@@ -1433,14 +1445,14 @@
   "importRecipeForm.expectedRecipeStructure": {
     "defaultMessage": "Struktur Resep yang Diharapkan"
   },
+  "importRecipeForm.importing": {
+    "defaultMessage": "Mengimpor..."
+  },
   "importRecipeForm.importRecipeButton": {
     "defaultMessage": "Impor Resep"
   },
   "importRecipeForm.importRecipeTitle": {
     "defaultMessage": "Impor Resep"
-  },
-  "importRecipeForm.importing": {
-    "defaultMessage": "Mengimpor..."
   },
   "importRecipeForm.or": {
     "defaultMessage": "ATAU"
@@ -1540,18 +1552,6 @@
   },
   "jsonSchemaForm.submit": {
     "defaultMessage": "Kirim"
-  },
-  "keyValueEditor.addValue": {
-    "defaultMessage": "Tambahkan nilai prakonfigurasi"
-  },
-  "keyValueEditor.defaultKeyPlaceholder": {
-    "defaultMessage": "Nama parameter..."
-  },
-  "keyValueEditor.defaultValuePlaceholder": {
-    "defaultMessage": "Nilai parameter..."
-  },
-  "keyValueEditor.removeValue": {
-    "defaultMessage": "Hapus nilai prakonfigurasi {key}"
   },
   "keyboardShortcuts.alwaysOnTopDescription": {
     "defaultMessage": "Aktifkan jendela selalu di atas"
@@ -1697,6 +1697,18 @@
   "keyboardShortcuts.toggleNavigationLabel": {
     "defaultMessage": "Alihkan Navigasi"
   },
+  "keyValueEditor.addValue": {
+    "defaultMessage": "Tambahkan nilai prakonfigurasi"
+  },
+  "keyValueEditor.defaultKeyPlaceholder": {
+    "defaultMessage": "Nama parameter..."
+  },
+  "keyValueEditor.defaultValuePlaceholder": {
+    "defaultMessage": "Nilai parameter..."
+  },
+  "keyValueEditor.removeValue": {
+    "defaultMessage": "Hapus nilai prakonfigurasi {key}"
+  },
   "launcher.placeholder": {
     "defaultMessage": "Tanyakan apa saja kepada goose..."
   },
@@ -1736,17 +1748,17 @@
   "localInferenceSettings.downloadCancelled": {
     "defaultMessage": "Unduhan dibatalkan"
   },
-  "localInferenceSettings.downloadFailed": {
-    "defaultMessage": "Unduhan gagal"
-  },
-  "localInferenceSettings.downloadProgress": {
-    "defaultMessage": "{downloaded} / {total} ({percent}%)"
-  },
   "localInferenceSettings.downloadedModels": {
     "defaultMessage": "Model yang Diunduh"
   },
+  "localInferenceSettings.downloadFailed": {
+    "defaultMessage": "Unduhan gagal"
+  },
   "localInferenceSettings.downloading": {
     "defaultMessage": "Mengunduh"
+  },
+  "localInferenceSettings.downloadProgress": {
+    "defaultMessage": "{downloaded} / {total} ({percent}%)"
   },
   "localInferenceSettings.evictFromMemory": {
     "defaultMessage": "Evict from memory"
@@ -1835,11 +1847,11 @@
   "localModelPicker.checkingModels": {
     "defaultMessage": "Memeriksa model yang tersedia..."
   },
-  "localModelPicker.downloadModel": {
-    "defaultMessage": "Unduh {modelId} ({size})"
-  },
   "localModelPicker.downloading": {
     "defaultMessage": "Mengunduh {modelId}"
+  },
+  "localModelPicker.downloadModel": {
+    "defaultMessage": "Unduh {modelId} ({size})"
   },
   "localModelPicker.failedToLoad": {
     "defaultMessage": "Gagal memuat model yang tersedia. Silakan coba lagi."
@@ -2003,6 +2015,9 @@
   "messageQueue.paused": {
     "defaultMessage": "Dijeda"
   },
+  "messageQueue.queued": {
+    "defaultMessage": "diantrekan"
+  },
   "messageQueue.queuePaused": {
     "defaultMessage": "Antrean Dijeda"
   },
@@ -2011,9 +2026,6 @@
   },
   "messageQueue.queuePausedExpanded": {
     "defaultMessage": "Antrean dijeda karena interupsi. Gunakan \"Kirim Sekarang\" atau tambahkan pesan baru untuk melanjutkan."
-  },
-  "messageQueue.queued": {
-    "defaultMessage": "diantrekan"
   },
   "messageQueue.removeFromQueue": {
     "defaultMessage": "Hapus pesan ini dari antrean"
@@ -2063,11 +2075,11 @@
   "messageUsageStats.speed": {
     "defaultMessage": "Kecepatan"
   },
-  "messageUsageStats.tokenUnit": {
-    "defaultMessage": "tok"
-  },
   "messageUsageStats.tokensPerSecondUnit": {
     "defaultMessage": "tok/s"
+  },
+  "messageUsageStats.tokenUnit": {
+    "defaultMessage": "tok"
   },
   "messageUsageStats.total": {
     "defaultMessage": "Total"
@@ -2105,35 +2117,11 @@
   "microphoneSelector.test": {
     "defaultMessage": "Uji"
   },
-  "modeSelectionItem.autonomousDescription": {
-    "defaultMessage": "Kemampuan modifikasi file penuh, edit, buat, dan hapus file dengan bebas."
-  },
-  "modeSelectionItem.autonomousLabel": {
-    "defaultMessage": "Otonom"
-  },
-  "modeSelectionItem.chatOnlyDescription": {
-    "defaultMessage": "Berinteraksi dengan penyedia yang dipilih tanpa menggunakan alat atau ekstensi."
-  },
-  "modeSelectionItem.chatOnlyLabel": {
-    "defaultMessage": "Obrolan saja"
-  },
-  "modeSelectionItem.manualDescription": {
-    "defaultMessage": "Semua alat, ekstensi, dan modifikasi file akan memerlukan persetujuan manusia"
-  },
-  "modeSelectionItem.manualLabel": {
-    "defaultMessage": "Manual"
-  },
-  "modeSelectionItem.smartDescription": {
-    "defaultMessage": "Tentukan secara cerdas tindakan mana yang memerlukan persetujuan berdasarkan tingkat risiko"
-  },
-  "modeSelectionItem.smartLabel": {
-    "defaultMessage": "Cerdas"
+  "modelAndProviderContext.modelChangedTitle": {
+    "defaultMessage": "Model diubah"
   },
   "modelAndProviderContext.modelChangeFailed": {
     "defaultMessage": "{provider}/{model} gagal"
-  },
-  "modelAndProviderContext.modelChangedTitle": {
-    "defaultMessage": "Model diubah"
   },
   "modelAndProviderContext.selectModel": {
     "defaultMessage": "Pilih Model"
@@ -2146,6 +2134,27 @@
   },
   "modelAndProviderContext.unknownProviderTitle": {
     "defaultMessage": "Pencarian nama penyedia"
+  },
+  "modelsBottomBar.changeModel": {
+    "defaultMessage": "Ubah Model"
+  },
+  "modelsBottomBar.currentModel": {
+    "defaultMessage": "Model saat ini"
+  },
+  "modelsBottomBar.loadingModel": {
+    "defaultMessage": "Memuat model..."
+  },
+  "modelsBottomBar.localModelSettings": {
+    "defaultMessage": "Pengaturan Model Lokal"
+  },
+  "modelsBottomBar.localModelSettingsTitle": {
+    "defaultMessage": "Pengaturan Model Lokal — {modelName}"
+  },
+  "modelsBottomBar.resolvedModel": {
+    "defaultMessage": "Model yang diselesaikan"
+  },
+  "modelsBottomBar.selectModel": {
+    "defaultMessage": "Pilih Model"
   },
   "modelSettingsButtons.configureProviders": {
     "defaultMessage": "Konfigurasikan penyedia"
@@ -2306,32 +2315,35 @@
   "modelSettingsPanel.topP": {
     "defaultMessage": "Top P"
   },
-  "modelsBottomBar.changeModel": {
-    "defaultMessage": "Ubah Model"
-  },
-  "modelsBottomBar.currentModel": {
-    "defaultMessage": "Model saat ini"
-  },
-  "modelsBottomBar.loadingModel": {
-    "defaultMessage": "Memuat model..."
-  },
-  "modelsBottomBar.localModelSettings": {
-    "defaultMessage": "Pengaturan Model Lokal"
-  },
-  "modelsBottomBar.localModelSettingsTitle": {
-    "defaultMessage": "Pengaturan Model Lokal — {modelName}"
-  },
-  "modelsBottomBar.resolvedModel": {
-    "defaultMessage": "Model yang diselesaikan"
-  },
-  "modelsBottomBar.selectModel": {
-    "defaultMessage": "Pilih Model"
-  },
   "modelsSection.resetDescription": {
     "defaultMessage": "Bersihkan pengaturan model dan penyedia yang dipilih untuk memulai dari awal"
   },
   "modelsSection.resetTitle": {
     "defaultMessage": "Atur Ulang Penyedia dan Model"
+  },
+  "modeSelectionItem.autonomousDescription": {
+    "defaultMessage": "Kemampuan modifikasi file penuh, edit, buat, dan hapus file dengan bebas."
+  },
+  "modeSelectionItem.autonomousLabel": {
+    "defaultMessage": "Otonom"
+  },
+  "modeSelectionItem.chatOnlyDescription": {
+    "defaultMessage": "Berinteraksi dengan penyedia yang dipilih tanpa menggunakan alat atau ekstensi."
+  },
+  "modeSelectionItem.chatOnlyLabel": {
+    "defaultMessage": "Obrolan saja"
+  },
+  "modeSelectionItem.manualDescription": {
+    "defaultMessage": "Semua alat, ekstensi, dan modifikasi file akan memerlukan persetujuan manusia"
+  },
+  "modeSelectionItem.manualLabel": {
+    "defaultMessage": "Manual"
+  },
+  "modeSelectionItem.smartDescription": {
+    "defaultMessage": "Tentukan secara cerdas tindakan mana yang memerlukan persetujuan berdasarkan tingkat risiko"
+  },
+  "modeSelectionItem.smartLabel": {
+    "defaultMessage": "Cerdas"
   },
   "navigation.itemApps": {
     "defaultMessage": "Aplikasi"
@@ -2612,11 +2624,11 @@
   "promptsSettings.edit": {
     "defaultMessage": "Edit"
   },
-  "promptsSettings.editPromptTitle": {
-    "defaultMessage": "Edit: {name}"
-  },
   "promptsSettings.editingLabel": {
     "defaultMessage": "Mengedit: {name}"
+  },
+  "promptsSettings.editPromptTitle": {
+    "defaultMessage": "Edit: {name}"
   },
   "promptsSettings.enterPromptContent": {
     "defaultMessage": "Masukkan konten prompt..."
@@ -2726,11 +2738,11 @@
   "providerConfigForm.noApiKey": {
     "defaultMessage": "Tidak punya kunci API?"
   },
-  "providerConfigForm.signInWith": {
-    "defaultMessage": "Masuk dengan {providerName}"
-  },
   "providerConfigForm.signingIn": {
     "defaultMessage": "Sedang masuk..."
+  },
+  "providerConfigForm.signInWith": {
+    "defaultMessage": "Masuk dengan {providerName}"
   },
   "providerConfigurationModal.addApiKeyDescription": {
     "defaultMessage": "Tambahkan kunci API Anda untuk penyedia ini agar terintegrasi ke dalam goose"
@@ -2792,11 +2804,11 @@
   "providerConfigurationModal.seeDocumentation": {
     "defaultMessage": "Lihat <link>dokumentasi</link> untuk detail selengkapnya."
   },
-  "providerConfigurationModal.signInWith": {
-    "defaultMessage": "Masuk dengan {providerName}"
-  },
   "providerConfigurationModal.signingIn": {
     "defaultMessage": "Sedang masuk..."
+  },
+  "providerConfigurationModal.signInWith": {
+    "defaultMessage": "Masuk dengan {providerName}"
   },
   "providerGrid.addProvider": {
     "defaultMessage": "Tambah Penyedia"
@@ -3032,39 +3044,6 @@
   "recipeNameField.formatHint": {
     "defaultMessage": "Akan diformat secara otomatis (huruf kecil, tanda hubung untuk spasi)"
   },
-  "recipeWarningModal.cancel": {
-    "defaultMessage": "Batal"
-  },
-  "recipeWarningModal.descriptionLabel": {
-    "defaultMessage": "Deskripsi:"
-  },
-  "recipeWarningModal.firstTimeDescription": {
-    "defaultMessage": "Anda akan menjalankan resep yang belum pernah Anda jalankan sebelumnya."
-  },
-  "recipeWarningModal.hiddenCharsWarning": {
-    "defaultMessage": "Resep ini berisi karakter tersembunyi yang akan diabaikan demi keamanan Anda, karena karakter tersebut dapat digunakan untuk tujuan jahat."
-  },
-  "recipeWarningModal.instructionsLabel": {
-    "defaultMessage": "Instruksi:"
-  },
-  "recipeWarningModal.newRecipeWarningTitle": {
-    "defaultMessage": "⚠️ Peringatan Resep Baru"
-  },
-  "recipeWarningModal.recipePreview": {
-    "defaultMessage": "Pratinjau Resep:"
-  },
-  "recipeWarningModal.securityWarningTitle": {
-    "defaultMessage": "⚠️ Peringatan Keamanan"
-  },
-  "recipeWarningModal.titleLabel": {
-    "defaultMessage": "Judul:"
-  },
-  "recipeWarningModal.trustAndExecute": {
-    "defaultMessage": "Percayai dan Jalankan"
-  },
-  "recipeWarningModal.trustSource": {
-    "defaultMessage": "Hanya lanjutkan jika Anda mempercayai sumber resep ini."
-  },
   "recipesView.addSchedule": {
     "defaultMessage": "Tambah jadwal"
   },
@@ -3239,6 +3218,39 @@
   "recipesView.yamlFiles": {
     "defaultMessage": "Berkas YAML"
   },
+  "recipeWarningModal.cancel": {
+    "defaultMessage": "Batal"
+  },
+  "recipeWarningModal.descriptionLabel": {
+    "defaultMessage": "Deskripsi:"
+  },
+  "recipeWarningModal.firstTimeDescription": {
+    "defaultMessage": "Anda akan menjalankan resep yang belum pernah Anda jalankan sebelumnya."
+  },
+  "recipeWarningModal.hiddenCharsWarning": {
+    "defaultMessage": "Resep ini berisi karakter tersembunyi yang akan diabaikan demi keamanan Anda, karena karakter tersebut dapat digunakan untuk tujuan jahat."
+  },
+  "recipeWarningModal.instructionsLabel": {
+    "defaultMessage": "Instruksi:"
+  },
+  "recipeWarningModal.newRecipeWarningTitle": {
+    "defaultMessage": "⚠️ Peringatan Resep Baru"
+  },
+  "recipeWarningModal.recipePreview": {
+    "defaultMessage": "Pratinjau Resep:"
+  },
+  "recipeWarningModal.securityWarningTitle": {
+    "defaultMessage": "⚠️ Peringatan Keamanan"
+  },
+  "recipeWarningModal.titleLabel": {
+    "defaultMessage": "Judul:"
+  },
+  "recipeWarningModal.trustAndExecute": {
+    "defaultMessage": "Percayai dan Jalankan"
+  },
+  "recipeWarningModal.trustSource": {
+    "defaultMessage": "Hanya lanjutkan jika Anda mempercayai sumber resep ini."
+  },
   "resetProviderSection.resetButton": {
     "defaultMessage": "Atur Ulang Penyedia dan Model"
   },
@@ -3272,11 +3284,11 @@
   "scheduleDetailView.cronExpression": {
     "defaultMessage": "Ekspresi Cron:"
   },
-  "scheduleDetailView.currentSession": {
-    "defaultMessage": "Sesi Saat Ini:"
-  },
   "scheduleDetailView.currentlyRunning": {
     "defaultMessage": "Sedang Berjalan"
+  },
+  "scheduleDetailView.currentSession": {
+    "defaultMessage": "Sesi Saat Ini:"
   },
   "scheduleDetailView.dir": {
     "defaultMessage": "Dir: {path}"
@@ -3335,12 +3347,6 @@
   "scheduleDetailView.noSessions": {
     "defaultMessage": "Tidak ada sesi yang ditemukan untuk jadwal ini."
   },
-  "scheduleDetailView.pauseSchedule": {
-    "defaultMessage": "Jeda Jadwal"
-  },
-  "scheduleDetailView.pauseUnpauseError": {
-    "defaultMessage": "Kesalahan Jeda/Lanjutkan"
-  },
   "scheduleDetailView.paused": {
     "defaultMessage": "Dijeda"
   },
@@ -3349,6 +3355,12 @@
   },
   "scheduleDetailView.pausedWarning": {
     "defaultMessage": "Jadwal ini dijeda dan tidak akan berjalan secara otomatis. Gunakan \"Jalankan Jadwal Sekarang\" untuk memicunya secara manual atau lanjutkan untuk melanjutkan eksekusi otomatis."
+  },
+  "scheduleDetailView.pauseSchedule": {
+    "defaultMessage": "Jeda Jadwal"
+  },
+  "scheduleDetailView.pauseUnpauseError": {
+    "defaultMessage": "Kesalahan Jeda/Lanjutkan"
   },
   "scheduleDetailView.processStarted": {
     "defaultMessage": "Proses Dimulai:"
@@ -3395,17 +3407,17 @@
   "scheduleDetailView.sessionId": {
     "defaultMessage": "ID Sesi: {id}"
   },
-  "scheduleDetailView.unpauseSchedule": {
-    "defaultMessage": "Lanjutkan Jadwal"
-  },
   "scheduleDetailView.unpausedMsg": {
     "defaultMessage": "Dilanjutkan \"{id}\""
   },
-  "scheduleDetailView.updateScheduleError": {
-    "defaultMessage": "Kesalahan Memperbarui Jadwal"
+  "scheduleDetailView.unpauseSchedule": {
+    "defaultMessage": "Lanjutkan Jadwal"
   },
   "scheduleDetailView.updatedMsg": {
     "defaultMessage": "Diperbarui \"{id}\""
+  },
+  "scheduleDetailView.updateScheduleError": {
+    "defaultMessage": "Kesalahan Memperbarui Jadwal"
   },
   "scheduleDetailView.viewingScheduleId": {
     "defaultMessage": "Melihat ID Jadwal: {id}"
@@ -3530,11 +3542,11 @@
   "schedulesView.pause": {
     "defaultMessage": "Jeda"
   },
-  "schedulesView.pauseError": {
-    "defaultMessage": "Kesalahan Menjeda Jadwal"
-  },
   "schedulesView.paused": {
     "defaultMessage": "Dijeda"
+  },
+  "schedulesView.pauseError": {
+    "defaultMessage": "Kesalahan Menjeda Jadwal"
   },
   "schedulesView.refresh": {
     "defaultMessage": "Segarkan"
@@ -3554,6 +3566,9 @@
   "schedulesView.schedulePausedMsg": {
     "defaultMessage": "Berhasil menjeda jadwal \"{id}\""
   },
+  "schedulesView.scheduler": {
+    "defaultMessage": "Penjadwal"
+  },
   "schedulesView.scheduleUnpaused": {
     "defaultMessage": "Jadwal Dilanjutkan"
   },
@@ -3565,9 +3580,6 @@
   },
   "schedulesView.scheduleUpdatedMsg": {
     "defaultMessage": "Berhasil memperbarui jadwal \"{id}\""
-  },
-  "schedulesView.scheduler": {
-    "defaultMessage": "Penjadwal"
   },
   "schedulesView.unpauseError": {
     "defaultMessage": "Kesalahan Melanjutkan Jadwal"
@@ -3674,14 +3686,14 @@
   "sessionActionsHeader.copyText": {
     "defaultMessage": "Salin teks"
   },
+  "sessionActionsHeader.duplicated": {
+    "defaultMessage": "Sesi digandakan"
+  },
   "sessionActionsHeader.duplicateFailed": {
     "defaultMessage": "Gagal menggandakan sesi: {error}"
   },
   "sessionActionsHeader.duplicateSession": {
     "defaultMessage": "Gandakan sesi"
-  },
-  "sessionActionsHeader.duplicated": {
-    "defaultMessage": "Sesi digandakan"
   },
   "sessionActionsHeader.fullTextTitle": {
     "defaultMessage": "Nilai teks"
@@ -3701,6 +3713,9 @@
   "sessionActionsHeader.modelInteractionsTitle": {
     "defaultMessage": "Recent model interactions"
   },
+  "sessionActionsHeader.renamed": {
+    "defaultMessage": "Sesi diganti namanya"
+  },
   "sessionActionsHeader.renameFailed": {
     "defaultMessage": "Gagal mengganti nama sesi: {error}"
   },
@@ -3712,9 +3727,6 @@
   },
   "sessionActionsHeader.renameTitle": {
     "defaultMessage": "Ganti Nama Sesi"
-  },
-  "sessionActionsHeader.renamed": {
-    "defaultMessage": "Sesi diganti namanya"
   },
   "sessionActionsHeader.save": {
     "defaultMessage": "Simpan"
@@ -3736,24 +3748,6 @@
   },
   "sessionIndicators.streaming": {
     "defaultMessage": "Streaming"
-  },
-  "sessionViewComponents.empty.description": {
-    "defaultMessage": "Sesi ini tidak berisi pesan apa pun"
-  },
-  "sessionViewComponents.empty.title": {
-    "defaultMessage": "Tidak ada pesan ditemukan"
-  },
-  "sessionViewComponents.error.loading": {
-    "defaultMessage": "Kesalahan Memuat Detail Sesi"
-  },
-  "sessionViewComponents.error.tryAgain": {
-    "defaultMessage": "Coba Lagi"
-  },
-  "sessionViewComponents.role.assistant": {
-    "defaultMessage": "Goose"
-  },
-  "sessionViewComponents.role.user": {
-    "defaultMessage": "Anda"
   },
   "sessions.action.delete": {
     "defaultMessage": "Hapus sesi"
@@ -3812,6 +3806,9 @@
   "sessions.import": {
     "defaultMessage": "Impor Sesi"
   },
+  "sessions.importing": {
+    "defaultMessage": "Mengimpor..."
+  },
   "sessions.importNostr": {
     "defaultMessage": "Impor Tautan"
   },
@@ -3823,9 +3820,6 @@
   },
   "sessions.importNostr.title": {
     "defaultMessage": "Impor Sesi Nostr"
-  },
-  "sessions.importing": {
-    "defaultMessage": "Mengimpor..."
   },
   "sessions.loadingMore": {
     "defaultMessage": "Memuat lebih banyak sesi..."
@@ -3854,26 +3848,26 @@
   "sessions.toast.copied": {
     "defaultMessage": "Disalin ke papan klip"
   },
-  "sessions.toast.deleteFailed": {
-    "defaultMessage": "Gagal menghapus sesi \"{name}\": {error}"
-  },
   "sessions.toast.deleted": {
     "defaultMessage": "Sesi berhasil dihapus"
   },
-  "sessions.toast.duplicateFailed": {
-    "defaultMessage": "Gagal menggandakan sesi: {error}"
+  "sessions.toast.deleteFailed": {
+    "defaultMessage": "Gagal menghapus sesi \"{name}\": {error}"
   },
   "sessions.toast.duplicated": {
     "defaultMessage": "Sesi \"{name}\" berhasil digandakan"
   },
+  "sessions.toast.duplicateFailed": {
+    "defaultMessage": "Gagal menggandakan sesi: {error}"
+  },
   "sessions.toast.exported": {
     "defaultMessage": "Sesi berhasil diekspor"
   },
-  "sessions.toast.importFailed": {
-    "defaultMessage": "Gagal mengimpor sesi: {error}"
-  },
   "sessions.toast.imported": {
     "defaultMessage": "Sesi berhasil diimpor"
+  },
+  "sessions.toast.importFailed": {
+    "defaultMessage": "Gagal mengimpor sesi: {error}"
   },
   "sessions.toast.shareNostr": {
     "defaultMessage": "Tautan berbagi Nostr terenkripsi dibuat"
@@ -3881,11 +3875,29 @@
   "sessions.toast.shareNostrFailed": {
     "defaultMessage": "Gagal membuat tautan berbagi Nostr: {error}"
   },
+  "sessions.toast.updated": {
+    "defaultMessage": "Deskripsi sesi berhasil diperbarui"
+  },
   "sessions.toast.updateFailed": {
     "defaultMessage": "Gagal memperbarui deskripsi sesi: {error}"
   },
-  "sessions.toast.updated": {
-    "defaultMessage": "Deskripsi sesi berhasil diperbarui"
+  "sessionViewComponents.empty.description": {
+    "defaultMessage": "Sesi ini tidak berisi pesan apa pun"
+  },
+  "sessionViewComponents.empty.title": {
+    "defaultMessage": "Tidak ada pesan ditemukan"
+  },
+  "sessionViewComponents.error.loading": {
+    "defaultMessage": "Kesalahan Memuat Detail Sesi"
+  },
+  "sessionViewComponents.error.tryAgain": {
+    "defaultMessage": "Coba Lagi"
+  },
+  "sessionViewComponents.role.assistant": {
+    "defaultMessage": "Goose"
+  },
+  "sessionViewComponents.role.user": {
+    "defaultMessage": "Anda"
   },
   "settings.appearance.description": {
     "defaultMessage": "Konfigurasikan tampilan goose di sistem Anda"
@@ -4078,6 +4090,9 @@
   },
   "settingsView.tabPrompts": {
     "defaultMessage": "Prompt"
+  },
+  "settingsView.tabVoice": {
+    "defaultMessage": "Voice"
   },
   "settingsView.title": {
     "defaultMessage": "Pengaturan"
@@ -4427,11 +4442,11 @@
   "themeSelector.theme": {
     "defaultMessage": "Tema"
   },
-  "toolApprovalButtons.allowOnce": {
-    "defaultMessage": "Izinkan Sekali"
-  },
   "toolApprovalButtons.allowedOnce": {
     "defaultMessage": "Diizinkan sekali"
+  },
+  "toolApprovalButtons.allowOnce": {
+    "defaultMessage": "Izinkan Sekali"
   },
   "toolApprovalButtons.alwaysAllow": {
     "defaultMessage": "Selalu Izinkan"
@@ -4514,17 +4529,17 @@
   "updateSection.disableAutoDownloadDesc": {
     "defaultMessage": "Saat diaktifkan, Goose akan memberi tahu Anda tentang versi baru tetapi tidak akan mengunduhnya secara otomatis."
   },
-  "updateSection.downloadNow": {
-    "defaultMessage": "Unduh Sekarang"
-  },
-  "updateSection.downloadReady": {
-    "defaultMessage": "Pembaruan telah diunduh dan siap dipasang!"
-  },
   "updateSection.downloadingProgress": {
     "defaultMessage": "Mengunduh pembaruan... {percent}%"
   },
   "updateSection.downloadingUpdate": {
     "defaultMessage": "Mengunduh pembaruan..."
+  },
+  "updateSection.downloadNow": {
+    "defaultMessage": "Unduh Sekarang"
+  },
+  "updateSection.downloadReady": {
+    "defaultMessage": "Pembaruan telah diunduh dan siap dipasang!"
   },
   "updateSection.installAndRestart": {
     "defaultMessage": "Instal & Mulai Ulang"
@@ -4550,11 +4565,11 @@
   "updateSection.readyInstallManual": {
     "defaultMessage": "✓ Pembaruan sudah siap! Klik \"Install & Restart\" untuk petunjuk pemasangan."
   },
-  "updateSection.upToDate": {
-    "defaultMessage": "(terbaru)"
-  },
   "updateSection.updateAvailable": {
     "defaultMessage": "Pembaruan tersedia!"
+  },
+  "updateSection.upToDate": {
+    "defaultMessage": "(terbaru)"
   },
   "updateSection.versionAvailable": {
     "defaultMessage": "→ {version} tersedia"
@@ -4606,5 +4621,68 @@
   },
   "userMessage.forkSessionTitle": {
     "defaultMessage": "Buat sesi baru dengan pesan yang diedit"
+  },
+  "voiceSettings.autoSpeakLabel": {
+    "defaultMessage": "Auto-speak responses"
+  },
+  "voiceSettings.autoSpeakTooltip": {
+    "defaultMessage": "Automatically read out AI responses using text-to-speech."
+  },
+  "voiceSettings.dictationDescription": {
+    "defaultMessage": "Configure voice dictation provider and microphone settings"
+  },
+  "voiceSettings.dictationTitle": {
+    "defaultMessage": "Voice Input"
+  },
+  "voiceSettings.modeHonk": {
+    "defaultMessage": "HONK! Enabled"
+  },
+  "voiceSettings.modeHonkDescription": {
+    "defaultMessage": "HONK button appears in chat when enabled. Press HONK to activate conversational style and auto-speak."
+  },
+  "voiceSettings.modeStandard": {
+    "defaultMessage": "Standard"
+  },
+  "voiceSettings.modeStandardDescription": {
+    "defaultMessage": "Microphone dictation only. Text appears in input box for review before sending."
+  },
+  "voiceSettings.silenceDescription": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting"
+  },
+  "voiceSettings.silenceTitle": {
+    "defaultMessage": "Silence Detection Threshold"
+  },
+  "voiceSettings.silenceTooltip": {
+    "defaultMessage": "How long to wait after you stop speaking before auto-submitting in conversation mode. Longer values are more forgiving for natural pauses. (500ms–3000ms)"
+  },
+  "voiceSettings.silenceValue": {
+    "defaultMessage": "{value}ms"
+  },
+  "voiceSettings.splitNone": {
+    "defaultMessage": "None"
+  },
+  "voiceSettings.splitParagraph": {
+    "defaultMessage": "Paragraph"
+  },
+  "voiceSettings.splitPunctuation": {
+    "defaultMessage": "Punctuation"
+  },
+  "voiceSettings.splitStrategyLabel": {
+    "defaultMessage": "Split Strategy"
+  },
+  "voiceSettings.splitStrategyTooltip": {
+    "defaultMessage": "Controls how text is broken into audio chunks for speech. 'Punctuation' gives faster first-word playback. 'None' synthesizes the full response at once."
+  },
+  "voiceSettings.ttsDescription": {
+    "defaultMessage": "Configure how Goose speaks responses aloud"
+  },
+  "voiceSettings.ttsTitle": {
+    "defaultMessage": "Text-to-Speech"
+  },
+  "voiceSettings.voiceModeDescription": {
+    "defaultMessage": "Choose how voice input behaves"
+  },
+  "voiceSettings.voiceModeTitle": {
+    "defaultMessage": "Voice Mode"
   }
 }

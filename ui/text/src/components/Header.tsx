@@ -4,6 +4,7 @@ import { Spinner } from "./Spinner.js";
 import { Rule } from "./Rule.js";
 import { TEAL, CRANBERRY, TEXT_PRIMARY, TEXT_DIM, RULE_COLOR } from "../colors.js";
 import { isErrorStatus } from "../utils.js";
+import type { VoicePhase } from '@aaif/voice-shared/voice/types.js';
 
 interface HeaderProps {
   width: number;
@@ -11,6 +12,7 @@ interface HeaderProps {
   loading: boolean;
   spinIdx: number;
   turnInfo?: { current: number; total: number };
+  voicePhase?: VoicePhase;
 }
 
 export const Header = React.memo(function Header({
@@ -19,6 +21,7 @@ export const Header = React.memo(function Header({
   loading,
   spinIdx,
   turnInfo,
+  voicePhase,
 }: HeaderProps) {
   const statusColor =
     status === "ready" ? TEAL : isErrorStatus(status) ? CRANBERRY : TEXT_DIM;
@@ -41,12 +44,21 @@ export const Header = React.memo(function Header({
           )}
         </Box>
         <Box width={rightSideWidth} justifyContent="flex-end">
+          {voicePhase === 'speaking' && (
+            <Text>{"🔊 "}</Text>
+          )}
+          {voicePhase === 'listening' && (
+            <Text>{"🎤 "}</Text>
+          )}
+          {voicePhase === 'transcribing' && (
+            <Text>{"⏳ "}</Text>
+          )}
           {turnInfo && turnInfo.total > 1 && (
             <Text color={TEXT_DIM}>
               {turnInfo.current}/{turnInfo.total}{"  "}
             </Text>
           )}
-          <Text color={TEXT_DIM}>^E exts · ^M models · ^P providers</Text>
+          <Text color={TEXT_DIM}>^T tts · ^L mic · ^E exts · ^M models · ^P providers</Text>
         </Box>
       </Box>
       <Rule width={constrainedWidth} />

@@ -9,7 +9,8 @@ import React, {
 import { Box, Text, render, useApp, useInput, useStdout } from "ink";
 import { MultilineInput } from "ink-multiline-input";
 import meow from "meow";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { Readable, Writable } from "node:stream";
 import type {
   SessionNotification,
@@ -52,6 +53,15 @@ import {
 } from "./colors.js";
 import { Spinner, SPINNER_FRAMES } from "./components/Spinner.js";
 import {
+  HONK_FULL_CONTEXT,
+  HONK_REINFORCEMENT,
+  SAMPLE_RATE,
+  SILENCE_THRESHOLD_MS,
+  ECHO_SUSPECT_DEFER_MS_WITH_AEC,
+  ECHO_SUSPECT_DEFER_MS_NO_AEC,
+} from '@aaif/voice-shared/voice/constants.js';
+import { detectSentenceBoundary } from '@aaif/voice-shared/voice/sentenceBoundary.js';
+import {
   PASTE_THRESHOLD,
   INPUT_MAX_ROWS,
   SENT_PREVIEW_LEN,
@@ -61,6 +71,311 @@ import {
   SCROLL_FAST_MULTIPLIER,
 } from "./constants.js";
 import { tryRunSlashCommand } from "./slashCommands.js";
+import { setTtsCapabilities, getTtsEnabled as getTtsEnabledState, setTtsEnabled as setTtsEnabledState, setTtsFormat as setTtsFormatState, getTtsFormat as getTtsFormatState, setTtsVoice as setTtsVoiceState, getTtsVoice as getTtsVoiceState, setTtsSpeed as setTtsSpeedState, getTtsSpeed as getTtsSpeedState, getHonkActive as getHonkActiveState, setHonkActive as setHonkActiveState, setDictationProvider as setDictationProviderState, getDictationProvider as getDictationProviderState, setVoicePhase, getVoicePhase, type VoicePhase } from "./voiceState.js";
+import {
+  detectAndCreateMedia,
+  type AudioPlayer,
+  type AudioRecorder,
+  type MediaCapabilities,
+} from './services/media/index.js';
+import { disposeLoopbacks, isEchoCancelLoaded } from './services/media/gstreamerBackend.js';
+import { voiceSession, resetVoiceSession } from './voiceSession.js';
+
+export function setTtsEnabled(v: boolean): void {
+  voiceSession.ttsEnabled = v;
+  setTtsEnabledState(v);
+  if (v) {
+    void voiceSession.player?.connect();
+  } else {
+    voiceSession.player?.stop();
+  }
+}
+
+export function getTtsEnabled(): boolean {
+  return voiceSession.ttsEnabled;
+}
+
+export function getMediaCapabilities(): MediaCapabilities | null {
+  return voiceSession.capabilities;
+}
+
+function readGooseConfigVoice(): { provider: string; voice: string; speed: number; format: string } {
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
+  const configPath = `${home}/.config/goose/config.yaml`;
+  const defaults = { provider: '', voice: '', speed: 1.0, format: 'opus' };
+  try {
+    const content = readFileSync(configPath, 'utf-8');
+    const get = (key: string): string => {
+      const m = content.match(new RegExp(`^${key}:\\s*'?([^'\\n]+?)'?\\s*$`, 'm'));
+      return m ? m[1].trim() : '';
+    };
+    return {
+      provider: get('voice_tts_provider'),
+      voice: get('voice_tts_voice'),
+      speed: parseFloat(get('voice_tts_speed')) || 1.0,
+      format: get('voice_tts_format') || 'opus',
+    };
+  } catch {
+    return defaults;
+  }
+}
+
+async function ensureTtsReady(client: GooseClient): Promise<boolean> {
+  if (voiceSession.voiceConfigInitialized) return voiceSession.player !== null && voiceSession.voiceProvider !== '' && voiceSession.voiceProvider !== '__disabled__';
+  voiceSession.voiceConfigInitialized = true; // set first to prevent concurrent double-init
+
+  // Read voice config
+  try {
+    const providerResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_provider' });
+    voiceSession.voiceProvider = (providerResp.value as string) ?? '';
+    const voiceResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_voice' });
+    voiceSession.voiceId = (voiceResp.value as string) ?? '';
+    const speedResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_speed' });
+    voiceSession.voiceSpeed = parseFloat((speedResp.value as string) ?? '1.0') || 1.0;
+    const fmtResp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_tts_format' });
+    const requestedFmt = (fmtResp.value as string) ?? 'opus';
+    if (voiceSession.capabilities) {
+      voiceSession.voiceFormat = voiceSession.capabilities.supportedFormats.includes(requestedFmt)
+        ? requestedFmt
+        : (voiceSession.capabilities.supportedFormats[0] ?? 'opus');
+    } else {
+      voiceSession.voiceFormat = requestedFmt;
+    }
+  } catch {
+    // ACP config/read not available — fall back to config file
+    const cfg = readGooseConfigVoice();
+    voiceSession.voiceProvider = cfg.provider;
+    voiceSession.voiceId = cfg.voice;
+    voiceSession.voiceSpeed = cfg.speed;
+    const requestedFmt = cfg.format;
+    voiceSession.voiceFormat = voiceSession.capabilities?.supportedFormats.includes(requestedFmt)
+      ? requestedFmt
+      : (voiceSession.capabilities?.supportedFormats[0] ?? 'opus');
+    if (!voiceSession.voiceProvider) {
+      console.error('[tts] voice_tts_provider not configured in ~/.config/goose/config.yaml');
+    }
+  }
+
+  // Sync config-read values to shared state (slash commands may override later)
+  if (!getTtsFormatState()) setTtsFormatState(voiceSession.voiceFormat);
+  if (!getTtsVoiceState()) setTtsVoiceState(voiceSession.voiceId);
+  if (getTtsSpeedState() === 1.0 && voiceSession.voiceSpeed !== 1.0) setTtsSpeedState(voiceSession.voiceSpeed);
+
+  // Connect player if provider is configured
+  if (voiceSession.player && voiceSession.voiceProvider && voiceSession.voiceProvider !== '__disabled__') {
+    try {
+      await voiceSession.player.connect();
+    } catch (err) {
+      console.error('[tts] player connect failed:', err);
+      return false;
+    }
+  }
+
+  return voiceSession.player !== null && voiceSession.voiceProvider !== '' && voiceSession.voiceProvider !== '__disabled__';
+}
+
+async function synthesizeAndPlay(client: GooseClient, text: string): Promise<void> {
+  const ready = await ensureTtsReady(client);
+  if (!ready) return;
+  const capturedGen = voiceSession.playbackEpoch;
+  try {
+    voiceSession.phase = 'speaking';
+    const fmt = getTtsFormatState() || voiceSession.voiceFormat;
+    const resp = await client.extMethod('_goose/unstable/tts/synthesize', {
+      text,
+      provider: voiceSession.voiceProvider,
+      voice: getTtsVoiceState() || voiceSession.voiceId,
+      speed: getTtsSpeedState() || voiceSession.voiceSpeed,
+      responseFormat: fmt,
+    });
+    const audioB64 = resp.audio as string;
+    const audioBuf = Buffer.from(audioB64, 'base64');
+    if (voiceSession.playbackEpoch === capturedGen) {
+      voiceSession.lastTtsChunkTime = Date.now();
+      voiceSession.player!.pushChunk(audioBuf, fmt);
+    }
+  } catch (err) {
+    console.error('[tts] synthesis failed:', err);
+  } finally {
+    voiceSession.phase = voiceSession.isListening ? 'listening' : 'idle';
+    setVoicePhase(voiceSession.phase);
+  }
+}
+
+function readGooseConfigDictation(): string {
+  const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
+  const configPath = `${home}/.config/goose/config.yaml`;
+  try {
+    const content = readFileSync(configPath, 'utf-8');
+    const m = content.match(/^voice_dictation_provider:\s*'?([^'\n]+?)'?\s*$/m);
+    return m ? m[1].trim() : '';
+  } catch {
+    return '';
+  }
+}
+
+async function ensureDictationReady(client: GooseClient): Promise<boolean> {
+  if (voiceSession.dictationConfigInitialized) return voiceSession.dictationProvider !== '';
+  voiceSession.dictationConfigInitialized = true;
+
+  try {
+    const resp = await client.extMethod('_goose/unstable/config/read', { key: 'voice_dictation_provider' });
+    voiceSession.dictationProvider = (resp.value as string) ?? '';
+  } catch {
+    voiceSession.dictationProvider = readGooseConfigDictation();
+  }
+
+  if (voiceSession.dictationProvider) {
+    setDictationProviderState(voiceSession.dictationProvider);
+  }
+  return voiceSession.dictationProvider !== '';
+}
+
+function encodeWavFromPcm(pcmChunks: Buffer[], sampleRate: number): Buffer {
+  const pcm = Buffer.concat(pcmChunks);
+  const header = Buffer.alloc(44);
+  const dataLen = pcm.length;
+  header.write('RIFF', 0);
+  header.writeUInt32LE(36 + dataLen, 4);
+  header.write('WAVE', 8);
+  header.write('fmt ', 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * 2, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write('data', 36);
+  header.writeUInt32LE(dataLen, 40);
+  return Buffer.concat([header, pcm]);
+}
+
+async function startRecording(client: GooseClient): Promise<void> {
+  if (!voiceSession.recorder || !voiceSession.capabilities?.audioCapture) return;
+  const ready = await ensureDictationReady(client);
+  if (!ready) {
+    console.error('[mic] voice_dictation_provider not configured');
+    return;
+  }
+
+  voiceSession.isListening = true;
+  voiceSession.phase = 'listening';
+  setVoicePhase('listening');
+  voiceSession.speechBuffer = [];
+
+  voiceSession.recorder.onSpeech(() => {
+    voiceSession.speechBuffer = [];
+
+    const isSpeakingPhase = voiceSession.phase === 'speaking';
+    const isRecentTts = Date.now() - voiceSession.lastTtsChunkTime < 150;
+    const isEchoSuspect = isSpeakingPhase || isRecentTts;
+
+    if (isEchoSuspect) {
+      if (voiceSession.echoSuspectTimer !== null) return;
+      const deferMs = isEchoCancelLoaded()
+        ? ECHO_SUSPECT_DEFER_MS_WITH_AEC
+        : ECHO_SUSPECT_DEFER_MS_NO_AEC;
+      voiceSession.echoSuspectTimer = setTimeout(() => {
+        voiceSession.echoSuspectTimer = null;
+        if (voiceSession.speechBuffer.length > 0 && voiceSession.isListening) {
+          voiceSession.playbackEpoch++;
+          voiceSession.player?.stop();
+          void voiceSession.player?.connect();
+          voiceSession.phase = 'listening';
+          setVoicePhase('listening');
+        }
+      }, deferMs);
+    } else {
+      if (voiceSession.echoSuspectTimer !== null) {
+        clearTimeout(voiceSession.echoSuspectTimer);
+        voiceSession.echoSuspectTimer = null;
+      }
+      voiceSession.playbackEpoch++;
+      voiceSession.player?.stop();
+      voiceSession.phase = 'listening';
+      setVoicePhase('listening');
+    }
+  });
+
+  voiceSession.recorder.onData((pcm: Buffer) => {
+    if (voiceSession.isListening) {
+      voiceSession.speechBuffer.push(Buffer.from(pcm));
+    }
+  });
+
+  voiceSession.recorder.onSilence(() => {
+    if (!voiceSession.isListening) return;
+    void flushAndTranscribe(client);
+  });
+
+  await voiceSession.recorder.connect({
+    sampleRate: SAMPLE_RATE,
+    channels: 1,
+    vadMethod: voiceSession.capabilities?.echoCancelAvailable ? 'silero' : 'rms-energy',
+    silenceThresholdMs: SILENCE_THRESHOLD_MS,
+  });
+}
+
+function stopRecording(): void {
+  voiceSession.isListening = false;
+  voiceSession.recorder?.stop();
+  voiceSession.speechBuffer = [];
+  if (voiceSession.echoSuspectTimer !== null) {
+    clearTimeout(voiceSession.echoSuspectTimer);
+    voiceSession.echoSuspectTimer = null;
+  }
+  if (voiceSession.phase === 'listening') {
+    voiceSession.phase = 'idle';
+    setVoicePhase('idle');
+  }
+}
+
+let _pendingSubmitFn: ((text: string) => void) | null = null;
+
+function setSubmitFn(fn: (text: string) => void): void {
+  _pendingSubmitFn = fn;
+}
+
+async function flushAndTranscribe(client: GooseClient): Promise<void> {
+  if (voiceSession.speechBuffer.length === 0 || voiceSession.isTranscribing) return;
+
+  const chunks = voiceSession.speechBuffer.slice();
+  voiceSession.speechBuffer = [];
+  voiceSession.isTranscribing = true;
+  voiceSession.phase = 'transcribing';
+  setVoicePhase('transcribing');
+
+  try {
+    const wav = encodeWavFromPcm(chunks, SAMPLE_RATE);
+    const audioB64 = wav.toString('base64');
+
+    const resp = await client.extMethod('_goose/unstable/dictation/transcribe', {
+      audio: audioB64,
+      mimeType: 'audio/wav',
+      provider: voiceSession.dictationProvider,
+    });
+
+    const text = ((resp.text as string) ?? '').replace(/\([^)]*\)/g, '').trim();
+    if (!text) {
+      voiceSession.phase = 'listening';
+      setVoicePhase('listening');
+      return;
+    }
+
+    if (getHonkActiveState() && _pendingSubmitFn) {
+      _pendingSubmitFn(text);
+    }
+    voiceSession.phase = voiceSession.isListening ? 'listening' : 'idle';
+    setVoicePhase(voiceSession.phase);
+  } catch (err) {
+    console.error('[mic] transcription failed:', err);
+    voiceSession.phase = voiceSession.isListening ? 'listening' : 'idle';
+    setVoicePhase(voiceSession.phase);
+  } finally {
+    voiceSession.isTranscribing = false;
+  }
+}
 
 const InputBar = React.memo(function InputBar({
   width,
@@ -670,15 +985,25 @@ function App({
       const sid = sessionIdRef.current;
       if (!client || !sid) return;
 
-      addUserTurn(text);
+       addUserTurn(text);
       setLoading(true);
       setStatus("thinking…");
       streamBuf.current = "";
 
+      let promptText = text;
+      if (getTtsEnabledState()) {
+        if (voiceSession.conversationTurn === 0) {
+          promptText = `${text}\n\n<voice-conversation>\n${HONK_FULL_CONTEXT}\n</voice-conversation>`;
+        } else {
+          promptText = `${text}\n\n${HONK_REINFORCEMENT}`;
+        }
+        voiceSession.conversationTurn++;
+      }
+
       try {
         const result = await client.prompt({
           sessionId: sid,
-          prompt: [{ type: "text", text }],
+          prompt: [{ type: "text", text: promptText }],
         });
         if (streamBuf.current) appendAgent("");
         setStatus(
@@ -691,6 +1016,12 @@ function App({
         setStatus(`error`);
         appendError(errorMsg);
       } finally {
+        if (getTtsEnabledState() && voiceSession.streamBuffer.trim()) {
+          const remaining = voiceSession.streamBuffer.trim();
+          voiceSession.streamBuffer = '';
+          void synthesizeAndPlay(client, remaining);
+        }
+        voiceSession.streamBuffer = '';
         setLoading(false);
       }
     },
@@ -715,6 +1046,10 @@ function App({
     },
     [executePrompt, processQueue],
   );
+
+  useEffect(() => {
+    setSubmitFn((text: string) => void sendPrompt(text));
+  }, [sendPrompt]);
 
   const createSession = useCallback(
     async (client: GooseClient) => {
@@ -777,6 +1112,18 @@ function App({
                 if (update.content.type === "text") {
                   streamBuf.current += update.content.text;
                   appendAgent(update.content.text);
+
+                  if (getTtsEnabledState()) {
+                    voiceSession.streamBuffer += update.content.text;
+                    const boundary = detectSentenceBoundary(voiceSession.streamBuffer);
+                    if (boundary > 0) {
+                      const sentence = voiceSession.streamBuffer.slice(0, boundary).trim();
+                      voiceSession.streamBuffer = voiceSession.streamBuffer.slice(boundary);
+                      if (sentence) {
+                        void synthesizeAndPlay(client, sentence);
+                      }
+                    }
+                  }
                 }
               } else if (update.sessionUpdate === "tool_call") {
                 handleToolCall(update);
@@ -817,6 +1164,20 @@ function App({
           setLoading(false);
           setStatus("setup required");
           return;
+        }
+
+        if (voiceSession.player === null) {
+          spawnSync('pkill', ['-f', 'pw-loopback.*goose-tts'], { stdio: 'ignore' });
+          spawnSync('pkill', ['-f', 'pw-loopback.*goose-mic'], { stdio: 'ignore' });
+
+          detectAndCreateMedia().then(({ player, recorder, capabilities }) => {
+            voiceSession.player = player;
+            voiceSession.recorder = recorder;
+            voiceSession.capabilities = capabilities;
+            setTtsCapabilities(capabilities);
+          }).catch((err: unknown) => {
+            console.error('[audio] init failed:', err);
+          });
         }
 
         await createSession(client);
@@ -879,6 +1240,16 @@ function App({
         return true;
       }
       addLocalTurn(raw, "message" in result ? result.message : undefined);
+
+      const cmd = raw.trim().toLowerCase();
+      const client = clientRef.current;
+      if (cmd.startsWith('/honk on') && getHonkActiveState() && !voiceSession.isListening && client && voiceSession.capabilities?.audioCapture) {
+        void startRecording(client);
+      }
+      if (cmd.startsWith('/honk off') && voiceSession.isListening) {
+        stopRecording();
+      }
+
       return true;
     },
     [addLocalTurn],
@@ -1058,6 +1429,32 @@ function App({
           setOverlay({ screen: "extensions" });
           return;
         }
+        if (key.ctrl && (ch === "t" || ch === "T")) {
+          const next = !getTtsEnabledState();
+          setTtsEnabled(next);
+          if (next) voiceSession.conversationTurn = 0;
+          setStatus(next ? 'tts on' : 'tts off');
+          setTimeout(() => { if (!loading) setStatus('ready'); }, 1500);
+          return;
+        }
+        if (key.ctrl && (ch === "l" || ch === "L")) {
+          if (!voiceSession.capabilities?.audioCapture) {
+            setStatus('no mic available');
+            setTimeout(() => { if (!loading) setStatus('ready'); }, 1500);
+            return;
+          }
+          const client = clientRef.current;
+          if (!client) return;
+          if (voiceSession.isListening) {
+            stopRecording();
+            setStatus('mic off');
+          } else {
+            void startRecording(client);
+            setStatus('mic on');
+          }
+          setTimeout(() => { if (!loading) setStatus('ready'); }, 1500);
+          return;
+        }
         if (ch === "g" && key.ctrl) {
           setOverlay({ screen: "configure", intent: "provider" });
           return;
@@ -1234,6 +1631,7 @@ function App({
                 ? { current: effectiveTurnIdx + 1, total: turns.length }
                 : undefined
             }
+            voicePhase={(getTtsEnabledState() || getHonkActiveState()) ? voiceSession.phase : undefined}
           />
 
           {toolCallExpanded && selectedToolCallInfo ? (
@@ -1405,6 +1803,9 @@ function cleanup() {
   if (serverProcess && !serverProcess.killed) {
     serverProcess.kill();
   }
+  voiceSession.player?.dispose();
+  voiceSession.recorder?.dispose();
+  disposeLoopbacks();
 }
 
 process.on("exit", cleanup);

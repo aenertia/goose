@@ -17,9 +17,11 @@ import {
   Keyboard,
   HardDrive,
   KeyRound,
+  Volume2,
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import ChatSettingsSection from './chat/ChatSettingsSection';
+import VoiceSettingsSection from './voice/VoiceSettingsSection';
 import KeyboardShortcutsSection from './keyboard/KeyboardShortcutsSection';
 import AuthSettingsSection from './auth/AuthSettingsSection';
 import LocalInferenceSection from './localInference/LocalInferenceSection';
@@ -44,6 +46,10 @@ const i18n = defineMessages({
   tabChat: {
     id: 'settingsView.tabChat',
     defaultMessage: 'Chat',
+  },
+  tabVoice: {
+    id: 'settingsView.tabVoice',
+    defaultMessage: 'Voice',
   },
   tabExternalBackend: {
     id: 'settingsView.tabExternalBackend',
@@ -109,6 +115,8 @@ export default function SettingsView({
         keyboard: 'keyboard',
         auth: 'auth',
         'local-inference': 'local-inference',
+        voice: 'voice',
+        dictation: 'voice',
       };
 
       const targetTab = sectionToTab[viewOptions.section];
@@ -189,6 +197,14 @@ export default function SettingsView({
                     {intl.formatMessage(i18n.tabChat)}
                   </TabsTrigger>
                   <TabsTrigger
+                    value="voice"
+                    className="flex gap-2"
+                    data-testid="settings-voice-tab"
+                  >
+                    <Volume2 className="h-4 w-4" />
+                    {intl.formatMessage(i18n.tabVoice)}
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="sharing"
                     className="flex gap-2"
                     data-testid="settings-sharing-tab"
@@ -245,6 +261,13 @@ export default function SettingsView({
                   className="mt-0 focus-visible:outline-none focus-visible:ring-0"
                 >
                   <ChatSettingsSection />
+                </TabsContent>
+
+                <TabsContent
+                  value="voice"
+                  className="mt-0 focus-visible:outline-none focus-visible:ring-0"
+                >
+                  <VoiceSettingsSection />
                 </TabsContent>
 
                 <TabsContent

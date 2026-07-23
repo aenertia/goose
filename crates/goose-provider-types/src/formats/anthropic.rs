@@ -288,6 +288,9 @@ fn format_messages_with_options(
                 MessageContent::Image(image) => {
                     content.push(convert_image(image, &ImageFormat::Anthropic));
                 }
+                MessageContent::Audio(_) => {
+                    // Skip - audio content not supported by Anthropic API
+                }
                 MessageContent::FrontendToolRequest(tool_request) => {
                     if let Ok(tool_call) = &tool_request.tool_call {
                         content.push(json!({

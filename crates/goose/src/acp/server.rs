@@ -39,7 +39,7 @@ use crate::session::{
 use crate::source_roots::SourceRoot;
 use crate::utils::sanitize_unicode_tags;
 use agent_client_protocol::schema::v1::{
-    AgentCapabilities, Annotations, AuthMethod, AuthMethodAgent, AuthenticateRequest,
+    AgentCapabilities, Annotations, AudioContent, AuthMethod, AuthMethodAgent, AuthenticateRequest,
     AuthenticateResponse, CancelNotification, CloseSessionRequest, CloseSessionResponse,
     ConfigOptionUpdate, ContentBlock, ContentChunk, Cost, CurrentModeUpdate,
     EmbeddedResourceResource, FileSystemCapabilities, ForkSessionRequest, ForkSessionResponse,
@@ -110,6 +110,7 @@ mod sources;
 mod tool_calls;
 mod tool_notifications;
 mod tools;
+mod tts;
 
 pub type AcpProviderFactory = Arc<
     dyn Fn(
@@ -979,7 +980,10 @@ impl GooseAcpAgent {
                         message = message.with_text(text);
                     }
                 }
-                ContentBlock::Audio(..) | _ => (),
+                ContentBlock::Audio(audio) => {
+                    message = message.with_audio(&audio.data, &audio.mime_type);
+                }
+                _ => (),
             }
         }
         message
@@ -1098,6 +1102,16 @@ impl GooseAcpAgent {
                     );
                 }
                 let chunk = ContentChunk::new(ContentBlock::Image(image_content))
+                    .meta(message_update_meta(message_id, message_created, steer));
+                let update = match role {
+                    Role::User => SessionUpdate::UserMessageChunk(chunk),
+                    Role::Assistant => SessionUpdate::AgentMessageChunk(chunk),
+                };
+                cx.send_notification(SessionNotification::new(session_id.clone(), update))?;
+            }
+            MessageContent::Audio(audio) => {
+                let audio_content = AudioContent::new(audio.data.clone(), audio.mime_type.clone());
+                let chunk = ContentChunk::new(ContentBlock::Audio(audio_content))
                     .meta(message_update_meta(message_id, message_created, steer));
                 let update = match role {
                     Role::User => SessionUpdate::UserMessageChunk(chunk),

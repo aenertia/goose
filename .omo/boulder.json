@@ -1,0 +1,26 @@
+{
+  "schema_version": 2,
+  "active_work_id": "text-tui-voice-parity",
+  "works": {
+    "honk-tts-fixes": { "work_id": "honk-tts-fixes", "status": "completed" },
+    "tts-format-quality": {
+      "work_id": "tts-format-quality",
+      "active_plan": "/tmp/opencode/goose/.omo/plans/tts-format-quality-settings.md",
+      "plan_name": "tts-format-quality-settings",
+      "session_ids": ["opencode:ses_07b992bf0ffepFnbHN44IHtX6q"],
+      "status": "completed",
+      "worktree_path": null,
+      "started_at": "2026-07-22T06:36:33.449Z",
+      "completed_at": "2026-07-22T07:00:00.000Z"
+    },
+    "text-tui-voice-parity": {
+      "work_id": "text-tui-voice-parity",
+      "active_plan": "/tmp/opencode/goose/.omo/plans/text-tui-voice-parity.md",
+      "plan_name": "text-tui-voice-parity",
+      "session_ids": ["opencode:ses_0770961d3ffeNAYH5h6g0lqwYO"],
+      "status": "active",
+      "worktree_path": null,
+      "started_at": "2026-07-22T10:39:54.169Z"
+    }
+  }
+}

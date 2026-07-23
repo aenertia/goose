@@ -157,10 +157,13 @@ module.exports = {
             '--share=ipc',
             '--socket=x11',
             '--socket=wayland',
+            '--socket=pulseaudio',
             '--device=dri',
+            '--device=all',
             '--share=network',
             '--filesystem=home',
             '--talk-name=org.freedesktop.Notifications',
+            '--talk-name=org.freedesktop.portal.Desktop',
             '--socket=session-bus',
             '--socket=system-bus',
             // This ensures the app looks in our shim folder first

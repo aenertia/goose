@@ -281,6 +281,10 @@ pub fn to_bedrock_message_content(content: &MessageContent) -> Result<bedrock::C
                     .build()?,
             )
         }
+        MessageContent::Audio(_) => {
+            // Audio content is not supported by Bedrock; skip it.
+            bedrock::ContentBlock::Text("[audio content]".to_string())
+        }
     })
 }
 

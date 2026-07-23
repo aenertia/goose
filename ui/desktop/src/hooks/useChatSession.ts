@@ -8,11 +8,14 @@ import type { Session } from '../types/session';
 
 import {
   createUserMessage,
+  getTextAndImageContent,
   type Message,
   type NotificationEvent,
   type UserInput,
 } from '../types/message';
 import { errorMessage } from '../utils/conversionUtils';
+import { useAudioPlayer } from './useAudioPlayer';
+import { useConfig } from '../components/ConfigContext';
 import type { UseChatSessionParams, UseChatSessionResult } from './useChatSessionTypes';
 import { resolveAcpElicitationRequest } from '../acp/elicitationRequests';
 import { acpChatSessionController } from '../acp/chatSessionController';
@@ -66,6 +69,9 @@ export function useChatSession({
   const sessionLoadError = acpSnapshot?.sessionLoadError;
   const tokenState = acpSnapshot?.tokenState ?? initialTokenState;
   const queueProcessingBlocked = acpSnapshot?.pendingCancelPromptAttemptId != null;
+
+  const { speak: autoSpeakSpeak } = useAudioPlayer();
+  const { read: configRead } = useConfig();
 
   const snapshotRef = useRef(acpSnapshot);
   snapshotRef.current = acpSnapshot;
@@ -124,9 +130,31 @@ export function useChatSession({
         }
       }
 
+      if (!error) {
+        try {
+          const voiceMode = await configRead('voice_mode', false);
+          const isConversation = voiceMode === 'honk' || voiceMode === 'conversation';
+          if (!isConversation) {
+            const autoSpeakEnabled = await configRead('voice_auto_speak', false);
+            if (autoSpeakEnabled === 'true') {
+              const currentMessages = getCurrentSnapshot()?.messages ?? [];
+              const lastMsg = currentMessages[currentMessages.length - 1];
+              if (lastMsg?.role === 'assistant') {
+                const { textContent } = getTextAndImageContent(lastMsg);
+                if (textContent.trim()) {
+                  autoSpeakSpeak(textContent);
+                }
+              }
+            }
+          }
+        } catch {
+          // best-effort
+        }
+      }
+
       onStreamFinish();
     },
-    [intl, onStreamFinish]
+    [intl, onStreamFinish, configRead, getCurrentSnapshot, autoSpeakSpeak]
   );
 
   const submitToAcpSession = useCallback(

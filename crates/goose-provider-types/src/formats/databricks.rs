@@ -219,6 +219,9 @@ fn format_messages(messages: &[Message], image_format: &ImageFormat) -> Vec<Data
                 MessageContent::Image(image) => {
                     content_array.push(convert_image(image, image_format));
                 }
+                MessageContent::Audio(_) => {
+                    // Skip - audio content not supported by Databricks API
+                }
                 MessageContent::FrontendToolRequest(req) => {
                     let text = match &req.tool_call {
                         Ok(tool_call) => format!(

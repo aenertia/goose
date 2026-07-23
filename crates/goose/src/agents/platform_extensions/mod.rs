@@ -5,6 +5,7 @@ pub mod chatrecall;
 pub mod code_execution;
 pub mod developer;
 pub mod ext_manager;
+pub mod honk;
 pub mod orchestrator;
 pub mod summarize;
 pub mod summon;
@@ -199,6 +200,20 @@ pub static PLATFORM_EXTENSIONS: Lazy<HashMap<&'static str, PlatformExtensionDef>
                 unprefixed_tools: true,
                 hidden: false,
                 client_factory: |ctx| Box::new(crate::skills::SkillsClient::new(ctx).unwrap()),
+            },
+        );
+
+        map.insert(
+            honk::EXTENSION_NAME,
+            PlatformExtensionDef {
+                name: honk::EXTENSION_NAME,
+                display_name: "HONK Integration",
+                description:
+                    "HONK conversation mode: voice I/O, accessibility awareness, screen reader detection, and conversation state management",
+                default_enabled: true,
+                unprefixed_tools: false,
+                hidden: false,
+                client_factory: |ctx| Box::new(honk::HonkClient::new(ctx).unwrap()),
             },
         );
 

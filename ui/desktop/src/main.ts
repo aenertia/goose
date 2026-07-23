@@ -4,7 +4,6 @@ import {
   App,
   BrowserWindow,
   dialog,
-  globalShortcut,
   ipcMain,
   Menu,
   MenuItem,
@@ -26,6 +25,11 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync, spawn, execFile } from 'child_process';
 import 'dotenv/config';
+import { createShortcutService, type ShortcutService } from './services/globalShortcuts';
+import { createMediaInhibitService, type MediaInhibitService } from './services/mediaInhibit';
+import { createMediaControlService, type MediaControlService } from './services/mediaControl';
+import { createVoiceIndicatorService, type VoiceIndicatorService } from './services/voiceIndicator';
+import type { VoiceState } from './services/voiceIndicator/types';
 import { checkBackendStatus } from './backendStatus';
 import { startGooseServe } from './gooseServe';
 import { GooseServeLeaseRegistry, type GooseServeLease } from './gooseServeLeaseRegistry';
@@ -398,6 +402,10 @@ app.whenReady().then(() => {
     callback(match ? 0 : -2);
   });
 });
+
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('enable-speech-dispatcher');
+}
 
 if (process.env.ENABLE_PLAYWRIGHT) {
   const debugPort = process.env.PLAYWRIGHT_DEBUG_PORT || '9222';
@@ -1574,6 +1582,14 @@ const createLauncher = () => {
 // Track tray instance
 let tray: Tray | null = null;
 
+// Track global shortcut service instance
+let shortcutService: ShortcutService | null = null;
+
+// Track voice conversation service instances
+let mediaInhibitService: MediaInhibitService | null = null;
+let mediaControlService: MediaControlService | null = null;
+let voiceIndicatorService: VoiceIndicatorService | null = null;
+
 const destroyTray = () => {
   if (tray) {
     tray.destroy();
@@ -1946,7 +1962,7 @@ ipcMain.handle('set-setting', (_event, key: SettingKey, value: unknown) => {
 
   // Re-register shortcuts if keyboard shortcuts changed
   if (key === 'keyboardShortcuts') {
-    registerGlobalShortcuts();
+    registerGlobalShortcuts().catch((e) => console.error('Failed to re-register shortcuts:', e));
   }
 
   if (key === 'disableAutoDownload') {
@@ -2373,31 +2389,33 @@ const focusWindow = () => {
   }
 };
 
-const registerGlobalShortcuts = () => {
-  globalShortcut.unregisterAll();
+const registerGlobalShortcuts = async () => {
+  if (shortcutService) await shortcutService.unregisterAll();
+  if (!shortcutService) shortcutService = await createShortcutService();
 
   const settings = getSettings();
   const shortcuts = getKeyboardShortcuts(settings);
+  const bindings: import('./services/globalShortcuts/types').ShortcutBinding[] = [];
 
   if (shortcuts.focusWindow) {
-    try {
-      globalShortcut.register(shortcuts.focusWindow, () => {
-        focusWindow();
-      });
-    } catch (e) {
-      console.error('Error registering focus window hotkey:', e);
-    }
+    bindings.push({
+      id: 'focus-window',
+      description: 'Focus Goose window',
+      accelerator: shortcuts.focusWindow,
+      callback: () => focusWindow(),
+    });
   }
 
   if (shortcuts.quickLauncher) {
-    try {
-      globalShortcut.register(shortcuts.quickLauncher, () => {
-        createLauncher();
-      });
-    } catch (e) {
-      console.error('Error registering launcher hotkey:', e);
-    }
+    bindings.push({
+      id: 'quick-launcher',
+      description: 'Quick launcher',
+      accelerator: shortcuts.quickLauncher,
+      callback: () => createLauncher(),
+    });
   }
+
+  await shortcutService.register(bindings);
 };
 
 async function appMain() {
@@ -2450,7 +2468,7 @@ async function appMain() {
   }
 
   // Register global shortcuts based on settings
-  registerGlobalShortcuts();
+  await registerGlobalShortcuts();
 
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     details.requestHeaders['Origin'] = 'http://localhost:5173';
@@ -2460,6 +2478,26 @@ async function appMain() {
   if (settings.showMenuBarIcon) {
     createTray();
   }
+
+  mediaInhibitService = await createMediaInhibitService();
+  mediaControlService = await createMediaControlService();
+  voiceIndicatorService = createVoiceIndicatorService(tray);
+
+  ipcMain.on('voice-inhibit-start', async (_event, reason: string) => {
+    await mediaInhibitService?.inhibit(reason);
+  });
+  ipcMain.on('voice-inhibit-release', async () => {
+    await mediaInhibitService?.release();
+  });
+  ipcMain.handle('voice-media-pause', async () => {
+    return mediaControlService?.pauseAll() ?? [];
+  });
+  ipcMain.on('voice-media-resume', async (_event, tokens: string[]) => {
+    await mediaControlService?.resumePaused(tokens);
+  });
+  ipcMain.on('voice-state-change', (_event, state: { phase: string; conversationActive: boolean }) => {
+    voiceIndicatorService?.updateState(state as VoiceState);
+  });
 
   if (process.platform === 'darwin' && !settings.showDockIcon && settings.showMenuBarIcon) {
     app.dock?.hide();
@@ -3130,7 +3168,7 @@ app.on('will-quit', async () => {
   }
   windowPowerSaveBlockers.clear();
 
-  globalShortcut.unregisterAll();
+  shortcutService?.dispose();
 });
 
 app.on('window-all-closed', () => {

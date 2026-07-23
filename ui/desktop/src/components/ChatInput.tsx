@@ -1,11 +1,13 @@
 import { AppEvents } from '../constants/events';
+import { HONK_FULL_CONTEXT } from '@aaif/voice-shared/voice/constants.js';
+import { detectSentenceBoundary } from '@aaif/voice-shared/voice/sentenceBoundary.js';
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
-import { ArrowUp, Bug, ScrollText } from 'lucide-react';
+import { ArrowUp, Bug, ScrollText, Volume2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/Tooltip';
 import { Button } from './ui/button';
 import type { View } from '../utils/navigationUtils';
 import Stop from './ui/Stop';
-import { Attach, Close, Microphone } from './icons';
+import { Attach, Close, Microphone, Goose as GooseIcon } from './icons';
 import { ChatState } from '../types/chatState';
 import debounce from 'lodash/debounce';
 import { LocalMessageStorage } from '../utils/localMessageStorage';
@@ -16,7 +18,11 @@ import { cn } from '../utils';
 import { AlertType, useAlerts } from './alerts';
 import { useModelAndProvider } from './ModelAndProviderContext';
 import { acpListProviderDetails } from '../acp/providers';
+import { acpChatSessionStore } from '../acp/chatSessionStore';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { useConversationMode } from '../hooks/useConversationMode';
+import { useConfig } from './ConfigContext';
 import { toastError } from '../toasts';
 import MentionPopover, { DisplayItemWithMatch } from './MentionPopover';
 import { COST_TRACKING_ENABLED } from '../updates';
@@ -32,7 +38,7 @@ import { getInitialWorkingDir } from '../utils/workingDir';
 import { getPredefinedModelsFromEnv } from './settings/models/predefinedModelsUtils';
 import { trackFileAttached, trackVoiceDictation, trackDiagnosticsOpened } from '../utils/analytics';
 import { getNavigationShortcutText } from '../utils/keyboardShortcuts';
-import { UserInput, ImageData } from '../types/message';
+import { UserInput, ImageData, getTextAndImageContent } from '../types/message';
 import { compressImageDataUrl } from '../utils/conversionUtils';
 import { fetchCanonicalModelInfo } from '../utils/canonical';
 import { defineMessages, useIntl } from '../i18n';
@@ -92,6 +98,12 @@ const getContextAlertType = (totalTokens: number, tokenLimit: number): AlertType
 
 // Manual compact trigger message - must match backend constant
 const MANUAL_COMPACT_TRIGGER = '/compact';
+
+let streamCursor = 0;
+let streamActive = false;
+let streamSessionId = '';
+let streamIntervalId: ReturnType<typeof setInterval> | null = null;
+let streamMsgCount = 0;
 
 const i18n = defineMessages({
   dictationError: {
@@ -153,6 +165,22 @@ const i18n = defineMessages({
   viewEditRecipe: {
     id: 'chatInput.viewEditRecipe',
     defaultMessage: 'View/Edit Recipe',
+  },
+  conversationMode: {
+    id: 'chatInput.conversationMode',
+    defaultMessage: 'Conversation mode',
+  },
+  conversationListening: {
+    id: 'chatInput.conversationListening',
+    defaultMessage: 'Listening...',
+  },
+  conversationSubmitting: {
+    id: 'chatInput.conversationSubmitting',
+    defaultMessage: 'Thinking...',
+  },
+  conversationSpeaking: {
+    id: 'chatInput.conversationSpeaking',
+    defaultMessage: 'Speaking...',
   },
 });
 
@@ -459,6 +487,30 @@ export default function ChatInput({
     selectFile: (index: number) => void;
   }>(null);
 
+  const { read: configRead } = useConfig();
+  const { speak: speakText, stop: stopAudioPlayback, isPlaying: isSpeaking } = useAudioPlayer();
+
+  // Conversation mode: read voice_mode preference
+  const [voiceModeEnabled, setVoiceModeEnabled] = useState(false);
+  useEffect(() => {
+    const checkMode = async () => {
+      try {
+        const val = await configRead('voice_mode', false);
+        setVoiceModeEnabled(val === 'honk' || val === 'conversation');
+      } catch {
+        // Default to dictation mode
+      }
+    };
+    checkMode();
+  }, [configRead]);
+
+  // Ref to break circular dependency: useAudioRecorder needs conversationAutoSubmit,
+  // but useConversationMode needs startRecording/stopRecording from useAudioRecorder.
+  const conversationAutoSubmitRef = useRef<((text: string) => void) | undefined>(undefined);
+  const handleSpeechStartRef = useRef<(() => void) | undefined>(undefined);
+  const honkIsListeningRef = useRef(false);
+  const conversationTurnRef = useRef(0);
+
   // Audio recorder hook for voice dictation
   const {
     isEnabled,
@@ -474,6 +526,12 @@ export default function ChatInput({
       let filteredText = text.replace(/\([^)]*\)/g, '').trim();
 
       if (!filteredText) {
+        return;
+      }
+
+      if (isConversationActive) {
+        trackVoiceDictation('auto_submit');
+        conversationAutoSubmitRef.current?.(filteredText);
         return;
       }
 
@@ -508,8 +566,148 @@ export default function ChatInput({
         msg: message,
       });
     },
+    onSilenceAutoSubmit: voiceModeEnabled ? ((text: string) => {
+      if (honkIsListeningRef.current) {
+        conversationAutoSubmitRef.current?.(text);
+      }
+    }) : undefined,
+    onSpeechStart: voiceModeEnabled ? (() => {
+      handleSpeechStartRef.current?.();
+    }) : undefined,
   });
   const internalTextAreaRef = useRef<HTMLTextAreaElement>(null);
+
+
+  const conversationSubmit = useCallback(
+    (text: string) => {
+      if (text.trim()) {
+        handleSubmit({ msg: text.trim(), images: [] });
+      }
+    },
+    [handleSubmit]
+  );
+
+  const {
+    honkActive,
+    isListening: honkIsListening,
+    activateHonk,
+    deactivateHonk,
+    startListening: honkStartListening,
+    stopListening: honkStopListening,
+    state: conversationState,
+    handleAutoSubmit: conversationAutoSubmit,
+    startStreamingSpeak,
+    enqueueStreamChunk,
+    handleSpeechStart,
+  } = useConversationMode({
+    submitMessage: conversationSubmit,
+    startRecording,
+    stopRecording,
+    isRecording,
+    isLoading,
+  });
+  // Transition alias — remaining references use this until fully migrated
+  const isConversationActive = honkActive;
+  conversationAutoSubmitRef.current = conversationAutoSubmit;
+  handleSpeechStartRef.current = handleSpeechStart;
+  honkIsListeningRef.current = honkIsListening;
+
+  useEffect(() => {
+    if (!honkActive) {
+      conversationTurnRef.current = 0;
+    }
+  }, [honkActive]);
+
+  useEffect(() => {
+    if (!honkActive) {
+      if (streamActive) {
+        streamActive = false;
+        streamCursor = 0;
+        if (streamIntervalId !== null) {
+          clearInterval(streamIntervalId);
+          streamIntervalId = null;
+        }
+      }
+    } else if (isLoading && !streamActive) {
+      // Stream just started
+      streamActive = true;
+      streamCursor = 0;
+      streamMsgCount = messages.length;
+      streamSessionId = sessionId ?? '';
+      void startStreamingSpeak();
+
+      // Start polling interval for sentence detection
+      streamIntervalId = setInterval(() => {
+        if (!streamActive) return;
+
+        const snapshot = acpChatSessionStore.getSnapshot(streamSessionId);
+        const msgs = snapshot?.messages ?? [];
+        let targetMsg = null;
+        for (let i = msgs.length - 1; i >= streamMsgCount; i--) {
+          if (msgs[i]?.role === 'assistant') {
+            targetMsg = msgs[i];
+            break;
+          }
+        }
+        if (!targetMsg) return;
+
+        const { textContent } = getTextAndImageContent(targetMsg);
+        const unspoken = textContent.slice(streamCursor);
+        if (!unspoken) return;
+
+        const splitPos = detectSentenceBoundary(unspoken);
+
+        if (splitPos > 0) {
+          const chunk = unspoken.slice(0, splitPos).trim();
+          if (chunk) {
+            void enqueueStreamChunk(chunk);
+            // Advance cursor past the split point, skipping trailing whitespace
+            let advance = splitPos;
+            while (advance < unspoken.length && unspoken[advance] === ' ') advance++;
+            streamCursor += advance;
+          }
+        }
+      }, 150);
+    } else if (!isLoading && streamActive) {
+      // Stream finished — flush remaining text
+      streamActive = false;
+
+      if (streamIntervalId !== null) {
+        clearInterval(streamIntervalId);
+        streamIntervalId = null;
+      }
+
+      // Find the correct assistant message (appeared after streaming started)
+      const flushSnapshot = acpChatSessionStore.getSnapshot(streamSessionId);
+      const msgs = flushSnapshot?.messages ?? [];
+      let targetMsg = null;
+      for (let i = msgs.length - 1; i >= streamMsgCount; i--) {
+        if (msgs[i]?.role === 'assistant') {
+          targetMsg = msgs[i];
+          break;
+        }
+      }
+
+      if (targetMsg) {
+        const { textContent } = getTextAndImageContent(targetMsg);
+        const remaining = textContent.slice(streamCursor).trim();
+        if (remaining) {
+          void enqueueStreamChunk(remaining);
+        }
+      }
+
+      streamCursor = 0;
+    }
+
+    return () => {
+      if (streamIntervalId !== null) {
+        clearInterval(streamIntervalId);
+        streamIntervalId = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally omit messages.length/sessionId to avoid restarting the polling interval on every message
+  }, [isLoading, honkActive, startStreamingSpeak, enqueueStreamChunk]);
+
   const textAreaRef = inputRef || internalTextAreaRef;
   const timeoutRefsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
@@ -727,6 +925,7 @@ export default function ChatInput({
     const val = evt.target.value;
     const cursorPosition = evt.target.selectionStart;
 
+    if (!honkActive) stopAudioPlayback();
     setDisplayValue(val);
     updateValue(val);
     setHasUserTyped(true);
@@ -1080,20 +1279,12 @@ export default function ChatInput({
     return true;
   };
 
-  const canSubmit =
-    !isLoading &&
-    !queueProcessingBlocked &&
-    (displayValue.trim() ||
-      pastedImages.some((img) => img.dataUrl && !img.error && !img.isLoading) ||
-      allDroppedFiles.some((file) => !file.error && !file.isLoading));
-
   const performSubmit = useCallback(
     (text?: string) => {
       const imageData = convertImagesToImageData();
       const textToSend = appendDroppedFilePaths(text ?? displayValue.trim());
 
       if (textToSend || imageData.length > 0) {
-        // Store original message in history
         if (displayValue.trim()) {
           LocalMessageStorage.addMessage(displayValue);
         } else {
@@ -1105,9 +1296,16 @@ export default function ChatInput({
           }
         }
 
-        handleSubmit({ msg: textToSend, images: imageData });
+        let finalMsg = textToSend;
+        if (honkActive && finalMsg && conversationTurnRef.current === 0) {
+          finalMsg = `${finalMsg}\n\n<voice-conversation>\n${HONK_FULL_CONTEXT}\n</voice-conversation>`;
+        }
+        if (honkActive) {
+          conversationTurnRef.current += 1;
+        }
 
-        // Auto-resume queue after sending a NON-interruption message (if it was paused due to interruption)
+        handleSubmit({ msg: finalMsg, images: imageData });
+
         if (
           queuePausedRef.current &&
           lastInterruption &&
@@ -1131,6 +1329,7 @@ export default function ChatInput({
       displayValue,
       allDroppedFiles,
       handleSubmit,
+      honkActive,
       lastInterruption,
       clearInputState,
     ]
@@ -1191,7 +1390,14 @@ export default function ChatInput({
         return;
       }
 
-      if (canSubmit) {
+      // Compute canSubmit inline (not render-time value) to match onFormSubmit behavior
+      const canSubmitNow =
+        !isLoading &&
+        !queueProcessingBlocked &&
+        (displayValue.trim() ||
+          pastedImages.some((img) => img.dataUrl && !img.error && !img.isLoading) ||
+          allDroppedFiles.some((file) => !file.error && !file.isLoading));
+      if (canSubmitNow) {
         performSubmit();
       }
     }
@@ -1756,7 +1962,64 @@ export default function ChatInput({
           </>
         )}
 
-        {/* Right: mic — ghost icon, no background when idle */}
+        {/* Right: HONK! conversation mode toggle (Goose icon) */}
+        {voiceModeEnabled && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant={isConversationActive ? 'default' : 'ghost'}
+                size="sm"
+                shape="round"
+                onClick={() => {
+                  if (honkActive) {
+                    deactivateHonk();
+                  } else {
+                    stopAudioPlayback();
+                    activateHonk();
+                  }
+                }}
+                className={cn(
+                  'transition-colors',
+                  isConversationActive
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'text-text-primary/70 hover:text-text-primary',
+                )}
+              >
+                {isConversationActive ? (
+                  <span className="flex items-center gap-0.5 text-xs">
+                    <span className={cn(
+                      'inline-block w-2 h-2 rounded-full',
+                      conversationState === 'listening' && 'bg-red-400 animate-pulse',
+                      conversationState === 'submitting' && 'bg-yellow-400 animate-pulse',
+                      conversationState === 'speaking' && 'bg-blue-400 animate-pulse',
+                      conversationState === 'idle' && 'bg-gray-400',
+                    )} />
+                    {conversationState === 'listening'
+                      ? intl.formatMessage(i18n.conversationListening)
+                      : conversationState === 'submitting'
+                        ? intl.formatMessage(i18n.conversationSubmitting)
+                        : conversationState === 'speaking'
+                          ? intl.formatMessage(i18n.conversationSpeaking)
+                          : intl.formatMessage(i18n.conversationMode)}
+                  </span>
+                ) : (
+                  <span className="relative inline-flex items-center">
+                    <GooseIcon className="w-4 h-4" />
+                    <span className="absolute -top-1 -right-1.5 text-[9px] font-bold leading-none text-accent-primary">!</span>
+                  </span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isConversationActive
+                ? 'Stop HONK! mode'
+                : 'HONK! — conversation mode + auto-speak'}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Right: mic — always visible when dictation is configured */}
         {dictationProvider && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -1767,25 +2030,32 @@ export default function ChatInput({
                 shape="round"
                 onClick={() => {
                   if (!isEnabled) return;
-                  if (isRecording) {
-                    trackVoiceDictation('stop');
-                    stopRecording();
+                  if (honkActive) {
+                    if (honkIsListening) {
+                      honkStopListening();
+                    } else {
+                      honkStartListening();
+                    }
                   } else {
-                    trackVoiceDictation('start');
-                    startRecording();
+                    if (isRecording) {
+                      trackVoiceDictation('stop');
+                      stopRecording();
+                    } else {
+                      trackVoiceDictation('start');
+                      stopAudioPlayback();
+                      startRecording();
+                    }
                   }
                 }}
-                // Keep the button hoverable when only !isEnabled so the
-                // "Dictation not configured" tooltip stays reachable.
-                // We still natively disable while transcribing.
                 disabled={isTranscribing}
                 aria-disabled={!isEnabled}
                 className={cn(
                   'transition-colors',
-                  isRecording
+                  (honkActive ? honkIsListening : isRecording)
                     ? 'text-red-500 hover:text-red-600'
                     : 'text-text-primary/70 hover:text-text-primary',
                   isTranscribing && 'animate-pulse',
+                  (honkActive && honkIsListening) && 'animate-pulse',
                   !isEnabled && 'opacity-50 cursor-not-allowed'
                 )}
               >
@@ -1795,9 +2065,50 @@ export default function ChatInput({
             <TooltipContent>
               {!isEnabled ? (
                 <p>Dictation not configured (Settings)</p>
+              ) : honkActive ? (
+                <p>{honkIsListening ? 'Stop listening' : 'Start listening'}</p>
               ) : (
                 <p>Voice dictation{isRecording ? '' : ' • Say "submit" to send'}</p>
               )}
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Right: Honk! — speak last assistant response */}
+        {messages.length > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                shape="round"
+                disabled={isLoading}
+                onClick={() => {
+                  if (isSpeaking) {
+                    stopAudioPlayback();
+                    return;
+                  }
+                  const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+                  if (lastAssistant) {
+                    const { textContent } = getTextAndImageContent(lastAssistant);
+                    if (textContent.trim()) {
+                      speakText(textContent);
+                    }
+                  }
+                }}
+                className={cn(
+                  'transition-colors',
+                  isSpeaking
+                    ? 'text-blue-500 hover:text-blue-600 animate-pulse'
+                    : 'text-text-primary/70 hover:text-text-primary',
+                )}
+              >
+                <Volume2 size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isSpeaking ? 'Stop speaking' : 'Honk! Speak last response'}
             </TooltipContent>
           </Tooltip>
         )}
