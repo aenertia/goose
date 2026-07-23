@@ -93,8 +93,8 @@ export function disposeLoopbacks(): void {
 // Covers normal exit and signal-induced exit (SIGTERM/SIGINT) but not SIGKILL;
 // stale SIGKILL orphans are cleaned up on next startup in tui.tsx.
 process.on('exit', () => {
-  if (ttsLoopback?.pid) { try { process.kill(ttsLoopback.pid, 'SIGTERM'); } catch {} }
-  if (micLoopback?.pid) { try { process.kill(micLoopback.pid, 'SIGTERM'); } catch {} }
+  if (ttsLoopback?.pid) { try { process.kill(ttsLoopback.pid, 'SIGTERM'); } catch { /* process already exited */ } }
+  if (micLoopback?.pid) { try { process.kill(micLoopback.pid, 'SIGTERM'); } catch { /* process already exited */ } }
 });
 
 const PW_PROPS = JSON.stringify({

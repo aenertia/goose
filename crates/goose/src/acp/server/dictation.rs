@@ -59,36 +59,45 @@ impl GooseAcpAgent {
             }
         };
 
-        let text = match provider {
-            #[cfg(feature = "local-inference")]
-            DictationProvider::Local => transcribe_local(audio_bytes).await,
-            DictationProvider::ModelNative => {
-                let audio_format = match extension {
-                    "wav" => "wav",
-                    "mp3" => "mp3",
-                    "webm" => "webm",
-                    "mp4" => "mp4",
-                    "m4a" => "m4a",
-                    _ => "wav",
-                };
-                transcribe_with_model(audio_bytes, audio_format).await
+        let transcribe_future = async {
+            match provider {
+                #[cfg(feature = "local-inference")]
+                DictationProvider::Local => transcribe_local(audio_bytes).await,
+                DictationProvider::ModelNative => {
+                    let audio_format = match extension {
+                        "wav" => "wav",
+                        "mp3" => "mp3",
+                        "webm" => "webm",
+                        "mp4" => "mp4",
+                        "m4a" => "m4a",
+                        _ => "wav",
+                    };
+                    transcribe_with_model(audio_bytes, audio_format).await
+                }
+                remote => {
+                    let (model_param, default_model) = dictation_transcribe_params(remote);
+                    let model = dictation_selected_model(config, remote)
+                        .unwrap_or_else(|| default_model.to_string());
+                    transcribe_with_provider(
+                        remote,
+                        model_param.to_string(),
+                        model,
+                        audio_bytes,
+                        extension,
+                        &req.mime_type,
+                    )
+                    .await
+                }
             }
-            remote => {
-                let (model_param, default_model) = dictation_transcribe_params(remote);
-                let model = dictation_selected_model(config, remote)
-                    .unwrap_or_else(|| default_model.to_string());
-                transcribe_with_provider(
-                    remote,
-                    model_param.to_string(),
-                    model,
-                    audio_bytes,
-                    extension,
-                    &req.mime_type,
-                )
-                .await
-            }
-        }
-        .internal_err()?;
+        };
+
+        let text = tokio::time::timeout(std::time::Duration::from_secs(120), transcribe_future)
+            .await
+            .map_err(|_| {
+                agent_client_protocol::Error::internal_error()
+                    .data("Transcription timed out after 120 seconds")
+            })?
+            .internal_err()?;
 
         Ok(DictationTranscribeResponse { text })
     }

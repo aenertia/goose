@@ -52,8 +52,19 @@ export class FfmpegAudioPlayer implements AudioPlayer {
   readonly supportedFormats = ['wav', 'mp3', 'opus', 'ogg', 'flac'] as const;
 
   private pending: ChildProcess[] = [];
+  private pendingTmp = new Set<string>();
+  private exitHandlerRegistered = false;
 
-  async connect(): Promise<void> {}
+  async connect(): Promise<void> {
+    if (!this.exitHandlerRegistered) {
+      this.exitHandlerRegistered = true;
+      process.on('exit', () => {
+        for (const tmp of this.pendingTmp) {
+          try { unlinkSync(tmp); } catch { /* file already deleted */ }
+        }
+      });
+    }
+  }
 
   pushChunk(audio: Buffer, format: string): void {
     const ext = format === 'opus' ? 'opus' : format === 'mp3' ? 'mp3' : format === 'ogg' ? 'ogg' : format === 'flac' ? 'flac' : 'wav';
@@ -72,16 +83,19 @@ export class FfmpegAudioPlayer implements AudioPlayer {
     );
 
     this.pending.push(proc);
+    this.pendingTmp.add(tmp);
 
     proc.on('exit', () => {
       this.pending = this.pending.filter(p => p !== proc);
-      try { unlinkSync(tmp); } catch {}
+      this.pendingTmp.delete(tmp);
+      try { unlinkSync(tmp); } catch { /* file already deleted */ }
     });
 
     proc.on('error', (err) => {
       console.error('[ffplay] error:', err.message);
       this.pending = this.pending.filter(p => p !== proc);
-      try { unlinkSync(tmp); } catch {}
+      this.pendingTmp.delete(tmp);
+      try { unlinkSync(tmp); } catch { /* file already deleted */ }
     });
   }
 
@@ -105,6 +119,10 @@ export class FfmpegAudioPlayer implements AudioPlayer {
 
   async dispose(): Promise<void> {
     this.stop();
+    for (const tmp of this.pendingTmp) {
+      try { unlinkSync(tmp); } catch { /* file already deleted */ }
+    }
+    this.pendingTmp.clear();
   }
 }
 
@@ -128,6 +146,9 @@ export class FfmpegAudioRecorder implements AudioRecorder {
   private silenceCb: (() => void) | null = null;
 
   async connect(opts: RecordOpts): Promise<void> {
+    if (process.platform === 'darwin' || process.platform === 'win32') {
+      console.warn(`[ffmpeg] UNTESTED: voice recording on ${process.platform} — report issues at https://github.com/aaif-goose/goose`);
+    }
     this.silenceThresholdMs = opts.silenceThresholdMs || DEFAULT_SILENCE_MS;
     this.speaking = false;
     this.silenceStart = 0;

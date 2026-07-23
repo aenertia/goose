@@ -43,6 +43,20 @@ fn profile_path(id: &str) -> PathBuf {
     profiles_dir().join(format!("{}.json", id))
 }
 
+fn validate_profile_id(id: &str) -> anyhow::Result<()> {
+    if id.is_empty()
+        || !id
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+    {
+        anyhow::bail!(
+            "Invalid profile ID {:?}: only alphanumeric characters, hyphens, and underscores are allowed",
+            id
+        );
+    }
+    Ok(())
+}
+
 /// List all saved TTS profiles.
 pub fn list_profiles() -> Result<Vec<TtsProfile>> {
     let dir = profiles_dir();
@@ -75,6 +89,7 @@ pub fn list_profiles() -> Result<Vec<TtsProfile>> {
 
 /// Get a single TTS profile by ID.
 pub fn get_profile(id: &str) -> Result<Option<TtsProfile>> {
+    validate_profile_id(id)?;
     let path = profile_path(id);
     if !path.exists() {
         return Ok(None);
@@ -92,6 +107,7 @@ pub fn save_profile(mut profile: TtsProfile) -> Result<TtsProfile> {
     if profile.id.is_empty() {
         profile.id = Uuid::new_v4().to_string();
     }
+    validate_profile_id(&profile.id)?;
 
     // Derive a secret-store key name for this profile's API key.
     if profile.api_key_env.is_empty() && !profile.id.is_empty() {
@@ -118,6 +134,7 @@ pub fn save_profile(mut profile: TtsProfile) -> Result<TtsProfile> {
 
 /// Delete a TTS profile by ID. Returns true if the file existed and was removed.
 pub fn delete_profile(id: &str) -> Result<bool> {
+    validate_profile_id(id)?;
     let path = profile_path(id);
     if path.exists() {
         fs::remove_file(&path).with_context(|| format!("Failed to delete TTS profile {}", id))?;
@@ -137,4 +154,27 @@ pub fn api_key_env_for_id(profile_id: &str) -> String {
     let hash = Sha256::digest(profile_id.as_bytes());
     let hex: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
     format!("TTS_KEY_{}", hex)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_profile_id_rejects_traversal() {
+        assert!(validate_profile_id("../../etc/passwd").is_err());
+        assert!(validate_profile_id("../config").is_err());
+        assert!(validate_profile_id("/etc/passwd").is_err());
+        assert!(validate_profile_id("id with spaces").is_err());
+        assert!(validate_profile_id("").is_err());
+        assert!(validate_profile_id("id\x00null").is_err());
+    }
+
+    #[test]
+    fn validate_profile_id_accepts_valid() {
+        assert!(validate_profile_id("valid-id").is_ok());
+        assert!(validate_profile_id("a1b2c3d4-e5f6-7890-abcd-ef1234567890").is_ok());
+        assert!(validate_profile_id("my_profile_name").is_ok());
+        assert!(validate_profile_id("OpenAI-High-Quality").is_ok());
+    }
 }

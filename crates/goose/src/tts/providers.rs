@@ -554,7 +554,7 @@ async fn synthesize_elevenlabs(
         .post(format!(
             "{}/v1/text-to-speech/{}",
             base_url.trim_end_matches('/'),
-            voice_id
+            urlencoding::encode(voice_id)
         ))
         .header("xi-api-key", &api_key)
         .header("Content-Type", "application/json")
