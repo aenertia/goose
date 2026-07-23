@@ -1,5 +1,6 @@
-use crate::config::tls::provider_tls_config_from_config;
 use crate::config::Config;
+use crate::providers::http_helpers::build_provider_client;
+use crate::providers::model_native::ModelNativeResolved;
 use crate::providers::openai::parse_openai_base_url;
 use anyhow::Result;
 use base64::{engine::general_purpose::STANDARD as BASE64_STD, Engine as _};
@@ -73,16 +74,12 @@ pub fn all_tts_providers() -> Vec<&'static TtsProviderDef> {
 }
 
 pub fn get_tts_provider_def(provider: TtsProvider) -> &'static TtsProviderDef {
-    if provider == TtsProvider::Browser {
-        return &BROWSER_PROVIDER_DEF;
+    match provider {
+        TtsProvider::Browser => &BROWSER_PROVIDER_DEF,
+        TtsProvider::ModelNative => &MODEL_NATIVE_PROVIDER_DEF,
+        TtsProvider::OpenAI => &PROVIDERS[0],
+        TtsProvider::ElevenLabs => &PROVIDERS[1],
     }
-    if provider == TtsProvider::ModelNative {
-        return &MODEL_NATIVE_PROVIDER_DEF;
-    }
-    PROVIDERS
-        .iter()
-        .find(|def| def.provider == provider)
-        .unwrap()
 }
 
 pub fn is_tts_configured(provider: TtsProvider) -> bool {
@@ -398,7 +395,7 @@ async fn synthesize_openai_compatible(
     let base_url = if has_custom_endpoint {
         overrides.endpoint_url.clone()
     } else {
-        resolve_openai_base_url(config)
+        crate::providers::model_native::resolve_openai_base_url(config)
     };
     let (host, query_params, has_v1) = parse_openai_base_url(&base_url)?;
     let endpoint = if has_v1 {
@@ -438,30 +435,7 @@ async fn synthesize_openai_compatible(
         "response_format": fmt,
     });
 
-    let tls = provider_tls_config_from_config(config)?;
-    #[allow(unused_mut)]
-    let mut client_builder = reqwest::Client::builder().timeout(TTS_REQUEST_TIMEOUT);
-    #[cfg(any(feature = "rustls-tls", feature = "native-tls"))]
-    if let Some(ref tls_config) = tls {
-        if let Some(ref ca_cert_path) = tls_config.ca_cert_path {
-            let ca_pem = std::fs::read_to_string(ca_cert_path)?;
-            let certs = reqwest::Certificate::from_pem_bundle(ca_pem.as_bytes())?;
-            for cert in certs {
-                client_builder = client_builder.add_root_certificate(cert);
-            }
-        }
-        if let Some(ref id) = tls_config.client_identity {
-            let cert_pem = std::fs::read_to_string(&id.cert_path)?;
-            let key_pem = std::fs::read_to_string(&id.key_path)?;
-            let combined = format!("{}\n{}", cert_pem, key_pem);
-            let identity = reqwest::Identity::from_pem(combined.as_bytes())?;
-            client_builder = client_builder.identity(identity);
-        }
-    }
-    #[cfg(not(any(feature = "rustls-tls", feature = "native-tls")))]
-    let _ = &tls;
-
-    let client = client_builder.build()?;
+    let client = build_provider_client(config, TTS_REQUEST_TIMEOUT)?;
 
     let mut headers_map: HashMap<String, String> = config
         .get_secret::<String>("OPENAI_CUSTOM_HEADERS")
@@ -576,7 +550,7 @@ async fn synthesize_elevenlabs(
     }
 
     let audio_bytes = response.bytes().await?.to_vec();
-    Ok((audio_bytes, "audio/ogg".to_string()))
+    Ok((audio_bytes, "audio/mpeg".to_string()))
 }
 
 const MODEL_TTS_TIMEOUT: Duration = Duration::from_secs(60);
@@ -602,29 +576,7 @@ pub async fn synthesize_with_model(text: &str) -> Result<(Vec<u8>, String)> {
         }]
     });
 
-    let tls = provider_tls_config_from_config(config)?;
-    #[allow(unused_mut)]
-    let mut client_builder = reqwest::Client::builder().timeout(MODEL_TTS_TIMEOUT);
-    #[cfg(any(feature = "rustls-tls", feature = "native-tls"))]
-    if let Some(ref tls_config) = tls {
-        if let Some(ref ca_cert_path) = tls_config.ca_cert_path {
-            let ca_pem = std::fs::read_to_string(ca_cert_path)?;
-            let certs = reqwest::Certificate::from_pem_bundle(ca_pem.as_bytes())?;
-            for cert in certs {
-                client_builder = client_builder.add_root_certificate(cert);
-            }
-        }
-        if let Some(ref id) = tls_config.client_identity {
-            let cert_pem = std::fs::read_to_string(&id.cert_path)?;
-            let key_pem = std::fs::read_to_string(&id.key_path)?;
-            let combined = format!("{}\n{}", cert_pem, key_pem);
-            let identity = reqwest::Identity::from_pem(combined.as_bytes())?;
-            client_builder = client_builder.identity(identity);
-        }
-    }
-    #[cfg(not(any(feature = "rustls-tls", feature = "native-tls")))]
-    let _ = &tls;
-    let client = client_builder.build()?;
+    let client = build_provider_client(config, MODEL_TTS_TIMEOUT)?;
 
     let (host, query_params, has_v1) = parse_openai_base_url(&resolved.base_url)?;
     let endpoint = if has_v1 {
@@ -675,101 +627,19 @@ pub async fn synthesize_with_model(text: &str) -> Result<(Vec<u8>, String)> {
         .decode(audio_b64)
         .map_err(|e| anyhow::anyhow!("Failed to decode audio base64: {}", e))?;
 
-    Ok((audio_bytes, "audio/ogg".to_string()))
-}
-
-fn resolve_openai_base_url(config: &Config) -> String {
-    if let Ok(h) = std::env::var("OPENAI_HOST") {
-        return h;
-    }
-    if let Ok(u) = config.get_param::<String>("OPENAI_BASE_URL") {
-        let trimmed = u.trim().to_string();
-        if !trimmed.is_empty() {
-            return trimmed;
-        }
-    }
-    config
-        .get_param::<String>("OPENAI_HOST")
-        .unwrap_or_else(|_| "https://api.openai.com".to_string())
-}
-
-struct ModelNativeResolved {
-    api_key: String,
-    base_url: String,
-    headers: Option<HashMap<String, String>>,
+    Ok((audio_bytes, "audio/mpeg".to_string()))
 }
 
 fn resolve_model_native_config(
     config: &Config,
     provider_name: &str,
 ) -> Result<ModelNativeResolved> {
-    if let Ok(loaded) = crate::config::declarative_providers::load_provider(provider_name) {
-        let mut cfg = loaded.config;
-        use goose_providers::declarative::ProviderEngine;
-        match cfg.engine {
-            ProviderEngine::OpenAI | ProviderEngine::Ollama => {}
-            ProviderEngine::Anthropic => {
-                anyhow::bail!(
-                    "Provider '{}' uses the Anthropic engine which does not support model-native TTS",
-                    provider_name
-                )
-            }
-        }
-        if let Some(ref env_vars) = cfg.env_vars {
-            cfg.base_url =
-                crate::config::declarative_providers::expand_env_vars(&cfg.base_url, env_vars)?;
-        }
-        let api_key = if cfg.api_key_env.is_empty() || !cfg.requires_auth {
-            String::new()
-        } else {
-            config.get_secret::<String>(&cfg.api_key_env).map_err(|_| {
-                anyhow::anyhow!(
-                    "API key '{}' required for model-native TTS but not configured",
-                    cfg.api_key_env
-                )
-            })?
-        };
-        let headers = cfg.headers.clone();
-        return Ok(ModelNativeResolved {
-            api_key,
-            base_url: cfg.base_url,
-            headers,
-        });
-    }
-
-    match provider_name {
-        "openai" => {
-            let api_key = config
-                .get_secret::<String>("OPENAI_API_KEY")
-                .unwrap_or_default();
-            let base_url = resolve_openai_base_url(config);
-            let mut headers: HashMap<String, String> = config
-                .get_secret::<String>("OPENAI_CUSTOM_HEADERS")
-                .ok()
-                .map(crate::providers::openai::parse_custom_headers)
-                .unwrap_or_default();
-            if let Ok(org) = config.get_param::<String>("OPENAI_ORGANIZATION") {
-                headers.insert("OpenAI-Organization".to_string(), org);
-            }
-            if let Ok(project) = config.get_param::<String>("OPENAI_PROJECT") {
-                headers.insert("OpenAI-Project".to_string(), project);
-            }
-            let headers = if headers.is_empty() {
-                None
-            } else {
-                Some(headers)
-            };
-            Ok(ModelNativeResolved {
-                api_key,
-                base_url,
-                headers,
-            })
-        }
-        other => {
-            anyhow::bail!(
+    crate::providers::model_native::resolve_model_native_config(config, provider_name)?.ok_or_else(
+        || {
+            anyhow::anyhow!(
                 "Provider '{}' is not supported for model-native TTS. Use a provider with audio output support.",
-                other
+                provider_name
             )
-        }
-    }
+        },
+    )
 }

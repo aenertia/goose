@@ -7,7 +7,7 @@ Run `goose session` on a remote server with audio playing through your **local**
 When you SSH with `RemoteForward`, the SSH connection carries your local PulseAudio/PipeWire socket to the remote host. goose TUI detects the forwarded socket and routes audio through it transparently.
 
 ```
-Local machine                              Remote server (awa)
+Local machine                              Remote server
 ┌──────────────┐                          ┌──────────────────────────┐
 │ Speakers ◄───┤                          │  goose session           │
 │ Microphone ──┤◄═══ SSH RemoteForward ══►│  pw-cat uses PULSE_SERVER│
@@ -20,14 +20,12 @@ Local machine                              Remote server (awa)
 ### 1. Local machine — `~/.ssh/config`
 
 ```
-Host awa
-    HostName 172.16.1.132
-    User aenertia
-    RemoteForward /run/user/1000/goose-pulse /run/user/1000/pulse/native
+Host <remote-host>
+    HostName <remote-server-ip>
+    User <your-user>
+    RemoteForward /run/user/$(id -u)/goose-pulse /run/user/$(id -u)/pulse/native
     StreamLocalBindUnlink yes
 ```
-
-> Replace `/run/user/1000/` with your actual UID path. Find it with: `echo $XDG_RUNTIME_DIR`
 
 > `StreamLocalBindUnlink yes` automatically cleans up stale sockets from previous sessions.
 
@@ -37,17 +35,15 @@ Add to the **end** of `~/.bashrc` on the remote host:
 
 ```bash
 # SSH audio forwarding — use forwarded local PulseAudio socket when connected via SSH
-if [ -n "$SSH_CONNECTION" ] && [ -S /run/user/1000/goose-pulse ]; then
-    export PULSE_SERVER=unix:/run/user/1000/goose-pulse
+if [ -n "$SSH_CONNECTION" ] && [ -S /run/user/$(id -u)/goose-pulse ]; then
+    export PULSE_SERVER=unix:/run/user/$(id -u)/goose-pulse
 fi
 ```
-
-> Replace `1000` with your UID on the remote host: `id -u`
 
 ### 3. Connect
 
 ```bash
-ssh awa            # audio forwarding activates automatically
+ssh <remote-host>  # audio forwarding activates automatically
 goose session      # voice I/O works through your local speakers/mic
 ```
 

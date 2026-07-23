@@ -92,21 +92,21 @@ SSH audio forwarding and persistent sessions compose naturally:
 
 ```bash
 # Local ~/.ssh/config (one-time setup):
-# Host awa
-#     RemoteForward /run/user/1000/goose-pulse /run/user/1000/pulse/native
+# Host <remote-host>
+#     RemoteForward /run/user/$(id -u)/goose-pulse /run/user/$(id -u)/pulse/native
 #     StreamLocalBindUnlink yes
 
 # Remote ~/.bashrc (one-time setup):
-# if [ -n "$SSH_CONNECTION" ] && [ -S /run/user/1000/goose-pulse ]; then
-#     export PULSE_SERVER=unix:/run/user/1000/goose-pulse
+# if [ -n "$SSH_CONNECTION" ] && [ -S /run/user/$(id -u)/goose-pulse ]; then
+#     export PULSE_SERVER=unix:/run/user/$(id -u)/goose-pulse
 # fi
 
 # Daily workflow:
-ssh awa                     # audio forwarding activates
+ssh <remote-host>           # audio forwarding activates
 goose session --attach      # TUI connects to serve, voice I/O works
 /honk on                    # start voice conversation
 # ... SSH drops (laptop sleeps) ...
-ssh awa                     # audio forwarding re-established
+ssh <remote-host>           # audio forwarding re-established
 goose session --attach      # reconnect to session (agent was idle but alive)
 /honk on                    # resume voice conversation
 ```
@@ -127,5 +127,5 @@ When reconnecting:
 
 ## Known Limitations
 
-- `goose session --list-remote` and `goose session --attach` currently require a provider configured in goose. If you get "No provider configured", run `goose configure` first.
+- `goose session --list-remote` and `goose session --attach` may require a provider configured in goose. If you get "No provider configured", run `goose configure` first. (This requirement may be relaxed in a future release.)
 - Session resume after reattach loads the conversation history from the goose serve session database. In-progress tool calls may not resume correctly after a disconnect.

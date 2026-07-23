@@ -3,11 +3,12 @@ use crate::config::Config;
 #[cfg(feature = "local-inference")]
 use crate::dictation::whisper::LOCAL_WHISPER_MODEL_CONFIG_KEY;
 use crate::providers::api_client::{ApiClient, AuthMethod};
+use crate::providers::http_helpers::build_provider_client;
+use crate::providers::model_native::ModelNativeResolved;
 use crate::providers::openai::parse_openai_base_url;
 use anyhow::Result;
 use base64::{engine::general_purpose::STANDARD as BASE64_STD, Engine as _};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 #[cfg(feature = "local-inference")]
 use std::sync::Mutex;
 use std::time::Duration;
@@ -15,12 +16,6 @@ use std::time::Duration;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 const OPENAI_VERSIONLESS_TRANSCRIPTIONS_PATH: &str = "audio/transcriptions";
 type OpenAiDictationTarget = (String, Vec<(String, String)>, String);
-
-struct ModelNativeResolved {
-    api_key: String,
-    base_url: String,
-    headers: Option<HashMap<String, String>>,
-}
 
 #[cfg(feature = "local-inference")]
 static LOCAL_TRANSCRIBER: once_cell::sync::Lazy<
@@ -403,36 +398,7 @@ pub async fn transcribe_with_model(audio_bytes: Vec<u8>, audio_format: &str) -> 
         }]
     });
 
-    let tls = provider_tls_config_from_config(config)?;
-    #[allow(unused_mut)]
-    let mut client_builder = reqwest::Client::builder().timeout(MODEL_TRANSCRIPTION_TIMEOUT);
-    #[cfg(any(feature = "rustls-tls", feature = "native-tls"))]
-    if let Some(ref tls_config) = tls {
-        if let Some(ref ca_cert_path) = tls_config.ca_cert_path {
-            let ca_pem = std::fs::read_to_string(ca_cert_path)
-                .map_err(|e| anyhow::anyhow!("Failed to read CA cert: {}", e))?;
-            let ca_certs = reqwest::Certificate::from_pem_bundle(ca_pem.as_bytes())
-                .map_err(|e| anyhow::anyhow!("Failed to parse CA cert bundle: {}", e))?;
-            for cert in ca_certs {
-                client_builder = client_builder.add_root_certificate(cert);
-            }
-        }
-        if let Some(ref id) = tls_config.client_identity {
-            let cert_pem = std::fs::read_to_string(&id.cert_path)
-                .map_err(|e| anyhow::anyhow!("Failed to read client cert: {}", e))?;
-            let key_pem = std::fs::read_to_string(&id.key_path)
-                .map_err(|e| anyhow::anyhow!("Failed to read client key: {}", e))?;
-            let combined = format!("{}\n{}", cert_pem, key_pem);
-            let identity = reqwest::Identity::from_pem(combined.as_bytes())
-                .map_err(|e| anyhow::anyhow!("Failed to create TLS identity: {}", e))?;
-            client_builder = client_builder.identity(identity);
-        }
-    }
-    #[cfg(not(any(feature = "rustls-tls", feature = "native-tls")))]
-    let _ = &tls;
-    let client = client_builder
-        .build()
-        .map_err(|e| anyhow::anyhow!("Failed to build HTTP client: {}", e))?;
+    let client = build_provider_client(config, MODEL_TRANSCRIPTION_TIMEOUT)?;
 
     // Parse the base URL to handle paths and query params correctly.
     let (host, query_params, has_v1) = parse_openai_base_url(base_url)?;
@@ -493,97 +459,13 @@ fn resolve_model_native_config(
     config: &Config,
     provider_name: &str,
 ) -> Result<ModelNativeResolved> {
-    // Try loading the declarative/custom provider config first — this handles
-    // custom_* providers whose base_url lives in a JSON file, not in env vars.
-    if let Ok(loaded) = crate::config::declarative_providers::load_provider(provider_name) {
-        let mut cfg = loaded.config;
-        // Only OpenAI-compatible engines support the input_audio content type.
-        // Anthropic uses a different API shape and does not accept input_audio.
-        use goose_providers::declarative::ProviderEngine;
-        match cfg.engine {
-            ProviderEngine::OpenAI | ProviderEngine::Ollama => {}
-            ProviderEngine::Anthropic => {
-                anyhow::bail!(
-                    "Provider '{}' uses the Anthropic engine which does not support \
-                     the input_audio content type for model-native dictation",
-                    provider_name
-                )
-            }
-        }
-        // Resolve env var placeholders (e.g. ${LMSTUDIO_HOST}) in base_url
-        if let Some(ref env_vars) = cfg.env_vars {
-            cfg.base_url =
-                crate::config::declarative_providers::expand_env_vars(&cfg.base_url, env_vars)?;
-        }
-        let api_key = if cfg.api_key_env.is_empty() || !cfg.requires_auth {
-            String::new()
-        } else {
-            config.get_secret::<String>(&cfg.api_key_env).map_err(|_| {
-                anyhow::anyhow!(
-                    "API key '{}' required for model-native dictation but not configured",
-                    cfg.api_key_env
-                )
-            })?
-        };
-        let headers = cfg.headers.clone();
-        return Ok(ModelNativeResolved {
-            api_key,
-            base_url: cfg.base_url,
-            headers,
-        });
+    if let Some(resolved) =
+        crate::providers::model_native::resolve_model_native_config(config, provider_name)?
+    {
+        return Ok(resolved);
     }
 
-    // Fallback: well-known providers resolved from env vars.
-    //
-    // OpenAI resolution mirrors openai_def.rs::resolve_base_url():
-    //   1. OPENAI_HOST env var (session override, deprecated but honoured)
-    //   2. OPENAI_BASE_URL (env or config) - ecosystem-standard
-    //   3. OPENAI_HOST from config - persisted by goose configure
-    //   4. Default https://api.openai.com
     match provider_name {
-        "openai" => {
-            let api_key = config
-                .get_secret::<String>("OPENAI_API_KEY")
-                .unwrap_or_default();
-            let base_url = if let Ok(h) = std::env::var("OPENAI_HOST") {
-                h
-            } else if let Ok(u) = config.get_param::<String>("OPENAI_BASE_URL") {
-                let trimmed = u.trim().to_string();
-                if trimmed.is_empty() {
-                    "https://api.openai.com".to_string()
-                } else {
-                    trimmed
-                }
-            } else {
-                config
-                    .get_param::<String>("OPENAI_HOST")
-                    .unwrap_or_else(|_| "https://api.openai.com".to_string())
-            };
-            // Forward OPENAI_CUSTOM_HEADERS, OPENAI_ORGANIZATION, and
-            // OPENAI_PROJECT so that org/project-scoped and proxy setups
-            // work identically to normal chat (see openai_def.rs).
-            let mut headers: std::collections::HashMap<String, String> = config
-                .get_secret::<String>("OPENAI_CUSTOM_HEADERS")
-                .ok()
-                .map(crate::providers::openai::parse_custom_headers)
-                .unwrap_or_default();
-            if let Ok(org) = config.get_param::<String>("OPENAI_ORGANIZATION") {
-                headers.insert("OpenAI-Organization".to_string(), org);
-            }
-            if let Ok(project) = config.get_param::<String>("OPENAI_PROJECT") {
-                headers.insert("OpenAI-Project".to_string(), project);
-            }
-            let headers = if headers.is_empty() {
-                None
-            } else {
-                Some(headers)
-            };
-            Ok(ModelNativeResolved {
-                api_key,
-                base_url,
-                headers,
-            })
-        }
         "openrouter" => {
             let api_key = config
                 .get_secret::<String>("OPENROUTER_API_KEY")
@@ -591,9 +473,6 @@ fn resolve_model_native_config(
             let mut base_url = config
                 .get_param::<String>("OPENROUTER_HOST")
                 .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
-            // OpenRouter chat endpoint is api/v1/chat/completions.
-            // Ensure the /api/v1 path is present so parse_openai_base_url
-            // detects the /v1 segment and builds the correct endpoint.
             if !base_url.contains("/api") {
                 base_url = format!("{}/api/v1", base_url.trim_end_matches('/'));
             } else if base_url.ends_with("/api") {
@@ -629,12 +508,8 @@ fn resolve_model_native_config(
             })
         }
         "google" => {
-            // Google Gemini OpenAI-compatible endpoint lives at /v1beta/openai.
-            // The default includes this path so /chat/completions is appended
-            // correctly by the caller.
             let has_custom_host = config.get_param::<String>("GOOGLE_HOST").is_ok();
             let api_key = if has_custom_host {
-                // Custom host may not require auth (e.g. local proxy)
                 config
                     .get_secret::<String>("GOOGLE_API_KEY")
                     .unwrap_or_default()
@@ -658,10 +533,6 @@ fn resolve_model_native_config(
             })
         }
         other => {
-            // Providers that reach this branch have no declarative config
-            // (load_provider failed above) and are not in the known
-            // OpenAI-compatible set. Reject rather than sending an
-            // input_audio payload to an incompatible endpoint.
             anyhow::bail!(
                 "Provider '{}' is not supported for model-native dictation. \
                  Use a provider with an OpenAI-compatible chat completions endpoint.",

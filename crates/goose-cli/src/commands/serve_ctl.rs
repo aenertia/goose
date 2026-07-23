@@ -55,7 +55,10 @@ pub async fn ensure_serve_running(url: Option<&str>) -> Result<String> {
         }
     }
 
-    tracing::info!("Starting goose serve directly on port {}", DEFAULT_SERVE_PORT);
+    tracing::info!(
+        "Starting goose serve directly on port {}",
+        DEFAULT_SERVE_PORT
+    );
     let _child = Command::new("goose")
         .args([
             "serve",

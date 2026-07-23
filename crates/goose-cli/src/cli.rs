@@ -940,7 +940,7 @@ enum Command {
             long_help = "Connect to a running goose-serve backend instead of launching a new agent. \
                 Automatically starts goose-serve via systemd if not already running. \
                 Use with --serve-url to target a specific instance.",
-            conflicts_with = "resume",
+            conflicts_with = "resume"
         )]
         attach: bool,
 
@@ -950,7 +950,7 @@ enum Command {
             value_name = "URL",
             default_value = "http://127.0.0.1:3284",
             help = "URL of goose-serve to connect to (used with --attach)",
-            requires = "attach",
+            requires = "attach"
         )]
         serve_url: Option<String>,
 
@@ -958,7 +958,7 @@ enum Command {
         #[arg(
             long,
             help = "List sessions on the running goose-serve instance",
-            conflicts_with = "attach",
+            conflicts_with = "attach"
         )]
         list_remote: bool,
 
@@ -2299,9 +2299,9 @@ pub async fn cli() -> anyhow::Result<()> {
             extension_opts,
         }) => {
             if list_remote {
-                let url = serve_url.as_deref().unwrap_or(
-                    crate::commands::serve_ctl::default_serve_url(),
-                );
+                let url = serve_url
+                    .as_deref()
+                    .unwrap_or(crate::commands::serve_ctl::default_serve_url());
                 match crate::commands::serve_ctl::ensure_serve_running(Some(url)).await {
                     Ok(running_url) => {
                         println!("goose serve is running at {}", running_url);

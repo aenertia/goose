@@ -186,20 +186,20 @@ Route voice I/O through your **local** speakers and microphone when SSH-ing to a
 
 ```
 # Local ~/.ssh/config (one-time):
-Host awa
-    RemoteForward /run/user/1000/goose-pulse /run/user/1000/pulse/native
+Host <remote-host>
+    RemoteForward /run/user/$(id -u)/goose-pulse /run/user/$(id -u)/pulse/native
     StreamLocalBindUnlink yes
 ```
 
 ```bash
 # Remote ~/.bashrc (one-time):
-if [ -n "$SSH_CONNECTION" ] && [ -S /run/user/1000/goose-pulse ]; then
-    export PULSE_SERVER=unix:/run/user/1000/goose-pulse
+if [ -n "$SSH_CONNECTION" ] && [ -S /run/user/$(id -u)/goose-pulse ]; then
+    export PULSE_SERVER=unix:/run/user/$(id -u)/goose-pulse
 fi
 ```
 
 ```bash
-ssh awa                # audio forwarding auto-activates
+ssh <remote-host>      # audio forwarding auto-activates
 goose session          # voice I/O works through local speakers/mic
 ```
 

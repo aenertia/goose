@@ -17,7 +17,6 @@ pub static EXTENSION_NAME: &str = "honk";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HonkExtState {
-    pub announce_message: Option<String>,
     pub mode: Option<String>,
     pub screen_reader_active: Option<bool>,
 }
@@ -25,11 +24,6 @@ pub struct HonkExtState {
 impl ExtensionState for HonkExtState {
     const EXTENSION_NAME: &'static str = "honk";
     const VERSION: &'static str = "v0";
-}
-
-#[derive(Debug, Serialize, Deserialize, JsonSchema)]
-struct HonkAnnounceParams {
-    message: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -51,13 +45,11 @@ impl HonkClient {
             )
             .with_instructions(
                 indoc! {r#"
-                HONK Integration extension for Goose. Provides tools to check voice capabilities,
-                announce messages via TTS, and control conversation mode.
+                HONK Integration extension for Goose. Provides tools to check voice capabilities
+                and control conversation mode.
 
                 Use honk_status to check what voice features are available before attempting
-                voice operations. Use honk_announce to speak a message aloud to the user
-                outside of the normal response stream (e.g., progress updates during long tasks).
-                Use honk_mode to switch between conversation modes.
+                voice operations. Use honk_mode to switch between conversation modes.
             "#}
                 .to_string(),
             );
@@ -116,49 +108,6 @@ impl HonkClient {
         Ok(vec![Content::text(status)])
     }
 
-    async fn handle_announce(
-        &self,
-        session_id: &str,
-        arguments: Option<JsonObject>,
-    ) -> Result<Vec<Content>, String> {
-        let message = arguments
-            .as_ref()
-            .ok_or("Missing arguments")?
-            .get("message")
-            .and_then(|v| v.as_str())
-            .ok_or("Missing required parameter: message")?
-            .to_string();
-
-        if !Self::voice_configured() {
-            return Err("TTS not configured — set voice_tts_provider in config".to_string());
-        }
-
-        let manager = &self.context.session_manager;
-        match manager.get_session(session_id, false).await {
-            Ok(mut session) => {
-                let state = HonkExtState {
-                    announce_message: Some(message.clone()),
-                    mode: HonkExtState::from_extension_data(&session.extension_data)
-                        .and_then(|s| s.mode),
-                    screen_reader_active: None,
-                };
-                state
-                    .to_extension_data(&mut session.extension_data)
-                    .map_err(|e| format!("Failed to serialize honk state: {e}"))?;
-
-                manager
-                    .update(session_id)
-                    .extension_data(session.extension_data)
-                    .apply()
-                    .await
-                    .map_err(|_| "Failed to update session".to_string())?;
-
-                Ok(vec![Content::text(format!("HONK announce stored in session (UI consumer not yet implemented — message will not be spoken): {}", message))])
-            }
-            Err(_) => Err("Failed to read session".to_string()),
-        }
-    }
-
     async fn handle_mode(
         &self,
         session_id: &str,
@@ -185,7 +134,6 @@ impl HonkClient {
         match manager.get_session(session_id, false).await {
             Ok(mut session) => {
                 let state = HonkExtState {
-                    announce_message: None,
                     mode: Some(mode.clone()),
                     screen_reader_active: None,
                 };
@@ -207,10 +155,6 @@ impl HonkClient {
     }
 
     fn get_tools() -> Vec<Tool> {
-        let announce_schema = schema_for!(HonkAnnounceParams);
-        let announce_schema_value = serde_json::to_value(announce_schema)
-            .expect("Failed to serialize HonkAnnounceParams schema");
-
         let mode_schema = schema_for!(HonkModeParams);
         let mode_schema_value =
             serde_json::to_value(mode_schema).expect("Failed to serialize HonkModeParams schema");
@@ -227,27 +171,6 @@ impl HonkClient {
             .annotate(ToolAnnotations::from_raw(
                 Some("HONK Status".to_string()),
                 Some(true),
-                Some(true),
-                Some(false),
-                Some(false),
-            )),
-            Tool::new(
-                "honk_announce".to_string(),
-                indoc! {r#"
-                    Speak a message aloud to the user via TTS. Use for:
-                    - Progress updates during long-running operations
-                    - Important status changes the user should hear immediately
-                    - Asking the user a question when you need verbal confirmation
-
-                    The message is queued for TTS playback. Keep messages concise
-                    (1-2 sentences) for natural speech.
-                "#}
-                .to_string(),
-                announce_schema_value.as_object().unwrap().clone(),
-            )
-            .annotate(ToolAnnotations::from_raw(
-                Some("HONK Announce".to_string()),
-                Some(false),
                 Some(true),
                 Some(false),
                 Some(false),
@@ -302,7 +225,6 @@ impl McpClientTrait for HonkClient {
         let session_id = &ctx.session_id;
         let content = match name {
             "honk_status" => self.handle_status(session_id).await,
-            "honk_announce" => self.handle_announce(session_id, arguments).await,
             "honk_mode" => self.handle_mode(session_id, arguments).await,
             _ => Err(format!("Unknown tool: {}", name)),
         };

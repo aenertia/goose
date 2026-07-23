@@ -3,6 +3,27 @@ import type { MediaCapabilities } from './types.js';
 
 let cached: MediaCapabilities | null = null;
 
+function baseCaps(
+  backend: MediaCapabilities['backend'],
+  overrides: Partial<Omit<MediaCapabilities, 'backend'>> = {},
+): MediaCapabilities {
+  return {
+    backend,
+    audioPlayback: false,
+    audioCapture: false,
+    persistentStreams: false,
+    screenCapture: false,
+    supportedFormats: [],
+    gstreamerVersion: null,
+    pipewire: false,
+    loopbackAvailable: false,
+    echoCancelAvailable: false,
+    grdSession: false,
+    sshAudioSession: false,
+    ...overrides,
+  };
+}
+
 function probe(command: string, args: string[]): boolean {
   const result = spawnSync(command, args, {
     stdio: ['ignore', 'pipe', 'ignore'],
@@ -58,68 +79,30 @@ function hasSshAudioSocket(): boolean {
 
 function detectDarwin(): MediaCapabilities {
   if (probe('ffplay', ['-version'])) {
-    return {
-      backend: 'ffmpeg',
+    return baseCaps('ffmpeg', {
       audioPlayback: true,
       audioCapture: true,
-      persistentStreams: false,
-      screenCapture: false,
       supportedFormats: ['wav', 'mp3', 'opus', 'ogg', 'flac'],
-      gstreamerVersion: null,
-      pipewire: false,
-      loopbackAvailable: false,
-      echoCancelAvailable: false,
-      grdSession: false,
-      sshAudioSession: false,
-    };
+    });
   }
-  return {
-    backend: 'afplay',
+  return baseCaps('afplay', {
     audioPlayback: true,
-    audioCapture: false,
-    persistentStreams: false,
-    screenCapture: false,
     supportedFormats: ['wav', 'mp3', 'aac'],
-    gstreamerVersion: null,
-    pipewire: false,
-    loopbackAvailable: false,
-    echoCancelAvailable: false,
-      grdSession: false,
-      sshAudioSession: false,
-  };
+  });
 }
 
 function detectWin32(): MediaCapabilities {
   if (probe('ffplay', ['-version'])) {
-    return {
-      backend: 'ffmpeg',
+    return baseCaps('ffmpeg', {
       audioPlayback: true,
       audioCapture: true,
-      persistentStreams: false,
-      screenCapture: false,
       supportedFormats: ['wav', 'mp3', 'opus', 'ogg', 'flac'],
-      gstreamerVersion: null,
-      pipewire: false,
-      loopbackAvailable: false,
-      echoCancelAvailable: false,
-      grdSession: false,
-      sshAudioSession: false,
-    };
+    });
   }
-  return {
-    backend: 'powershell',
+  return baseCaps('powershell', {
     audioPlayback: true,
-    audioCapture: false,
-    persistentStreams: false,
-    screenCapture: false,
     supportedFormats: ['wav'],
-    gstreamerVersion: null,
-    pipewire: false,
-    loopbackAvailable: false,
-    echoCancelAvailable: false,
-      grdSession: false,
-      sshAudioSession: false,
-  };
+  });
 }
 
 function probeGStreamerFormats(): string[] {
@@ -157,12 +140,10 @@ function detectLinux(): MediaCapabilities {
     const hasPWSrc = probe('gst-inspect-1.0', ['pipewiresrc']);
     const formats = probeGStreamerFormats();
 
-    return {
-      backend: 'gstreamer',
+    return baseCaps('gstreamer', {
       audioPlayback: hasPWSink || pwCatAvailable || formats.length > 0,
       audioCapture: hasPWSrc || pwCatAvailable,
       persistentStreams: pwLoopback || hasPWSink || pwCatAvailable,
-      screenCapture: false,
       supportedFormats: formats,
       gstreamerVersion: gstVersion,
       pipewire: hasPWSink || hasPWSrc || pwCatAvailable,
@@ -170,40 +151,18 @@ function detectLinux(): MediaCapabilities {
       echoCancelAvailable: hasEchoCancel(),
       grdSession: hasGrdAudioSource(),
       sshAudioSession: hasSshAudioSocket(),
-    };
+    });
   }
 
   if (probe('pacat', ['--version'])) {
-    return {
-      backend: 'pacat',
+    return baseCaps('pacat', {
       audioPlayback: true,
       audioCapture: true,
-      persistentStreams: false,
-      screenCapture: false,
       supportedFormats: ['wav'],
-      gstreamerVersion: null,
-      pipewire: false,
-      loopbackAvailable: false,
-      echoCancelAvailable: false,
-      grdSession: false,
-      sshAudioSession: false,
-    };
+    });
   }
 
-  return {
-    backend: 'noop',
-    audioPlayback: false,
-    audioCapture: false,
-    persistentStreams: false,
-    screenCapture: false,
-    supportedFormats: [],
-    gstreamerVersion: null,
-    pipewire: false,
-    loopbackAvailable: false,
-    echoCancelAvailable: false,
-          grdSession: false,
-      sshAudioSession: false,
-  };
+  return baseCaps('noop');
 }
 
 export function detectMediaCapabilities(): Promise<MediaCapabilities> {
