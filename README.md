@@ -58,6 +58,7 @@ This fork/branch implements:
 | **i18n (Voice Strings)** | 26 keys × 16 locales | — |
 | **VadEngine abstraction** | `useVad(engine)` hook | Inline state machine with `SileroNodeEngine` |
 | **macOS TUI audio** | N/A (Desktop works via Web Audio) | ⚠️ UNTESTED — `afplay` stub exists, no recording backend |
+| **Windows TUI audio** | N/A (Desktop works via Web Audio) | ⚠️ UNTESTED — `powershell` stub exists, falls to noop |
 
 ### Shared Components (`@aaif/voice-shared`)
 
@@ -157,6 +158,20 @@ macOS TUI voice is **not yet implemented**. The detection layer returns an `afpl
 - **Echo cancellation**: Deferred — no PipeWire equivalent on macOS; JS NLMS port or Apple AUVoiceIO needed
 
 No macOS hardware is available for testing. Contributions welcome.
+
+### Terminal (TUI) — Windows (⚠️ UNTESTED)
+
+Windows TUI voice is **not yet implemented**. The detection layer returns a `powershell` backend type but falls through to noop (silent). Planned approach:
+- **Playback**: `ffplay` (from FFmpeg) for all formats; PowerShell `[System.Media.SoundPlayer]` as zero-dep WAV-only fallback
+- **Recording**: `ffmpeg -f dshow -i audio="Microphone" -ar 16000 -ac 1 -f s16le -` (DirectShow capture, streams raw PCM to stdout)
+- **Install**: `winget install Gyan.FFmpeg`
+- **VAD**: Silero v6 via `onnxruntime-node` (prebuilt win32/x64 binaries — should work unchanged)
+- **Echo cancellation**: Not available via CLI on Windows (WASAPI AEC is C++ API only). Deferred.
+- **Process cleanup**: Windows needs `taskkill /pid /f /t` instead of SIGTERM
+
+The planned `ffmpegBackend.ts` would also cover macOS (`-f avfoundation`), unifying both non-Linux platforms behind one backend.
+
+No Windows hardware is available for testing. Contributions welcome.
 
 ---
 
