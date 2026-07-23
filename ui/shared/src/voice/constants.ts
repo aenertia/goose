@@ -9,6 +9,8 @@ export const SILERO_NEGATIVE_THRESHOLD = 0.35;
 export const SILERO_REDEMPTION_FRAMES = 24;
 export const SILERO_MIN_SPEECH_FRAMES = 9;
 export const SILERO_PRE_SPEECH_PAD_FRAMES = 3;
+export const SILERO_FRAME_SIZE = 512;
+export const SILERO_STATE_DIM = 128;
 
 export const ECHO_SUSPECT_DEFER_MS_WITH_AEC = 200;
 export const ECHO_SUSPECT_DEFER_MS_NO_AEC = 500;

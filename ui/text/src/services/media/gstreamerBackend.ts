@@ -312,7 +312,7 @@ export class GStreamerAudioRecorder implements AudioRecorder {
       const avrVad = await getAvrVad();
       if (avrVad) {
         this.sileroVad = await avrVad.RealTimeVAD.new({
-          model: 'v5',
+          model: 'v5', // avr-vad bundles v5 with no custom model path — upgrade to v6 when avr-vad supports it
           frameSamples: 512,
           sampleRate: opts.sampleRate,
           positiveSpeechThreshold: 0.5,

@@ -43,7 +43,7 @@ This fork/branch implements:
 | **TTS Streaming** | Chunk queue with pre-fetch | Persistent `pw-cat` process |
 | **TTS Caching** | LRU cache (50 entries) | — |
 | **Mic Recording** | `getUserMedia` + AudioWorklet | `pw-cat --record` (PipeWire) |
-| **Silero VAD** | `onnxruntime-web` (WASM) | `avr-vad` (`onnxruntime-node`) |
+| **Silero VAD** | v6 via `onnxruntime-web` (WASM) | v5 via `avr-vad` (`onnxruntime-node`) |
 | **RMS Fallback VAD** | Shared `computeRms()` | Shared `computeRms()` |
 | **Echo Cancellation** | NLMS AudioWorklet (256 taps) | `pactl module-echo-cancel` (WebRTC AEC) |
 | **TTS Reference Signal** | `MediaStreamDestination` node | `pw-loopback` virtual sink |
@@ -56,6 +56,7 @@ This fork/branch implements:
 | **Voice Indicator** | Tray icon phase display | Terminal header badge |
 | **Screen Reader Detection** | Via HONK extension | Via HONK extension |
 | **i18n (Voice Strings)** | 26 keys × 16 locales | — |
+| **macOS TUI audio** | N/A (Desktop works via Web Audio) | ⚠️ UNTESTED — `afplay` stub exists, no recording backend |
 
 ### Shared Components (`@aaif/voice-shared`)
 
@@ -125,20 +126,50 @@ Saved as JSON in `~/.config/goose/tts_profiles/`. CRUD via Desktop settings UI o
 
 ## Platform Requirements
 
-### Desktop (Electron)
+### Desktop (Electron) — Linux, macOS, Windows
 - Standard Electron requirements (no additional system deps)
-- `onnxruntime-web` for Silero VAD (bundled, WASM backend)
+- `onnxruntime-web` for Silero VAD v6 (bundled, WASM backend)
+- Microphone entitlement already in `entitlements.plist` (macOS)
+- Voice pipeline uses Web Audio API — works cross-platform
 
-### Terminal (TUI) — Linux
+### Terminal (TUI) — Linux (tested)
 - **PipeWire** with `pw-cat` (recording and playback)
 - **GStreamer** with opus/mp3 codec plugins (for encoded formats)
 - **PulseAudio** `pactl` (for echo cancellation module loading)
 - `pw-loopback` (for virtual TTS sink and mic source nodes)
-- `onnxruntime-node` via `avr-vad` (for Silero VAD)
+- `onnxruntime-node` via `avr-vad` (for Silero VAD v5)
 
 Fallback chain: GStreamer/PipeWire → PulseAudio `pacat` → noop (silent)
 
 Detection is automatic — run `goose session` and voice capabilities are probed at startup.
+
+### Terminal (TUI) — macOS (⚠️ UNTESTED)
+
+macOS TUI voice is **not yet implemented**. The detection layer returns an `afplay` backend type but falls through to noop (silent). Planned approach:
+- **Playback**: `afplay` (zero deps, built-in) for WAV; `sox` (Homebrew) for streaming + encoded formats
+- **Recording**: `sox rec` (Homebrew) for mic capture
+- **VAD**: Silero via `avr-vad` (onnxruntime-node works cross-platform — only needs audio capture feeding it)
+- **Echo cancellation**: Deferred — no PipeWire equivalent on macOS; JS NLMS port or Apple AUVoiceIO needed
+
+No macOS hardware is available for testing. Contributions welcome.
+
+---
+
+## Silero VAD: Why v6?
+
+The Desktop app uses Silero VAD v6 (upgraded from v5). The TUI uses v5 via `avr-vad` (which bundles v5 with no override path).
+
+| Metric | v5 | v6 | Delta |
+|--------|-----|-----|-------|
+| ONNX file size | 2,327,524 bytes | 2,327,524 bytes | identical |
+| I/O contract | input/state/sr → output/stateN | identical | drop-in |
+| Speech detection (ROC-AUC) | 0.96 | 0.97 | +0.01 |
+| **Noise rejection (ESC-50)** | **0.61** | **0.87** | **+0.26** |
+| **Noise rejection (private)** | **0.44** | **0.71** | **+0.27** |
+
+v6 retrained 28/345 weight tensors with no architecture changes. The improvement is entirely in noise rejection — fewer false VAD triggers from environmental sounds, fans, keyboard clicks. Speech detection accuracy is unchanged. Same ONNX opset 16, same frame size (512 samples), same state dimensions ([2,1,128]).
+
+Source: [snakers4/silero-vad Quality Metrics](https://github.com/snakers4/silero-vad/wiki/Quality-Metrics)
 
 ---
 
