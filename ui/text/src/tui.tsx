@@ -312,7 +312,7 @@ async function startRecording(client: GooseClient): Promise<void> {
   await voiceSession.recorder.connect({
     sampleRate: SAMPLE_RATE,
     channels: 1,
-    vadEngine: voiceSession.capabilities?.echoCancelAvailable ? 'silero-v5' : 'rms-energy',
+    vadEngine: voiceSession.capabilities?.echoCancelAvailable ? 'silero-v6' : 'rms-energy',
     silenceThresholdMs: SILENCE_THRESHOLD_MS,
   });
 }

@@ -1,19 +1,9 @@
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import type { AudioPlayer, AudioRecorder, RecordOpts } from "./types.js";
-import type { RealTimeVAD as RealTimeVADType } from 'avr-vad';
-import { RMS_THRESHOLD, MIN_SPEECH_MS, DEFAULT_SILENCE_MS } from '@aaif/voice-shared/voice/constants.js';
+import type { VadEngine } from '@aaif/voice-shared/voice/vadEngine.js';
+import { RMS_THRESHOLD, MIN_SPEECH_MS, DEFAULT_SILENCE_MS, SILERO_POSITIVE_THRESHOLD, SILERO_NEGATIVE_THRESHOLD, SILERO_REDEMPTION_FRAMES, SILERO_MIN_SPEECH_FRAMES, SILERO_FRAME_SIZE } from '@aaif/voice-shared/voice/constants.js';
 import { computeRms } from '@aaif/voice-shared/voice/vad.js';
-
-let _avr_vad_module: typeof import('avr-vad') | null = null;
-async function getAvrVad(): Promise<typeof import('avr-vad') | null> {
-  if (_avr_vad_module) return _avr_vad_module;
-  try {
-    _avr_vad_module = await import('avr-vad');
-    return _avr_vad_module;
-  } catch {
-    return null;
-  }
-}
+import { SileroNodeEngine } from '../vadEngines/sileroNodeEngine.js';
 
 const TTS_SINK_NODE = 'goose-tts-sink';
 const MIC_SOURCE_NODE = 'goose-mic-src';
@@ -272,6 +262,13 @@ const PW_MIC_PROPS = JSON.stringify({
   "node.dont-fallback": "true",
 });
 
+function concatFloat32(a: Float32Array, b: Float32Array): Float32Array {
+  const out = new Float32Array(a.length + b.length);
+  out.set(a, 0);
+  out.set(b, a.length);
+  return out;
+}
+
 function bufferToFloat32(buf: Buffer): Float32Array {
   const sampleCount = Math.floor(buf.length / 2);
   const out = new Float32Array(sampleCount);
@@ -295,7 +292,11 @@ export class GStreamerAudioRecorder implements AudioRecorder {
   private silenceThresholdMs = DEFAULT_SILENCE_MS;
 
   private useLoopback = false;
-  private sileroVad: RealTimeVADType | null = null;
+  private vadEngine: VadEngine | null = null;
+  private vadSpeaking = false;
+  private vadRedemption = 0;
+  private vadSpeechFrames = 0;
+  private vadLeftover = new Float32Array(0);
 
   async connect(opts: RecordOpts): Promise<void> {
     this.silenceThresholdMs = opts.silenceThresholdMs || DEFAULT_SILENCE_MS;
@@ -308,31 +309,13 @@ export class GStreamerAudioRecorder implements AudioRecorder {
       await new Promise(r => setTimeout(r, 250));
     }
 
-    if (opts.vadEngine === 'silero-v5') {
-      const avrVad = await getAvrVad();
-      if (avrVad) {
-        this.sileroVad = await avrVad.RealTimeVAD.new({
-          model: 'v5', // avr-vad bundles v5 with no custom model path — upgrade to v6 when avr-vad supports it
-          frameSamples: 512,
-          sampleRate: opts.sampleRate,
-          positiveSpeechThreshold: 0.5,
-          negativeSpeechThreshold: 0.35,
-          redemptionFrames: 24,
-          preSpeechPadFrames: 3,
-          minSpeechFrames: 9,
-          onSpeechStart: () => {
-            this.speechCb?.();
-          },
-          onSpeechEnd: (_audio: Float32Array) => {
-            this.silenceCb?.();
-          },
-          onVADMisfire: () => {},
-          onSpeechRealStart: () => {},
-          onFrameProcessed: () => {},
-        });
-        this.sileroVad.start();
+    if (opts.vadEngine === 'silero-v6') {
+      const engine = new SileroNodeEngine();
+      const ok = await engine.init();
+      if (ok) {
+        this.vadEngine = engine;
       } else {
-        console.warn('[vad] avr-vad not available, falling back to rms-energy');
+        console.warn('[vad] SileroNodeEngine init failed, falling back to rms-energy');
       }
     }
 
@@ -350,13 +333,8 @@ export class GStreamerAudioRecorder implements AudioRecorder {
 
     child.stdout!.on('data', (chunk: Buffer) => {
       this.dataCb?.(chunk);
-      if (opts.vadEngine === 'silero-v5' && this.sileroVad) {
-        const sampleCount = Math.floor(chunk.length / 2);
-        const float32 = new Float32Array(sampleCount);
-        for (let i = 0; i < sampleCount; i++) {
-          float32[i] = chunk.readInt16LE(i * 2) / 32768.0;
-        }
-        void this.sileroVad.processAudio(float32);
+      if (this.vadEngine) {
+        void this.processSileroVad(chunk);
       } else if (opts.vadEngine !== 'none') {
         this.processVad(chunk);
       }
@@ -369,6 +347,39 @@ export class GStreamerAudioRecorder implements AudioRecorder {
     });
 
     this.proc = child;
+  }
+
+  private async processSileroVad(chunk: Buffer): Promise<void> {
+    if (!this.vadEngine) return;
+    const float32 = bufferToFloat32(chunk);
+    const combined = this.vadLeftover.length > 0
+      ? concatFloat32(this.vadLeftover, float32)
+      : float32;
+    let offset = 0;
+    while (offset + SILERO_FRAME_SIZE <= combined.length) {
+      const frame = combined.slice(offset, offset + SILERO_FRAME_SIZE);
+      offset += SILERO_FRAME_SIZE;
+      const prob = await this.vadEngine.processFrame(frame);
+      if (prob >= SILERO_POSITIVE_THRESHOLD) {
+        this.vadRedemption = SILERO_REDEMPTION_FRAMES;
+        this.vadSpeechFrames++;
+        if (!this.vadSpeaking && this.vadSpeechFrames >= SILERO_MIN_SPEECH_FRAMES) {
+          this.vadSpeaking = true;
+          this.speechCb?.();
+        }
+      } else if (this.vadSpeaking) {
+        if (this.vadRedemption > 0) {
+          this.vadRedemption--;
+        } else if (prob < SILERO_NEGATIVE_THRESHOLD) {
+          this.vadSpeaking = false;
+          this.vadSpeechFrames = 0;
+          this.silenceCb?.();
+        }
+      } else {
+        this.vadSpeechFrames = 0;
+      }
+    }
+    this.vadLeftover = offset < combined.length ? combined.slice(offset) : new Float32Array(0);
   }
 
   private processVad(chunk: Buffer): void {
@@ -404,9 +415,13 @@ export class GStreamerAudioRecorder implements AudioRecorder {
       this.proc.kill('SIGTERM');
       this.proc = null;
     }
-    if (this.sileroVad) {
-      void this.sileroVad.flush().then(() => this.sileroVad?.destroy());
-      this.sileroVad = null;
+    if (this.vadEngine) {
+      void this.vadEngine.destroy();
+      this.vadEngine = null;
+      this.vadSpeaking = false;
+      this.vadRedemption = 0;
+      this.vadSpeechFrames = 0;
+      this.vadLeftover = new Float32Array(0);
     }
     this.speaking = false;
     this.silenceStart = 0;

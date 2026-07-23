@@ -31,7 +31,7 @@
     "@aaif/voice-shared": "workspace:*",
     "@agentclientprotocol/sdk": "^0.19.0",
     "@inkjs/ui": "^2.0.0",
-    "avr-vad": "^1.0.10",
+    "onnxruntime-node": "^1.22.0",
     "ink": "^6.8.0",
     "ink-multiline-input": "^0.1.0",
     "marked": "^15.0.12",
