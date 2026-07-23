@@ -38,6 +38,9 @@ ui/desktop/src/bin/goose_llm.dll
 # Claude
 .claude/settings.local.json
 
+# OpenCode / OMO
+.omo/
+
 debug_*.txt
 
 # Docs

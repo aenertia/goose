@@ -98,18 +98,6 @@ Both frontends import from `ui/shared/src/voice/`:
            └────────────────┘  └───────────────┘  └─────────────┘
 ```
 
-For detailed architecture docs, clone the repo and see the AGENTS.md hierarchy (local development aids, not pushed to GitHub):
-
-```
-AGENTS.md                    — root (CI gates, commands, conventions)
-crates/goose/AGENTS.md       — core library (agent, extensions, providers)
-ui/desktop/AGENTS.md         — Electron app (hooks, services, i18n)
-ui/text/AGENTS.md            — TUI (PipeWire pipeline, media backends)
-ui/shared/AGENTS.md          — shared voice package
-```
-
-Regenerate after significant changes: run `/init-deep` in an opencode session.
-
 ---
 
 ## Configuration
@@ -170,14 +158,14 @@ Detection is automatic — run `goose session` and voice capabilities are probed
 
 ### Device Testing
 
-| Target | Hardware | Status |
-|--------|----------|--------|
-| **Build host** (koero) | `172.16.1.124`, NVMe build tier | Release binary v1.43.0 built, deployed |
-| **Test device** (z20) | Qualcomm handheld, bootc system | Binary deployed at `~/goose/target/release/goose`, `goose-dev` script configured |
+| Target | Hardware | OS | Status |
+|--------|----------|----|--------|
+| Build host | AMD Ryzen 7 9700X, 32GB DDR5, NVMe | Fedora 42 | Release binary built, deployed |
+| Test workstation | AMD Ryzen 7 9700X, RX 9070 XT (RDNA 4), 32GB DDR5 | AEOS (Fedora 45 bootc), KDE Plasma/Wayland | Binary deployed, voice pipeline testing |
 
 ### Test Coverage Gaps
 
-- End-to-end voice pipeline on z20 (binary deployed, needs interactive testing)
+- End-to-end voice pipeline (binary deployed, needs interactive testing)
 - Multi-provider TTS comparison (OpenAI vs ElevenLabs latency/quality)
 - Long-running conversation mode stability
 - Silero VAD accuracy across ambient noise levels
@@ -241,20 +229,17 @@ just run-ui
 cargo run -p goose-cli -- session   # then /honk on
 ```
 
-### Remote Build (koero)
+### Remote Build & Deploy
+
+Build the release binary on the build host, then deploy to the test workstation:
 
 ```bash
-ssh aenertia@172.16.1.124
-cd /home/aenertia/builds/goose
-git pull
+# On build host
+cd ~/builds/goose && git pull
 cargo build --release -p goose-cli --bin goose
-```
 
-### Deploy to z20
-
-```bash
-scp target/release/goose a3d@z20:~/goose/target/release/goose
-# goose-dev script at ~/bin/goose-dev already configured
+# Deploy to test workstation
+scp target/release/goose <user>@<test-host>:~/goose/target/release/goose
 ```
 
 ---
@@ -268,24 +253,6 @@ scp target/release/goose a3d@z20:~/goose/target/release/goose
 - Tested on new device → add to Device Testing table
 - CI gate results change → update Testing section
 - Commits squashed or PRs submitted → update Branch Status
-
-### Updating the AGENTS.md Knowledge Base
-
-The AGENTS.md hierarchy provides detailed architecture docs for AI agents working in this codebase. To regenerate after significant changes:
-
-```
-# In opencode session:
-/init-deep
-```
-
-This re-discovers the codebase structure and updates:
-- `AGENTS.md` — root (structure, commands, CI gates, conventions)
-- `crates/goose/AGENTS.md` — core library architecture
-- `ui/desktop/AGENTS.md` — Electron app details
-- `ui/text/AGENTS.md` — TUI voice pipeline
-- `ui/shared/AGENTS.md` — shared voice package
-
-> **Note**: AGENTS.md files use `--skip-worktree` and `.git/info/exclude` to stay out of GitHub. They are local development aids, not upstream documentation.
 
 ---
 
