@@ -11,7 +11,7 @@
 
 **Full voice I/O for goose — TTS, dictation, conversation mode, echo cancellation, and accessibility — in both Electron and terminal.**
 
-`feat/voice-audio-overhaul` · 70 commits ahead of upstream/main · 130 files changed
+`feat/voice-audio-overhaul` · 73 commits ahead of upstream/main · 131 files changed
 
 </div>
 
@@ -57,8 +57,8 @@ This fork/branch implements:
 | **Screen Reader Detection** | Via HONK extension | Via HONK extension |
 | **i18n (Voice Strings)** | 26 keys × 16 locales | — |
 | **VadEngine abstraction** | `useVad(engine)` hook | Inline state machine with `SileroNodeEngine` |
-| **macOS TUI audio** | N/A (Desktop works via Web Audio) | ⚠️ UNTESTED — `afplay` stub exists, no recording backend |
-| **Windows TUI audio** | N/A (Desktop works via Web Audio) | ⚠️ UNTESTED — `powershell` stub exists, falls to noop |
+| **macOS TUI audio** | N/A (Desktop works via Web Audio) | ⚠️ UNTESTED — `FfmpegAudioPlayer` + `FfmpegAudioRecorder` via `ffplay`/`ffmpeg -f avfoundation` |
+| **Windows TUI audio** | N/A (Desktop works via Web Audio) | ⚠️ UNTESTED — `FfmpegAudioPlayer` + `FfmpegAudioRecorder` via `ffplay`/`ffmpeg -f dshow` |
 
 ### Shared Components (`@aaif/voice-shared`)
 
@@ -149,29 +149,24 @@ Fallback chain: GStreamer/PipeWire → PulseAudio `pacat` → noop (silent)
 
 Detection is automatic — run `goose session` and voice capabilities are probed at startup.
 
-### Terminal (TUI) — macOS (⚠️ UNTESTED)
+### Terminal (TUI) — macOS + Windows (⚠️ UNTESTED)
 
-macOS TUI voice is **not yet implemented**. The detection layer returns an `afplay` backend type but falls through to noop (silent). Planned approach:
-- **Playback**: `afplay` (zero deps, built-in) for WAV; `sox` (Homebrew) for streaming + encoded formats
-- **Recording**: `sox rec` (Homebrew) for mic capture
-- **VAD**: Silero v6 via `onnxruntime-node` (cross-platform — only needs audio capture feeding it)
-- **Echo cancellation**: Deferred — no PipeWire equivalent on macOS; JS NLMS port or Apple AUVoiceIO needed
+Both macOS and Windows TUI voice use `ffmpegBackend.ts` — a unified backend requiring `ffmpeg`/`ffplay` installed:
 
-No macOS hardware is available for testing. Contributions welcome.
+| | macOS | Windows |
+|---|---|---|
+| **Install** | `brew install ffmpeg` | `winget install Gyan.FFmpeg` |
+| **Playback** | `ffplay -nodisp -autoexit` | `ffplay -nodisp -autoexit` |
+| **Recording** | `ffmpeg -f avfoundation -i ":0"` | `ffmpeg -f dshow -i audio="Microphone"` |
+| **VAD** | Silero v6 via `SileroNodeEngine` (onnxruntime-node) | Same |
+| **AEC** | None (deferred) | None (WASAPI AEC is C++ only) |
+| **Process cleanup** | `SIGTERM` | `taskkill /pid /f /t` |
 
-### Terminal (TUI) — Windows (⚠️ UNTESTED)
+Detection probes `ffplay -version` at startup. When not found, falls back to `afplay` (macOS, playback-only) or `powershell` (Windows, playback-only) stubs — both without recording capability.
 
-Windows TUI voice is **not yet implemented**. The detection layer returns a `powershell` backend type but falls through to noop (silent). Planned approach:
-- **Playback**: `ffplay` (from FFmpeg) for all formats; PowerShell `[System.Media.SoundPlayer]` as zero-dep WAV-only fallback
-- **Recording**: `ffmpeg -f dshow -i audio="Microphone" -ar 16000 -ac 1 -f s16le -` (DirectShow capture, streams raw PCM to stdout)
-- **Install**: `winget install Gyan.FFmpeg`
-- **VAD**: Silero v6 via `onnxruntime-node` (prebuilt win32/x64 binaries — should work unchanged)
-- **Echo cancellation**: Not available via CLI on Windows (WASAPI AEC is C++ API only). Deferred.
-- **Process cleanup**: Windows needs `taskkill /pid /f /t` instead of SIGTERM
+**To test**: install ffmpeg, then `goose session` → `/honk on`
 
-The planned `ffmpegBackend.ts` would also cover macOS (`-f avfoundation`), unifying both non-Linux platforms behind one backend.
-
-No Windows hardware is available for testing. Contributions welcome.
+No macOS or Windows hardware is available for testing. Contributions welcome.
 
 ---
 
@@ -231,8 +226,8 @@ Source: [snakers4/silero-vad Quality Metrics](https://github.com/snakers4/silero
 | **Branch** | `feat/voice-audio-overhaul` |
 | **Base** | upstream/main @ `7b879b407` (v1.44.0) |
 | **Merge strategy** | Clean merge (not rebase — 2 conflicts vs 63+ rebase rounds) |
-| **Commits ahead** | 70 |
-| **Files changed** | 130 (+15,208 / −3,767) |
+| **Commits ahead** | 73 |
+| **Files changed** | 131 (+15,524 / −3,767) |
 | **Remotes** | origin (Forgejo), github (GitHub fork), upstream (block/goose) |
 
 ### Known Issues (from REVISION_PLAN.md)
