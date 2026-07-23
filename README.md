@@ -180,6 +180,56 @@ sudo systemctl enable --now gnome-remote-desktop.service
 
 Connect from any RDP client with **audio playback** and **audio input (microphone)** redirection enabled, then run `goose session` → `/honk on`.
 
+### SSH Audio Forwarding
+
+Route voice I/O through your **local** speakers and microphone when SSH-ing to a remote goose server. No ports, no special SSH flags — one-time setup in `~/.ssh/config`.
+
+```
+# Local ~/.ssh/config (one-time):
+Host awa
+    RemoteForward /run/user/1000/goose-pulse /run/user/1000/pulse/native
+    StreamLocalBindUnlink yes
+```
+
+```bash
+# Remote ~/.bashrc (one-time):
+if [ -n "$SSH_CONNECTION" ] && [ -S /run/user/1000/goose-pulse ]; then
+    export PULSE_SERVER=unix:/run/user/1000/goose-pulse
+fi
+```
+
+```bash
+ssh awa                # audio forwarding auto-activates
+goose session          # voice I/O works through local speakers/mic
+```
+
+goose auto-detects `SSH_CONNECTION` + `PULSE_SERVER` and skips server-side echo cancel (client-side handles it). See [SSH Audio Setup Guide](docs/ssh-audio-setup.md) for full setup and troubleshooting.
+
+### Persistent Sessions (tmux-like)
+
+Sessions persist across SSH disconnections via `goose serve` running as a systemd user service.
+
+| tmux | goose |
+|------|-------|
+| `tmux new-session` | `goose session` |
+| `tmux attach` | `goose session --attach` |
+| `tmux list-sessions` | `goose session --list-remote` |
+| `tmux detach` (Ctrl+B D) | `/detach` slash command |
+
+**Setup:**
+```bash
+bash contrib/systemd/install.sh    # install goose-serve as systemd user service
+```
+
+**Daily use:**
+```bash
+goose session --attach             # connect to running session (starts serve if needed)
+goose session --list-remote        # check if serve is running
+/detach                            # disconnect (session persists on serve)
+```
+
+See [Persistent Sessions Guide](docs/persistent-sessions.md) for full documentation.
+
 ### Terminal (TUI) — macOS + Windows (⚠️ UNTESTED)
 
 Both macOS and Windows TUI voice use `ffmpegBackend.ts` — a unified backend requiring `ffmpeg`/`ffplay` installed:

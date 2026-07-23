@@ -6,7 +6,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/goose serve --host 127.0.0.1 --port 3284 --dangerously-unauthenticated
+ExecStart=%h/.local/bin/goose serve --host 127.0.0.1 --port 3284 --dangerously-unauthenticated
 Restart=on-failure
 RestartSec=5
 Environment=GOOSE_LOG=info
