@@ -193,100 +193,125 @@ AGENTS.md files use `--skip-worktree` and `.git/info/exclude`. Verify they don't
 
 ## Phase 4 — PR Preparation
 
-### Revised PR Split Strategy
+### Revised PR Split Strategy (5 PRs)
 
-**PR1: Rust Backend — TTS + Dictation + HONK Extension**
+Dependency chain: PR1 → {PR2, PR3, PR4} (parallel) → PR5 (docs, anytime)
 
-Scope: All `crates/` changes.
+```
+PR1 (Rust backend + shared)
+ ├── PR2 (Desktop UI)      — depends on PR1
+ ├── PR3 (TUI voice)       — depends on PR1
+ └── PR4 (CLI persistence) — depends on PR1
+PR5 (Documentation)        — independent, submit anytime
+```
 
-Files:
+---
+
+**PR1: Rust Backend + Shared Voice Package** — foundation layer
+*36 crate files (+2754/−226) + 11 shared files (+209) = ~3000 lines*
+
+Rust:
 - `crates/goose/src/tts/` — providers.rs, profiles.rs, mod.rs
-- `crates/goose/src/dictation/providers.rs` — enhanced with ElevenLabs, Groq, model-native, local
+- `crates/goose/src/dictation/` — providers.rs, mod.rs (ElevenLabs, Groq, model-native, local Whisper)
 - `crates/goose/src/acp/server/tts.rs` — TTS ACP handlers
 - `crates/goose/src/acp/server/dictation.rs` — dictation ACP handlers
-- `crates/goose/src/acp/server/custom_dispatch.rs` — dispatch routing
-- `crates/goose/src/agents/platform_extensions/honk.rs` — HONK extension
+- `crates/goose/src/acp/server/custom_dispatch.rs` — `_goose/unstable/*` dispatch routing
+- `crates/goose/src/agents/platform_extensions/honk.rs` — HONK extension (honk_status, honk_mode)
 - `crates/goose/src/agents/platform_extensions/mod.rs` — registration
-- `crates/goose/src/skills/builtins/honk-*.md` — conversation skills
+- `crates/goose/src/skills/builtins/honk-conversation.md`, `honk-accessible.md`
+- `crates/goose/src/providers/model_native.rs`, `http_helpers.rs` — shared extractors
 - `crates/goose-sdk-types/src/custom_requests.rs` — ACP wire types
 - `crates/goose-provider-types/src/formats/*.rs` — audio content support
 - `crates/goose-provider-types/src/conversation/message.rs` — message types
-- `crates/goose/src/providers/formats/bedrock.rs` — audio format support
 
-Prerequisite work (do before PR1):
-- [ ] C1: Extract shared HTTP client builder
-- [ ] C2: Extract shared ModelNativeResolved
-- [ ] B1: Fix MIME type mismatches
-- [ ] B2: Fix unwrap panic
-- [ ] B3: Remove or wire `honk_announce`
-- [ ] B5: Make model/voice configurable (at minimum OpenAI TTS model)
+Shared (TypeScript — no build step, consumed by both Desktop and TUI):
+- `ui/shared/` — @aaif/voice-shared package: constants, types, vadEngine, encoding, vad, sentenceBoundary
+- `ui/shared/package.json`, `ui/shared/tsconfig.json`
+- `ui/pnpm-workspace.yaml` — workspace registration
 
-Does NOT include: CLI changes, systemd, docs, UI.
+Depends on: nothing (first PR).
+Commit: `feat(voice): server-side TTS/dictation + HONK extension + shared voice package`
 
-**PR2: Desktop UI — Voice Settings + Hooks + Services**
+---
 
-Scope: All `ui/desktop/` changes.
+**PR2: Desktop UI — Voice Settings + Conversation Mode**
+*72 files (+8817/−3342)*
 
-Files:
 - `ui/desktop/src/hooks/` — useAudioPlayer, useAudioRecorder, useVad, useConversationMode
-- `ui/desktop/src/components/settings/voice/` — 13 settings components (2089 lines)
+- `ui/desktop/src/components/settings/voice/` — 13 settings components
 - `ui/desktop/src/components/settings/dictation/` — DictationSettings
-- `ui/desktop/src/components/ChatInput.tsx` — voice button integration
+- `ui/desktop/src/components/ChatInput.tsx` — voice button, streaming TTS, conversation mode
 - `ui/desktop/src/components/GooseMessage.tsx` — audio content rendering
 - `ui/desktop/src/services/` — audioDevices, globalShortcuts, mediaControl, mediaInhibit, sileroVad, vadEngines, voiceIndicator
 - `ui/desktop/src/acp/tts.ts` — TTS client
 - `ui/desktop/src/types/` — tts.ts, dictation.ts, message.ts
-- `ui/desktop/src/i18n/messages/*.json` — 16 locales with voice strings
-- `ui/desktop/public/models/silero_vad_v6.onnx` — Silero v6 model
-- `ui/desktop/public/aec-worklet.js` — echo cancellation worklet
-- `ui/desktop/package.json` — new dependencies
+- `ui/desktop/src/i18n/messages/*.json` — 16 locales
+- `ui/desktop/public/models/silero_vad_v6.onnx`, `aec-worklet.js`
+- `ui/desktop/package.json`
 
-Depends on: PR1 merged (backend ACP endpoints must exist).
+Depends on: PR1 (ACP endpoints + shared package).
+Commit: `feat(desktop): voice conversation mode with TTS, dictation, VAD, and AEC`
 
-**PR3: Text TUI + Shared Package + CLI + Docs**
+---
 
-Scope: `ui/text/`, `ui/shared/`, CLI changes, docs, contrib.
+**PR3: TUI Voice Pipeline** — Linux-first (PipeWire/GStreamer)
+*15 files (+1879/−9)*
 
-Files:
-- `ui/shared/` — @aaif/voice-shared package (constants, types, vadEngine, encoding, vad, sentenceBoundary)
-- `ui/text/src/services/media/` — detection, gstreamerBackend, ffmpegBackend, pacatBackend, noopBackend, types, index
-- `ui/text/src/services/vadEngines/` — sileroNodeEngine + model
-- `ui/text/src/tui.tsx` — voice lifecycle integration
-- `ui/text/src/voiceSession.ts`, `voiceState.ts` — voice state management
+- `ui/text/src/services/media/` — detection.ts, gstreamerBackend.ts, ffmpegBackend.ts, pacatBackend.ts, noopBackend.ts, types.ts, index.ts
+- `ui/text/src/services/vadEngines/` — sileroNodeEngine.ts + bundled v6 model
+- `ui/text/src/tui.tsx` — voice lifecycle (synthesizeAndPlay, startRecording, flushAndTranscribe)
+- `ui/text/src/voiceSession.ts`, `voiceState.ts` — voice state singletons
 - `ui/text/src/slashCommands.tsx` — /honk, /tts, /detach commands
 - `ui/text/src/components/Header.tsx` — voice phase indicator
-- `crates/goose-cli/src/cli.rs` — --attach, --serve-url, --list-remote flags
-- `crates/goose-cli/src/commands/serve_ctl.rs` — ensure_serve_running()
-- `contrib/systemd/` — goose-serve.service + install.sh
-- `docs/` — ssh-audio-setup.md, persistent-sessions.md
-- `ui/pnpm-workspace.yaml` — shared package registration
-- `ui/pnpm-lock.yaml` — lockfile update
+- `ui/text/package.json`
 
-Prerequisite work (do before PR3):
-- [ ] B4: Fix CLI pre-dispatch provider check
-- [ ] C3: MediaCapabilities defaults factory
-- [ ] D2: Generalize README voice sections
-- [ ] D3: Generalize docs/ssh-audio-setup.md
-- [ ] D4: Update docs/persistent-sessions.md
+Depends on: PR1 (shared package + ACP endpoints).
+Commit: `feat(tui): PipeWire voice pipeline with Silero VAD, echo cancellation, and GStreamer backends`
 
-Depends on: PR1 merged (shared voice constants reference backend types).
+---
+
+**PR4: CLI Persistent Sessions + Systemd**
+*3 CLI files (+162/−11) + 2 contrib files + 2 docs*
+
+- `crates/goose-cli/src/cli.rs` — --attach, --serve-url, --list-remote flags on Session subcommand
+- `crates/goose-cli/src/commands/serve_ctl.rs` — ensure_serve_running() (health check → systemd → direct spawn)
+- `crates/goose-cli/src/commands/mod.rs` — module declaration
+- `contrib/systemd/goose-serve.service` — systemd user service template
+- `contrib/systemd/install.sh` — installer script
+- `docs/persistent-sessions.md` — tmux-like persistent sessions guide
+- `docs/ssh-audio-setup.md` — SSH PulseAudio socket forwarding guide
+
+Depends on: PR1 (goose serve must exist). Independent of PR2/PR3.
+Commit: `feat(cli): persistent sessions with systemd service and SSH audio forwarding`
+
+---
+
+**PR5: Documentation + README**
+*~700 lines, submit anytime*
+
+- `README.md` — voice feature sections (HONK description, feature matrix, architecture, config)
+- `REVISION_PLAN.md` — remove from PR (internal planning doc)
+- `documentation/voice-audio-architecture.md` — AudioContext + setSinkId technical doc
+- `documentation/docs/ai/ADR-001-accessibility-voice-integration.md` — future accessibility plan (optional — may defer)
+- `documentation/docs/guides/environment-variables.md` — voice env var additions
+- `.gitignore` — .omo/ exclusion
+
+Depends on: nothing (can be submitted first as context, or last as a wrap-up).
+Commit: `docs(voice): architecture, configuration, and accessibility planning`
+
+---
 
 ### Commit Squash Strategy
 
-79 commits → target 2-3 per PR:
+81 commits → 1 logical commit per PR (5 total):
 
-**PR1:** 2 commits
-1. `feat(voice): TTS + dictation providers with profile system`
-2. `feat(voice): HONK platform extension with conversation skills`
-
-**PR2:** 2 commits
-1. `feat(desktop): voice settings UI with provider/profile management`
-2. `feat(desktop): conversation mode, VAD, AEC, and voice hooks`
-
-**PR3:** 3 commits
-1. `feat(shared): @aaif/voice-shared constants, types, and VAD engine interface`
-2. `feat(tui): PipeWire voice pipeline with GStreamer/ffmpeg/pacat backends`
-3. `feat(cli): persistent sessions with --attach, --serve-url, --list-remote`
+| PR | Commit message |
+|----|---------------|
+| PR1 | `feat(voice): server-side TTS/dictation + HONK extension + shared voice package` |
+| PR2 | `feat(desktop): voice conversation mode with TTS, dictation, VAD, and AEC` |
+| PR3 | `feat(tui): PipeWire voice pipeline with Silero VAD and echo cancellation` |
+| PR4 | `feat(cli): persistent sessions with systemd service and SSH audio forwarding` |
+| PR5 | `docs(voice): architecture, configuration, and accessibility planning` |
 
 ---
 

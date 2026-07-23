@@ -3,7 +3,7 @@
 // On Windows, microphone device name may need explicit configuration.
 // On macOS, AVFoundation device index ":0" may differ per system.
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
-import { writeFileSync, unlinkSync } from 'node:fs';
+import { writeFileSync, unlinkSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -53,6 +53,7 @@ export class FfmpegAudioPlayer implements AudioPlayer {
 
   private pending: ChildProcess[] = [];
   private pendingTmp = new Set<string>();
+  private tmpDir: string | null = null;
   private exitHandlerRegistered = false;
 
   async connect(): Promise<void> {
@@ -60,15 +61,22 @@ export class FfmpegAudioPlayer implements AudioPlayer {
       this.exitHandlerRegistered = true;
       process.on('exit', () => {
         for (const tmp of this.pendingTmp) {
-          try { unlinkSync(tmp); } catch { /* file already deleted */ }
+          try { unlinkSync(tmp); } catch { /* already deleted */ }
+        }
+        if (this.tmpDir) {
+          try { rmSync(this.tmpDir, { recursive: true, force: true }); } catch { /* best effort */ }
         }
       });
+    }
+    if (!this.tmpDir) {
+      this.tmpDir = mkdtempSync(join(tmpdir(), 'goose-tts-'));
     }
   }
 
   pushChunk(audio: Buffer, format: string): void {
     const ext = format === 'opus' ? 'opus' : format === 'mp3' ? 'mp3' : format === 'ogg' ? 'ogg' : format === 'flac' ? 'flac' : 'wav';
-    const tmp = join(tmpdir(), `goose-tts-${randomBytes(6).toString('hex')}.${ext}`);
+    const filename = `chunk-${randomBytes(6).toString('hex')}.${ext}`;
+    const tmp = join(this.tmpDir!, filename);
     try {
       writeFileSync(tmp, audio);
     } catch (err) {
@@ -123,6 +131,10 @@ export class FfmpegAudioPlayer implements AudioPlayer {
       try { unlinkSync(tmp); } catch { /* file already deleted */ }
     }
     this.pendingTmp.clear();
+    if (this.tmpDir) {
+      try { rmSync(this.tmpDir, { recursive: true, force: true }); } catch { /* best effort */ }
+      this.tmpDir = null;
+    }
   }
 }
 

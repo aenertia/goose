@@ -6,6 +6,12 @@ After=network.target
 
 [Service]
 Type=simple
+# SECURITY WARNING: --dangerously-unauthenticated binds the ACP server to TCP
+# 127.0.0.1:3284 with no authentication. Any local user on this machine can
+# connect and execute commands via the agent's tools. Only deploy on machines
+# where you are the sole user, or where localhost is trusted (e.g., inside a
+# private VM or container). A future improvement will bind to a Unix domain
+# socket at /run/user/<uid>/goose-acp.sock with 0600 permissions instead.
 ExecStart=%h/.local/bin/goose serve --host 127.0.0.1 --port 3284 --dangerously-unauthenticated
 Restart=on-failure
 RestartSec=5

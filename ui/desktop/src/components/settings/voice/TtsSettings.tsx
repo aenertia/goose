@@ -115,7 +115,7 @@ export function TtsSettings() {
       )}
 
       {provider && (
-        <TtsSpeedSlider speed={speed} onSpeedChange={handleSpeedChange} />
+        <TtsSpeedSlider speed={speed} onSpeedChange={handleSpeedChange} provider={provider} />
       )}
 
       {provider && (

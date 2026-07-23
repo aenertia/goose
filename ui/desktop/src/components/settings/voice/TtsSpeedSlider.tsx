@@ -4,9 +4,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../
 export interface TtsSpeedSliderProps {
   speed: string;
   onSpeedChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  provider?: string;
 }
 
-export function TtsSpeedSlider({ speed, onSpeedChange }: TtsSpeedSliderProps) {
+export function TtsSpeedSlider({ speed, onSpeedChange, provider }: TtsSpeedSliderProps) {
+  const isDisabled = provider === 'elevenlabs';
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
@@ -30,12 +33,18 @@ export function TtsSpeedSlider({ speed, onSpeedChange }: TtsSpeedSliderProps) {
           step="0.05"
           value={speed}
           onChange={onSpeedChange}
-          className="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-accent-primary"
+          disabled={isDisabled}
+          className={`flex-1 h-2 rounded-lg appearance-none accent-accent-primary ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
         />
         <span className="text-sm text-text-secondary min-w-[40px] text-right">
           {parseFloat(speed).toFixed(2)}x
         </span>
       </div>
+      {isDisabled && (
+        <p className="text-xs text-text-secondary">
+          Speed control is not supported by the ElevenLabs API.
+        </p>
+      )}
     </div>
   );
 }

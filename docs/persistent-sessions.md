@@ -125,6 +125,24 @@ When reconnecting:
 | Session not resuming | Different session ID | `goose session --list-remote` to find session IDs (requires configured provider) |
 | Audio not working after reconnect | PULSE_SERVER not re-set | Close and reopen SSH connection (or re-source `~/.bashrc` in the session) |
 
+## Security Considerations
+
+The `goose serve --dangerously-unauthenticated` flag is named deliberately — there is **no authentication** on the ACP endpoint.
+
+**Risk on shared machines:** The service binds to `127.0.0.1:3284`. Any local user account on the same host can connect to that port and send requests to your agent, including running shell commands via the developer tools extension.
+
+**Safe deployments:**
+- Single-user machines or dedicated VMs (the typical case)
+- Environments where you control who can SSH in (e.g., a personal server)
+
+**Not recommended for:**
+- Multi-user shared servers with untrusted users
+- SSH jump boxes where other teams have shell access
+
+**Future mitigation:** A follow-up change will add a `--socket` flag to `goose serve` that binds to a Unix domain socket at `/run/user/$(id -u)/goose-acp.sock` with 0600 permissions, making it inaccessible to other local users entirely.
+
+For now, if you are on a shared machine, do not run the systemd service. Use `goose session` directly instead, which starts a short-lived in-process server.
+
 ## Known Limitations
 
 - `goose session --list-remote` and `goose session --attach` may require a provider configured in goose. If you get "No provider configured", run `goose configure` first. (This requirement may be relaxed in a future release.)

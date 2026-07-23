@@ -1,15 +1,7 @@
-import { useState, useEffect } from 'react';
-import { ChevronDown, Info, Volume2 } from 'lucide-react';
+import { useState } from 'react';
+import { Info, Volume2 } from 'lucide-react';
 import { synthesizeTts } from '../../../acp/tts';
-import { setAudioOutputDevice, getAudioOutputDevice } from '../../../hooks/useAudioPlayer';
 import { Button } from '../../ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '../../ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../ui/Tooltip';
 
 interface TtsTestAndOutputProps {
@@ -21,10 +13,6 @@ interface TtsTestAndOutputProps {
 export function TtsTestAndOutput({ provider, selectedVoice, speed }: TtsTestAndOutputProps) {
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState('');
-  const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedOutputDevice, setSelectedOutputDevice] = useState<string>(
-    getAudioOutputDevice() || ''
-  );
 
   const runTtsTest = async () => {
     if (!provider) {
@@ -35,8 +23,8 @@ export function TtsTestAndOutput({ provider, selectedVoice, speed }: TtsTestAndO
       setTestStatus('Testing browser TTS...');
       try {
         const utterance = new SpeechSynthesisUtterance('Hello! This is a test. Honk!');
-        utterance.onend = () => setTestStatus('Browser TTS played successfully');
-        utterance.onerror = (e) => setTestStatus(`Browser TTS error: ${e.error}`);
+        utterance.onend = () => { setIsTesting(false); setTestStatus('Browser TTS played successfully'); };
+        utterance.onerror = (e) => { setIsTesting(false); setTestStatus(`Browser TTS error: ${e.error}`); };
         window.speechSynthesis.speak(utterance);
         setIsTesting(true);
         return;
@@ -97,20 +85,6 @@ export function TtsTestAndOutput({ provider, selectedVoice, speed }: TtsTestAndO
     }
   };
 
-  useEffect(() => {
-    const enumerateOutputs = async () => {
-      try {
-        const all = await navigator.mediaDevices.enumerateDevices();
-        setOutputDevices(all.filter((d) => d.kind === 'audiooutput'));
-      } catch {
-        console.warn('Could not enumerate audio output devices');
-      }
-    };
-    enumerateOutputs();
-    navigator.mediaDevices.addEventListener('devicechange', enumerateOutputs);
-    return () => navigator.mediaDevices.removeEventListener('devicechange', enumerateOutputs);
-  }, []);
-
   return (
     <div className="space-y-3 pt-2 border-t border-border-primary">
       <div className="flex items-center justify-between">
@@ -148,49 +122,6 @@ export function TtsTestAndOutput({ provider, selectedVoice, speed }: TtsTestAndO
         </p>
       )}
 
-      {/* NOTE: The audio output device selector below has no effect on AudioContext-based playback.
-         AudioContext does not support setSinkId(). The selected device is stored but unused.
-         See documentation/voice-audio-architecture.md for context and workaround options. */}
-      {outputDevices.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-text-primary text-xs">Audio Output Device</h4>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-between text-text-primary bg-background-primary border-border-primary"
-              >
-                <span className="truncate">
-                  {selectedOutputDevice
-                    ? outputDevices.find((d) => d.deviceId === selectedOutputDevice)?.label ||
-                      'Selected device'
-                    : 'System Default'}
-                </span>
-                <ChevronDown className="h-4 w-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-full min-w-[200px] max-h-[300px] overflow-y-auto">
-              <DropdownMenuRadioGroup
-                value={selectedOutputDevice || '__default__'}
-                onValueChange={(v) => {
-                  const deviceId = v === '__default__' ? '' : v;
-                  setSelectedOutputDevice(deviceId);
-                  void setAudioOutputDevice(deviceId || null);
-                }}
-              >
-                <DropdownMenuRadioItem value="__default__">System Default</DropdownMenuRadioItem>
-                {outputDevices.map((d, i) => (
-                  <DropdownMenuRadioItem key={d.deviceId} value={d.deviceId}>
-                    <span className="truncate">
-                      {d.label || `Output ${i + 1}`}
-                    </span>
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
     </div>
   );
 }

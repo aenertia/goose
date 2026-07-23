@@ -10,8 +10,6 @@ import {
   TtsVoiceInfo,
 } from '../../../acp/tts';
 import { useConfig } from '../../ConfigContext';
-import { getAudioOutputDevice, getStoredAudioOutputDevice, setAudioOutputDevice } from '../../../hooks/useAudioPlayer';
-import { createAudioDeviceResolver } from '../../../services/audioDevices';
 import type { TtsProvider, TtsProfile } from '../../../types/tts';
 
 type TtsProviderOption = TtsProvider | null;
@@ -66,10 +64,6 @@ export interface UseTtsConfigReturn {
   setIsTesting: React.Dispatch<React.SetStateAction<boolean>>;
   testStatus: string;
   setTestStatus: React.Dispatch<React.SetStateAction<string>>;
-  outputDevices: MediaDeviceInfo[];
-  setOutputDevices: React.Dispatch<React.SetStateAction<MediaDeviceInfo[]>>;
-  selectedOutputDevice: string;
-  setSelectedOutputDevice: React.Dispatch<React.SetStateAction<string>>;
   browserTtsAvailable: boolean;
 
   // Functions
@@ -135,10 +129,6 @@ export function useTtsConfig(): UseTtsConfigReturn {
 
   const [isTesting, setIsTesting] = useState(false);
   const [testStatus, setTestStatus] = useState('');
-  const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedOutputDevice, setSelectedOutputDevice] = useState<string>(
-    getAudioOutputDevice() || ''
-  );
   const [browserTtsAvailable, setBrowserTtsAvailable] = useState(true);
 
   useEffect(() => {
@@ -165,8 +155,8 @@ export function useTtsConfig(): UseTtsConfigReturn {
       setTestStatus('Testing browser TTS...');
       try {
         const utterance = new SpeechSynthesisUtterance('Hello! This is a test. Honk!');
-        utterance.onend = () => setTestStatus('Browser TTS played successfully');
-        utterance.onerror = (e) => setTestStatus(`Browser TTS error: ${e.error}`);
+        utterance.onend = () => { setIsTesting(false); setTestStatus('Browser TTS played successfully'); };
+        utterance.onerror = (e) => { setIsTesting(false); setTestStatus(`Browser TTS error: ${e.error}`); };
         window.speechSynthesis.speak(utterance);
         setIsTesting(true);
         return;
@@ -252,35 +242,6 @@ export function useTtsConfig(): UseTtsConfigReturn {
     refreshStatuses();
     refreshProfiles();
   }, [refreshProfiles]);
-
-  useEffect(() => {
-    const enumerateOutputs = async () => {
-      try {
-        const all = await navigator.mediaDevices.enumerateDevices();
-        setOutputDevices(all.filter((d) => d.kind === 'audiooutput'));
-      } catch {
-        console.warn('Could not enumerate audio output devices');
-      }
-    };
-    enumerateOutputs();
-    navigator.mediaDevices.addEventListener('devicechange', enumerateOutputs);
-    return () => navigator.mediaDevices.removeEventListener('devicechange', enumerateOutputs);
-  }, []);
-
-  useEffect(() => {
-    const deviceResolver = createAudioDeviceResolver();
-    const resolveDevice = async () => {
-      const stored = getStoredAudioOutputDevice();
-      if (stored) {
-        const resolved = await deviceResolver.resolveOutputDevice(stored);
-        if (resolved && resolved !== stored.deviceId) {
-          setSelectedOutputDevice(resolved);
-          void setAudioOutputDevice(resolved);
-        }
-      }
-    };
-    void resolveDevice();
-  }, []);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -526,10 +487,6 @@ export function useTtsConfig(): UseTtsConfigReturn {
     setIsTesting,
     testStatus,
     setTestStatus,
-    outputDevices,
-    setOutputDevices,
-    selectedOutputDevice,
-    setSelectedOutputDevice,
     browserTtsAvailable,
 
     // Functions
