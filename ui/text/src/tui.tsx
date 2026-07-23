@@ -1243,6 +1243,10 @@ function App({
         });
         return true;
       }
+      if ("detach" in result && result.detach) {
+        gracefulDetach();
+        return true;
+      }
       addLocalTurn(raw, "message" in result ? result.message : undefined);
 
       const cmd = raw.trim().toLowerCase();
@@ -1761,11 +1765,24 @@ async function runTextMode(serverConnection: Stream | string, prompt: string) {
   }
 }
 
+function gracefulDetach(): void {
+  // Stop audio pipeline without killing the remote session
+  if (voiceSession.isListening) {
+    try { stopRecording(); } catch {}
+  }
+  if (voiceSession.player) {
+    try { void voiceSession.player.drain().catch(() => {}); } catch {}
+  }
+  process.stdout.write('\n[detach] Session persists on goose serve.\n');
+  process.exit(0);
+}
+
 async function main() {
   let serverConnection: Stream | string;
 
-  if (cli.flags.server) {
-    serverConnection = cli.flags.server;
+  const serverUrl = cli.flags.server ?? process.env.GOOSE_SERVER_URL;
+  if (serverUrl) {
+    serverConnection = serverUrl;
   } else {
     const binary = resolveGooseBinary();
     serverProcess = spawn(binary, ["acp"], {
@@ -1786,6 +1803,9 @@ async function main() {
     ) as ReadableStream<Uint8Array>;
     serverConnection = ndJsonStream(output, input);
   }
+
+  process.once('SIGHUP', gracefulDetach);
+  process.once('SIGTERM', gracefulDetach);
 
   // Text mode: bypass TUI and stream directly to stdout
   if (cli.flags.text) {

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::{Args, CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Shell as ClapShell};
 use clap_complete_nushell::Nushell as ClapNushell;
@@ -932,6 +932,35 @@ enum Command {
             requires = "resume"
         )]
         history: bool,
+
+        /// Attach to a running goose serve instance
+        #[arg(
+            long,
+            help = "Attach TUI to a running goose-serve instance",
+            long_help = "Connect to a running goose-serve backend instead of launching a new agent. \
+                Automatically starts goose-serve via systemd if not already running. \
+                Use with --serve-url to target a specific instance.",
+            conflicts_with = "resume",
+        )]
+        attach: bool,
+
+        /// URL of the goose serve instance to attach to
+        #[arg(
+            long,
+            value_name = "URL",
+            default_value = "http://127.0.0.1:3284",
+            help = "URL of goose-serve to connect to (used with --attach)",
+            requires = "attach",
+        )]
+        serve_url: Option<String>,
+
+        /// List sessions on a running goose serve instance
+        #[arg(
+            long,
+            help = "List sessions on the running goose-serve instance",
+            conflicts_with = "attach",
+        )]
+        list_remote: bool,
 
         #[command(flatten)]
         session_opts: SessionOptions,
@@ -2263,19 +2292,53 @@ pub async fn cli() -> anyhow::Result<()> {
             fork,
             edit,
             history,
+            attach,
+            serve_url,
+            list_remote,
             session_opts,
             extension_opts,
         }) => {
-            handle_interactive_session(
-                identifier,
-                resume,
-                fork,
-                edit,
-                history,
-                session_opts,
-                extension_opts,
-            )
-            .await
+            if list_remote {
+                let url = serve_url.as_deref().unwrap_or(
+                    crate::commands::serve_ctl::default_serve_url(),
+                );
+                match crate::commands::serve_ctl::ensure_serve_running(Some(url)).await {
+                    Ok(running_url) => {
+                        println!("goose serve is running at {}", running_url);
+                        println!("Use `goose session --attach` to connect the TUI.");
+                        Ok(())
+                    }
+                    Err(_) => {
+                        println!("goose serve is not running at {}.", url);
+                        println!(
+                            "Start it with: bash contrib/systemd/install.sh\n\
+                             Or start manually: goose serve --host 127.0.0.1 --port 3284 --dangerously-unauthenticated"
+                        );
+                        Ok(())
+                    }
+                }
+            } else if attach {
+                let url = serve_url
+                    .as_deref()
+                    .unwrap_or(crate::commands::serve_ctl::default_serve_url());
+                let running_url = crate::commands::serve_ctl::ensure_serve_running(Some(url))
+                    .await
+                    .context("Failed to start goose serve")?;
+                tracing::info!("Connecting TUI to {}", running_url);
+                std::env::set_var("GOOSE_SERVER_URL", &running_url);
+                crate::commands::tui::handle_tui(vec![])
+            } else {
+                handle_interactive_session(
+                    identifier,
+                    resume,
+                    fork,
+                    edit,
+                    history,
+                    session_opts,
+                    extension_opts,
+                )
+                .await
+            }
         }
         Some(Command::Project {}) => {
             handle_project_default()?;

@@ -9,6 +9,7 @@ export interface SlashCommandContext {
 export type SlashCommandResult =
   | { handled: true; message?: string }
   | { handled: true; overlay: "diff"; content: string; truncated: boolean }
+  | { handled: true; detach: true; message: string }
   | { handled: false };
 
 export interface SlashCommand {
@@ -178,10 +179,21 @@ const honkCommand: SlashCommand = {
   },
 };
 
+const detachCommand: SlashCommand = {
+  name: 'detach',
+  description: 'Disconnect from session (session persists on goose serve)',
+  run: () => ({
+    handled: true as const,
+    detach: true as const,
+    message: '[detach] Disconnecting — session persists on goose serve. Reconnect with: goose session --attach',
+  }),
+};
+
 const COMMANDS: Record<string, SlashCommand> = {
   diff: diffCommand,
   tts: ttsCommand,
   honk: honkCommand,
+  detach: detachCommand,
 };
 
 export function tryRunSlashCommand(
