@@ -170,7 +170,7 @@ export function useConversationMode({
   );
 
   // Echo-suspect barge-in classification: when TTS is playing (or just finished),
-  // VAD triggers are likely speaker echo, not genuine user speech. Defer 500ms
+  // VAD triggers are likely speaker echo, not genuine user speech. Defer 200ms
   // and only interrupt if speech persists. Mirrors TUI gstreamerBackend logic.
   const ECHO_SUSPECT_DEFER_MS = 200;
 

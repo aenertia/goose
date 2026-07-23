@@ -21,6 +21,13 @@ static VOICE_CACHE: LazyLock<Mutex<HashMap<String, CachedVoices>>> =
 
 const VOICE_CACHE_TTL: Duration = Duration::from_secs(300);
 
+static VOICE_PROBE_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(TTS_REQUEST_TIMEOUT)
+        .build()
+        .expect("Failed to build voice probe HTTP client")
+});
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TtsProvider {
@@ -207,9 +214,7 @@ async fn list_custom_endpoint_voices(endpoint: &str) -> Result<Vec<VoiceInfo>> {
 }
 
 async fn probe_endpoint_voices(base: &str) -> Result<Vec<VoiceInfo>> {
-    let client = reqwest::Client::builder()
-        .timeout(TTS_REQUEST_TIMEOUT)
-        .build()?;
+    let client = &*VOICE_PROBE_CLIENT;
 
     // Try /v1/audio/voices first (OpenAI-compatible)
     if let Ok(resp) = client.get(format!("{}/v1/audio/voices", base)).send().await {
@@ -286,9 +291,7 @@ async fn list_elevenlabs_voices() -> Result<Vec<VoiceInfo>> {
         anyhow::anyhow!("ELEVENLABS_API_KEY not configured")
     })?;
 
-    let client = reqwest::Client::builder()
-        .timeout(TTS_REQUEST_TIMEOUT)
-        .build()?;
+    let client = &*VOICE_PROBE_CLIENT;
 
     let response = client
         .get("https://api.elevenlabs.io/v1/voices")

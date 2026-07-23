@@ -114,6 +114,11 @@ export class FfmpegAudioPlayer implements AudioPlayer {
   stop(): void {
     for (const proc of this.pending) killProc(proc);
     this.pending = [];
+    // Immediately unlink temp files — don't wait for proc.on('exit') or dispose()
+    for (const tmp of this.pendingTmp) {
+      try { unlinkSync(tmp); } catch { /* already deleted or process did it */ }
+    }
+    this.pendingTmp.clear();
   }
 
   async drain(): Promise<void> {
