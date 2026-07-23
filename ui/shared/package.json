@@ -9,6 +9,7 @@
     "./voice/index.js": "./src/voice/index.ts",
     "./voice/encoding.js": "./src/voice/encoding.ts",
     "./voice/vad.js": "./src/voice/vad.ts",
+    "./voice/vadEngine.js": "./src/voice/vadEngine.ts",
     "./voice/sentenceBoundary.js": "./src/voice/sentenceBoundary.ts",
     "./voice": "./src/voice/index.ts"
   }

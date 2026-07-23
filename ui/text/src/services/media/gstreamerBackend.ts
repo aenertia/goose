@@ -308,7 +308,7 @@ export class GStreamerAudioRecorder implements AudioRecorder {
       await new Promise(r => setTimeout(r, 250));
     }
 
-    if (opts.vadMethod === 'silero') {
+    if (opts.vadEngine === 'silero-v5') {
       const avrVad = await getAvrVad();
       if (avrVad) {
         this.sileroVad = await avrVad.RealTimeVAD.new({
@@ -350,14 +350,14 @@ export class GStreamerAudioRecorder implements AudioRecorder {
 
     child.stdout!.on('data', (chunk: Buffer) => {
       this.dataCb?.(chunk);
-      if (opts.vadMethod === 'silero' && this.sileroVad) {
+      if (opts.vadEngine === 'silero-v5' && this.sileroVad) {
         const sampleCount = Math.floor(chunk.length / 2);
         const float32 = new Float32Array(sampleCount);
         for (let i = 0; i < sampleCount; i++) {
           float32[i] = chunk.readInt16LE(i * 2) / 32768.0;
         }
         void this.sileroVad.processAudio(float32);
-      } else if (opts.vadMethod !== 'none') {
+      } else if (opts.vadEngine !== 'none') {
         this.processVad(chunk);
       }
     });

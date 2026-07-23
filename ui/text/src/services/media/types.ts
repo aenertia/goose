@@ -1,3 +1,5 @@
+import type { VadEngineId } from '@aaif/voice-shared/voice/vadEngine.js';
+
 export interface AudioPlayer {
   readonly backend: string;
   readonly persistent: boolean;
@@ -14,7 +16,7 @@ export interface AudioPlayer {
 export interface RecordOpts {
   sampleRate: number;
   channels: number;
-  vadMethod: 'silero' | 'gst-level' | 'rms-energy' | 'none';
+  vadEngine: VadEngineId;
   silenceThresholdMs: number;
 }
 

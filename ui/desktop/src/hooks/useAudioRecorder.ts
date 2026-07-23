@@ -4,10 +4,11 @@ import { useConfig } from "../components/ConfigContext";
 import type { DictationProvider } from "../types/dictation";
 import { errorMessage } from "../utils/conversionUtils";
 import { getTtsReferenceStream } from "./useAudioPlayer";
-import { useSileroVad } from "./useSileroVad";
+import { useVad } from "./useVad";
 import { SAMPLE_RATE, DEFAULT_SILENCE_MS, MIN_SPEECH_MS, RMS_THRESHOLD } from '@aaif/voice-shared/voice/constants.js';
 import { encodeWav } from '@aaif/voice-shared/voice/encoding.js';
 import { computeRms } from '@aaif/voice-shared/voice/vad.js';
+import { SileroV6Engine } from "../services/vadEngines/sileroEngine.js";
 
 interface UseAudioRecorderOptions {
   onTranscription: (text: string) => void;
@@ -85,9 +86,11 @@ export const useAudioRecorder = ({
 
   // Silero VAD (primary, falls back to RMS when not ready)
   const preSpeechBufferRef = useRef<Float32Array[]>([]);
-  const MAX_PRE_SPEECH_FRAMES = 9; // match MIN_SPEECH_FRAMES in useSileroVad
+  const MAX_PRE_SPEECH_FRAMES = 9;
 
-  const { processSamples: sileroProcess, isReadyRef: sileroReadyRef, reset: sileroReset } = useSileroVad({
+  const sileroEngineRef = useRef<SileroV6Engine | null>(null);
+  if (!sileroEngineRef.current) sileroEngineRef.current = new SileroV6Engine();
+  const { processSamples: sileroProcess, isReadyRef: sileroReadyRef, reset: sileroReset } = useVad(sileroEngineRef.current, {
     onSpeechStart: () => {
       isSpeakingRef.current = true;
       speechStartRef.current = Date.now();

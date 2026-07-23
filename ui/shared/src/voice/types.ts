@@ -1,3 +1,5 @@
+import type { VadEngineId } from './vadEngine.js';
+
 export type VoicePhase = 'idle' | 'listening' | 'transcribing' | 'submitting' | 'speaking';
 
 export interface VoiceConfig {
@@ -9,7 +11,7 @@ export interface VoiceConfig {
 }
 
 export interface VadConfig {
-  method: 'silero' | 'rms-energy' | 'gst-level' | 'none';
+  engine: VadEngineId;
   positiveThreshold: number;
   negativeThreshold: number;
   redemptionFrames: number;

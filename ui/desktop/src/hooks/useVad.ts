@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect } from 'react';
-import { SileroVAD } from '../services/sileroVad';
+import type { VadEngine } from '@aaif/voice-shared/voice/vadEngine.js';
 import {
   SILERO_POSITIVE_THRESHOLD,
   SILERO_NEGATIVE_THRESHOLD,
@@ -14,13 +14,12 @@ function concatFloat32(a: Float32Array, b: Float32Array): Float32Array {
   return out;
 }
 
-interface UseSileroVadOptions {
+interface UseVadOptions {
   onSpeechStart?: () => void;
   onSpeechEnd?: () => void;
 }
 
-export function useSileroVad({ onSpeechStart, onSpeechEnd }: UseSileroVadOptions = {}) {
-  const vadRef = useRef<SileroVAD | null>(null);
+export function useVad(engine: VadEngine, { onSpeechStart, onSpeechEnd }: UseVadOptions = {}) {
   const isReadyRef = useRef(false);
   const isSpeakingRef = useRef(false);
   const redemptionRef = useRef(0);
@@ -33,23 +32,24 @@ export function useSileroVad({ onSpeechStart, onSpeechEnd }: UseSileroVadOptions
   onSpeechEndRef.current = onSpeechEnd;
 
   useEffect(() => {
-    const vad = new SileroVAD();
-    vadRef.current = vad;
-    vad.init().then(ok => { isReadyRef.current = ok; });
-    return () => { vadRef.current = null; isReadyRef.current = false; };
-  }, []);
+    engine.init().then((ok: boolean) => { isReadyRef.current = ok; });
+    return () => {
+      isReadyRef.current = false;
+      engine.destroy();
+    };
+  }, [engine]);
 
   const processSamples = useCallback(async (samples: Float32Array): Promise<boolean | null> => {
-    if (!isReadyRef.current || !vadRef.current) return null;
+    if (!isReadyRef.current) return null;
     const combined = leftoverRef.current.length > 0
       ? concatFloat32(leftoverRef.current, samples)
       : samples;
-    const FRAME = SileroVAD.FRAME_SIZE;
+    const FRAME = engine.frameSamples;
     let offset = 0;
     while (offset + FRAME <= combined.length) {
       const frame = combined.slice(offset, offset + FRAME);
       offset += FRAME;
-      const prob = await vadRef.current.processFrame(frame);
+      const prob = await engine.processFrame(frame);
       if (prob >= SILERO_POSITIVE_THRESHOLD) {
         redemptionRef.current = SILERO_REDEMPTION_FRAMES;
         speechFramesRef.current++;
@@ -73,15 +73,15 @@ export function useSileroVad({ onSpeechStart, onSpeechEnd }: UseSileroVadOptions
       ? combined.slice(offset)
       : new Float32Array(0);
     return isSpeakingRef.current;
-  }, []);
+  }, [engine]);
 
   const reset = useCallback(() => {
     isSpeakingRef.current = false;
     redemptionRef.current = 0;
     speechFramesRef.current = 0;
     leftoverRef.current = new Float32Array(0);
-    vadRef.current?.reset();
-  }, []);
+    engine.reset();
+  }, [engine]);
 
   return { processSamples, reset, isReadyRef };
 }
