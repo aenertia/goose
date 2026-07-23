@@ -11,7 +11,7 @@
 
 **Full voice I/O for goose — TTS, dictation, conversation mode, echo cancellation, and accessibility — in both Electron and terminal.**
 
-`feat/voice-audio-overhaul` · 73 commits ahead of upstream/main · 131 files changed
+`feat/voice-audio-overhaul` · 83 commits ahead of upstream/main · 146 files changed
 
 </div>
 
@@ -29,9 +29,9 @@ This fork/branch implements:
 - **Voice Activity Detection (VAD)** — Silero v6 neural VAD (ONNX) on both frontends, behind a pluggable `VadEngine` interface, with RMS energy fallback
 - **Acoustic Echo Cancellation (AEC)** — prevents goose from hearing its own TTS output as speech input
 - **Accessibility** — screen reader detection, PipeWire `media.role=Accessibility` for TTS, HONK sub-skills for verbal descriptions and semantic structure
-- **5 composable HONK skills** — `honk-core`, `honk-tool-protocol`, `honk-precision`, `honk-styles`, `honk-accessible` — compiled into the binary
+- **2 composable HONK skills** — `honk-conversation` (merged core + tool protocol + precision + styles) and `honk-accessible` — compiled into the binary
 
-> **Upstream target**: [block/goose](https://github.com/block/goose). This branch is being prepared for submission as 2–3 discrete PRs.
+> **Upstream target**: [block/goose](https://github.com/block/goose). This branch is being prepared for submission as 5 discrete PRs.
 
 ---
 
@@ -86,8 +86,8 @@ Both frontends import from `ui/shared/src/voice/`:
                          │  tts/providers.rs        │ ← OpenAI, ElevenLabs, Browser, ModelNative
                          │  dictation/providers.rs  │ ← OpenAI, ElevenLabs, Groq, ModelNative, Local
                          │  dictation/whisper.rs    │ ← Candle GGUF (offline)
-                         │  honk.rs (extension)     │ ← honk_status, honk_announce, honk_mode
-                         │  skills/builtins/honk-*  │ ← 5 composable conversation skills
+                         │  honk.rs (extension)     │ ← honk_status, honk_mode
+                         │  skills/builtins/honk-*  │ ← 2 composable conversation skills
                          └────────────┬─────────────┘
                                       │ ACP JSON-RPC
                     ┌─────────────────┼─────────────────┐
@@ -277,7 +277,7 @@ Source: [snakers4/silero-vad Quality Metrics](https://github.com/snakers4/silero
 |------|--------|
 | `cargo fmt --check` | ✅ 0 diffs |
 | `cargo clippy --all-targets -- -D warnings` | ✅ clean |
-| `cargo test` (1424 tests) | ✅ pass (4 pre-existing GCP/JWT failures — not ours) |
+| `cargo test` (2776+ tests) | ✅ pass |
 | `cargo-machete` (unused deps) | ✅ clean |
 | Desktop `eslint --max-warnings 0` | ✅ clean |
 | Desktop `tsc --noEmit` | ✅ pass |
@@ -285,10 +285,14 @@ Source: [snakers4/silero-vad Quality Metrics](https://github.com/snakers4/silero
 
 ### Device Testing
 
-| Target | Hardware | OS | Status |
-|--------|----------|----|--------|
-| Build host | AMD Ryzen 7 9700X, 32GB DDR5, NVMe | Fedora 42 | Release binary built, deployed |
-| Test workstation | AMD Ryzen 7 9700X, RX 9070 XT (RDNA 4), 32GB DDR5 | AEOS (Fedora 45 bootc), KDE Plasma/Wayland | Binary deployed, voice pipeline testing |
+| Role | Host | Hardware | GPU | OS | Status |
+|------|------|----------|-----|----|--------|
+| Build host | koero | HPE ProLiant DL360 Gen10, 2× Xeon Gold 6130 (32C/64T), 377GB RAM | — (headless) | RHEL 10.2 | Release binary built, CI gates run here |
+| Test server | awa | Dell PowerEdge R730XD, 2× Xeon E5-2683 v4 (32C/64T), 252GB RAM | AMD RX 9060 XT (RDNA 4) | RHEL 10.2, SELinux enforcing | goose-serve deployed, SSH audio tested, gnome-remote-desktop installed |
+| Dev workstation | z20 | AMD Ryzen 7 9700X (8C/16T), 32GB DDR5 | AMD RX 9070 XT (RDNA 4) | Fedora 45 (bootc) | Voice pipeline testing, local LLM (Qwen 3.6 MoE via llama-server) |
+| Desktop (Electron) | — | Any x86_64 | — | Linux / macOS / Windows | Electron voice UI (cross-platform via Web Audio API) |
+| TUI macOS | — | — | — | macOS | ⚠️ UNTESTED — ffmpeg backend |
+| TUI Windows | — | — | — | Windows | ⚠️ UNTESTED — ffmpeg backend |
 
 ### Test Coverage Gaps
 
@@ -306,34 +310,38 @@ Source: [snakers4/silero-vad Quality Metrics](https://github.com/snakers4/silero
 |--------|-------|
 | **Branch** | `feat/voice-audio-overhaul` |
 | **Base** | upstream/main @ `7b879b407` (v1.44.0) |
-| **Merge strategy** | Clean merge (not rebase — 2 conflicts vs 63+ rebase rounds) |
-| **Commits ahead** | 73 |
-| **Files changed** | 131 (+15,524 / −3,767) |
+| **Commits ahead** | 83 |
+| **Files changed** | 146 (+3,964 / −16,086) |
 | **Remotes** | origin (Forgejo), github (GitHub fork), upstream (block/goose) |
 
-### Known Issues (from REVISION_PLAN.md)
+### Known Issues
 
-| ID | Severity | Issue |
-|----|----------|-------|
-| P0-1 | Critical | MIME type mismatches in TTS providers (ogg vs mpeg) |
-| P0-2 | High | Browser TTS test button permanently disabled after first test |
-| P0-3 | Critical | Path traversal in TTS profile ID |
-| P0-4 | Critical | ElevenLabs voice_id URL injection |
-| P0-5 | High | AudioContext created per chunk — resource exhaustion |
-| P0-6 | High | Conversation mode loop — `handleStreamFinish` not wired |
-| P0-7 | High | `unwrap()` panic in `get_tts_provider_def` |
+| ID | Severity | Issue | Status |
+|----|----------|-------|--------|
+| P0-1 | ~~Critical~~ | ~~MIME type mismatches in TTS providers~~ | ✅ FIXED — ElevenLabs + model-native now return `audio/mpeg` |
+| P0-2 | ~~High~~ | ~~Browser TTS test button permanently disabled~~ | ✅ FIXED — `setIsTesting(false)` added to onend/onerror |
+| P0-3 | ~~Critical~~ | ~~Path traversal in TTS profile ID~~ | ✅ FIXED — `validate_profile_id()` with alphanumeric check |
+| P0-4 | ~~Critical~~ | ~~ElevenLabs voice_id URL injection~~ | ✅ FIXED — `urlencoding::encode()` |
+| P0-5 | ~~High~~ | ~~AudioContext created per chunk~~ | ✅ FIXED — singleton `globalSharedCtx` reused |
+| P0-6 | ~~High~~ | ~~Conversation mode loop broken~~ | ✅ FIXED — `isPlaying` watcher effect restarts listening |
+| P0-7 | ~~High~~ | ~~`unwrap()` panic in `get_tts_provider_def`~~ | ✅ FIXED — exhaustive match |
+| P1-2 | Low | ElevenLabs speed parameter silently dropped | ⚠️ DOCUMENTED — speed slider disabled when ElevenLabs selected |
 
-See [`REVISION_PLAN.md`](REVISION_PLAN.md) for full details and fixes.
+All critical and high-severity issues from the Gemini and Qwen 3.6 code reviews have been resolved. See [`REVISION_PLAN.md`](REVISION_PLAN.md) for the full revision history.
 
-### Upstream PR Strategy
+### Upstream PR Strategy (5 PRs)
 
-| PR | Scope | Files |
-|----|-------|-------|
-| **PR 1** | Rust backend: TTS + dictation + HONK extension + skills | `crates/goose/src/{tts,dictation,agents/platform_extensions/honk.rs,skills/builtins/honk-*}` |
-| **PR 2** | Desktop UI: voice settings, hooks, Silero VAD, AEC worklet | `ui/desktop/src/{hooks/use{Audio,Silero,Conversation}*,services/{silero,voice,media}*,components/settings/voice/}` |
-| **PR 3** | Text TUI: PipeWire backend, voice session, shared package | `ui/text/src/{services/media/,voiceSession,voiceState}`, `ui/shared/src/voice/` |
+Dependency chain: PR1 → {PR2, PR3, PR4} (parallel) → PR5 (anytime)
 
-Commits will be squashed (65 → 2–3 logical commits per PR) before submission. CONTRIBUTING.md requires conventional commits and small first PRs.
+| PR | Scope | Key Files |
+|----|-------|-----------|
+| **PR1** | Rust backend + shared voice package | `crates/goose/src/{tts,dictation,acp,agents/platform_extensions/honk.rs}`, `ui/shared/` |
+| **PR2** | Desktop UI: voice settings, hooks, VAD, AEC | `ui/desktop/src/{hooks,services,components/settings/voice}` |
+| **PR3** | TUI voice pipeline (PipeWire/GStreamer) | `ui/text/src/{services/media,tui.tsx,voiceSession.ts}` |
+| **PR4** | CLI persistent sessions + systemd | `crates/goose-cli/`, `contrib/systemd/`, `docs/` |
+| **PR5** | Documentation + README | `README.md`, `documentation/`, `.gitignore` |
+
+83 commits will be squashed to 1 logical commit per PR before submission.
 
 ---
 
