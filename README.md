@@ -11,7 +11,7 @@
 
 **Full voice I/O for goose — TTS, dictation, conversation mode, echo cancellation, and accessibility — in both Electron and terminal.**
 
-`feat/voice-audio-overhaul` · 65 commits ahead of upstream/main · 125 files changed
+`feat/voice-audio-overhaul` · 70 commits ahead of upstream/main · 130 files changed
 
 </div>
 
@@ -26,7 +26,7 @@ This fork/branch implements:
 - **Text-to-Speech (TTS)** — server-side synthesis via OpenAI, ElevenLabs, browser native, or model-native audio (GPT-4o-audio), with voice profiles, format selection (WAV/opus/mp3), and speed control
 - **Speech-to-Text (STT/Dictation)** — transcription via OpenAI Whisper, ElevenLabs, Groq, model-native, or local Whisper (Candle GGUF, fully offline)
 - **HONK Conversation Mode** — continuous listen→transcribe→respond→speak loop with automatic turn-taking
-- **Voice Activity Detection (VAD)** — Silero v5 neural VAD (ONNX) with RMS energy fallback
+- **Voice Activity Detection (VAD)** — Silero v6 neural VAD (ONNX) on both frontends, behind a pluggable `VadEngine` interface, with RMS energy fallback
 - **Acoustic Echo Cancellation (AEC)** — prevents goose from hearing its own TTS output as speech input
 - **Accessibility** — screen reader detection, PipeWire `media.role=Accessibility` for TTS, HONK sub-skills for verbal descriptions and semantic structure
 - **5 composable HONK skills** — `honk-core`, `honk-tool-protocol`, `honk-precision`, `honk-styles`, `honk-accessible` — compiled into the binary
@@ -43,7 +43,7 @@ This fork/branch implements:
 | **TTS Streaming** | Chunk queue with pre-fetch | Persistent `pw-cat` process |
 | **TTS Caching** | LRU cache (50 entries) | — |
 | **Mic Recording** | `getUserMedia` + AudioWorklet | `pw-cat --record` (PipeWire) |
-| **Silero VAD** | v6 via `onnxruntime-web` (WASM) | v5 via `avr-vad` (`onnxruntime-node`) |
+| **Silero VAD** | v6 via `SileroV6Engine` (`onnxruntime-web` WASM) | v6 via `SileroNodeEngine` (`onnxruntime-node` native) |
 | **RMS Fallback VAD** | Shared `computeRms()` | Shared `computeRms()` |
 | **Echo Cancellation** | NLMS AudioWorklet (256 taps) | `pactl module-echo-cancel` (WebRTC AEC) |
 | **TTS Reference Signal** | `MediaStreamDestination` node | `pw-loopback` virtual sink |
@@ -56,6 +56,7 @@ This fork/branch implements:
 | **Voice Indicator** | Tray icon phase display | Terminal header badge |
 | **Screen Reader Detection** | Via HONK extension | Via HONK extension |
 | **i18n (Voice Strings)** | 26 keys × 16 locales | — |
+| **VadEngine abstraction** | `useVad(engine)` hook | Inline state machine with `SileroNodeEngine` |
 | **macOS TUI audio** | N/A (Desktop works via Web Audio) | ⚠️ UNTESTED — `afplay` stub exists, no recording backend |
 
 ### Shared Components (`@aaif/voice-shared`)
@@ -66,6 +67,9 @@ Both frontends import from `ui/shared/src/voice/`:
 |--------|---------|
 | `constants.ts` | `SAMPLE_RATE` (16kHz), VAD thresholds, echo-suspect timing, `HONK_FULL_CONTEXT` system prompt |
 | `types.ts` | `VoicePhase`, `VoiceConfig`, `VadConfig` |
+| `vadEngine.ts` | `VadEngine` interface, `VadEngineId`, `VadEngineConfig`, `VAD_DEFAULTS` |
+| `vadEngines/rmsEngine.ts` | `RmsEnergyEngine` — threshold-based VAD (no ML, zero deps) |
+| `vadEngines/noopEngine.ts` | `NoopEngine` — silent stub for disabled VAD |
 | `encoding.ts` | `encodeWav()` — Float32Array PCM → WAV |
 | `vad.ts` | `computeRms()` — RMS energy calculation |
 | `sentenceBoundary.ts` | `detectSentenceBoundary()` — TTS streaming chunk splitter |
@@ -93,8 +97,9 @@ Both frontends import from `ui/shared/src/voice/`:
            │                │  │               │  │             │
            │ useAudioPlayer │  │ GStreamer      │  │ constants   │
            │ useAudioRec.   │  │ Backend       │  │ types       │
-           │ useSileroVad   │  │ (pw-cat)      │  │ encoding    │
-           │ useConvMode    │  │ voiceSession   │  │ vad         │
+           │ useVad         │  │ (pw-cat)      │  │ vadEngine   │
+           │ useConvMode    │  │ SileroNode    │  │ encoding    │
+           │ SileroV6Eng.   │  │ voiceSession   │  │ vad         │
            │ AEC Worklet    │  │ echo-cancel   │  │ sentBound.  │
            └────────────────┘  └───────────────┘  └─────────────┘
 ```
@@ -137,7 +142,7 @@ Saved as JSON in `~/.config/goose/tts_profiles/`. CRUD via Desktop settings UI o
 - **GStreamer** with opus/mp3 codec plugins (for encoded formats)
 - **PulseAudio** `pactl` (for echo cancellation module loading)
 - `pw-loopback` (for virtual TTS sink and mic source nodes)
-- `onnxruntime-node` via `avr-vad` (for Silero VAD v5)
+- `onnxruntime-node` for Silero VAD v6 (bundled model, no `avr-vad` dependency)
 
 Fallback chain: GStreamer/PipeWire → PulseAudio `pacat` → noop (silent)
 
@@ -148,7 +153,7 @@ Detection is automatic — run `goose session` and voice capabilities are probed
 macOS TUI voice is **not yet implemented**. The detection layer returns an `afplay` backend type but falls through to noop (silent). Planned approach:
 - **Playback**: `afplay` (zero deps, built-in) for WAV; `sox` (Homebrew) for streaming + encoded formats
 - **Recording**: `sox rec` (Homebrew) for mic capture
-- **VAD**: Silero via `avr-vad` (onnxruntime-node works cross-platform — only needs audio capture feeding it)
+- **VAD**: Silero v6 via `onnxruntime-node` (cross-platform — only needs audio capture feeding it)
 - **Echo cancellation**: Deferred — no PipeWire equivalent on macOS; JS NLMS port or Apple AUVoiceIO needed
 
 No macOS hardware is available for testing. Contributions welcome.
@@ -157,7 +162,7 @@ No macOS hardware is available for testing. Contributions welcome.
 
 ## Silero VAD: Why v6?
 
-The Desktop app uses Silero VAD v6 (upgraded from v5). The TUI uses v5 via `avr-vad` (which bundles v5 with no override path).
+Both Desktop and TUI use Silero VAD v6. Previously, the TUI used v5 via the `avr-vad` npm package (which bundled v5 with no override path). We replaced `avr-vad` with a direct `onnxruntime-node` integration (`SileroNodeEngine`) loading the same v6 model.
 
 | Metric | v5 | v6 | Delta |
 |--------|-----|-----|-------|
@@ -211,8 +216,8 @@ Source: [snakers4/silero-vad Quality Metrics](https://github.com/snakers4/silero
 | **Branch** | `feat/voice-audio-overhaul` |
 | **Base** | upstream/main @ `7b879b407` (v1.44.0) |
 | **Merge strategy** | Clean merge (not rebase — 2 conflicts vs 63+ rebase rounds) |
-| **Commits ahead** | 65 |
-| **Files changed** | 125 (+15,468 / −3,723) |
+| **Commits ahead** | 70 |
+| **Files changed** | 130 (+15,208 / −3,767) |
 | **Remotes** | origin (Forgejo), github (GitHub fork), upstream (block/goose) |
 
 ### Known Issues (from REVISION_PLAN.md)
