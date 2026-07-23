@@ -304,7 +304,7 @@ export class GStreamerAudioRecorder implements AudioRecorder {
     this.silenceStart = 0;
     this.speechStart = 0;
 
-    if (!opts.grdSession) {
+    if (!opts.grdSession && !opts.sshAudioSession) {
       this.useLoopback = ensureMicLoopback();
       if (this.useLoopback) {
         await new Promise(r => setTimeout(r, 250));

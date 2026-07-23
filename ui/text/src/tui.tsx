@@ -312,9 +312,12 @@ async function startRecording(client: GooseClient): Promise<void> {
   await voiceSession.recorder.connect({
     sampleRate: SAMPLE_RATE,
     channels: 1,
-    vadEngine: voiceSession.capabilities?.echoCancelAvailable ? 'silero-v6' : 'rms-energy',
+    vadEngine: (voiceSession.capabilities?.echoCancelAvailable ||
+                voiceSession.capabilities?.sshAudioSession ||
+                voiceSession.capabilities?.grdSession) ? 'silero-v6' : 'rms-energy',
     silenceThresholdMs: SILENCE_THRESHOLD_MS,
     grdSession: voiceSession.capabilities?.grdSession,
+    sshAudioSession: voiceSession.capabilities?.sshAudioSession,
   });
 }
 

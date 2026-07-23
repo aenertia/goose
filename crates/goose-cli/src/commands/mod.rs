@@ -7,6 +7,7 @@ pub mod project;
 pub mod recipe;
 pub mod review;
 pub mod schedule;
+pub mod serve_ctl;
 pub mod session;
 pub mod skills;
 pub mod term;

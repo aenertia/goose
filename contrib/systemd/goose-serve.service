@@ -1,0 +1,17 @@
+[Unit]
+Description=Goose ACP Backend Server
+Documentation=https://github.com/aaif-goose/goose
+After=network.target
+# Restart cleanly when SSH session ends (SIGHUP does not kill service)
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/goose serve --host 127.0.0.1 --port 3284 --dangerously-unauthenticated
+Restart=on-failure
+RestartSec=5
+Environment=GOOSE_LOG=info
+# Ensure service survives SSH session end
+KillMode=process
+
+[Install]
+WantedBy=default.target

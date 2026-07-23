@@ -50,6 +50,12 @@ function hasGrdAudioSource(): boolean {
   return (result.stdout ?? '').includes('grd_remote_audio_source');
 }
 
+function hasSshAudioSocket(): boolean {
+  if (!process.env.SSH_CONNECTION) return false;
+  const pulseServer = process.env.PULSE_SERVER ?? '';
+  return pulseServer.startsWith('unix:') || pulseServer.startsWith('/');
+}
+
 function detectDarwin(): MediaCapabilities {
   if (probe('ffplay', ['-version'])) {
     return {
@@ -64,6 +70,7 @@ function detectDarwin(): MediaCapabilities {
       loopbackAvailable: false,
       echoCancelAvailable: false,
       grdSession: false,
+      sshAudioSession: false,
     };
   }
   return {
@@ -77,7 +84,8 @@ function detectDarwin(): MediaCapabilities {
     pipewire: false,
     loopbackAvailable: false,
     echoCancelAvailable: false,
-    grdSession: false,
+      grdSession: false,
+      sshAudioSession: false,
   };
 }
 
@@ -95,6 +103,7 @@ function detectWin32(): MediaCapabilities {
       loopbackAvailable: false,
       echoCancelAvailable: false,
       grdSession: false,
+      sshAudioSession: false,
     };
   }
   return {
@@ -108,7 +117,8 @@ function detectWin32(): MediaCapabilities {
     pipewire: false,
     loopbackAvailable: false,
     echoCancelAvailable: false,
-    grdSession: false,
+      grdSession: false,
+      sshAudioSession: false,
   };
 }
 
@@ -159,6 +169,7 @@ function detectLinux(): MediaCapabilities {
       loopbackAvailable: pwLoopback,
       echoCancelAvailable: hasEchoCancel(),
       grdSession: hasGrdAudioSource(),
+      sshAudioSession: hasSshAudioSocket(),
     };
   }
 
@@ -175,6 +186,7 @@ function detectLinux(): MediaCapabilities {
       loopbackAvailable: false,
       echoCancelAvailable: false,
       grdSession: false,
+      sshAudioSession: false,
     };
   }
 
@@ -189,7 +201,8 @@ function detectLinux(): MediaCapabilities {
     pipewire: false,
     loopbackAvailable: false,
     echoCancelAvailable: false,
-    grdSession: false,
+          grdSession: false,
+      sshAudioSession: false,
   };
 }
 

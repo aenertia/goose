@@ -19,6 +19,7 @@ export interface RecordOpts {
   vadEngine: VadEngineId;
   silenceThresholdMs: number;
   grdSession?: boolean;
+  sshAudioSession?: boolean;
 }
 
 export interface AudioRecorder {
@@ -44,4 +45,5 @@ export interface MediaCapabilities {
   loopbackAvailable: boolean;
   echoCancelAvailable: boolean;
   grdSession: boolean;
+  sshAudioSession: boolean;
 }
