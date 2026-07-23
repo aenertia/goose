@@ -69,7 +69,7 @@ export function useConversationMode({
   const [isListening, setIsListening] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { speak, stop: stopPlayback, isPlaying, startStreamingSpeak, enqueueStreamChunk } = useAudioPlayer();
+  const { stop: stopPlayback, isPlaying, startStreamingSpeak, enqueueStreamChunk } = useAudioPlayer();
 
   // Refs for stable callback access
   const honkActiveRef = useRef(false);
@@ -77,6 +77,7 @@ export function useConversationMode({
   const pausedMediaRef = useRef<string[]>([]);
   const echoSuspectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTtsAudioTimeRef = useRef(0);
+  const prevIsPlayingRef = useRef(false);
 
   // Keep refs in sync
   honkActiveRef.current = honkActive;
@@ -105,6 +106,7 @@ export function useConversationMode({
   // --- Internal: restart recording after TTS ---
   const beginListening = useCallback(() => {
     if (!honkActiveRef.current) return;
+    if (isListeningRef.current) return;
     setIsListening(true);
     isListeningRef.current = true;
     startRecordingRef.current();
@@ -202,23 +204,16 @@ export function useConversationMode({
   }, [isPlaying, stopPlayback]);
 
   /**
-   * Called when the LLM stream finishes. If HONK mode is active,
-   * auto-speak the response and then optionally restart listening.
+   * Called when the LLM stream finishes. Streaming TTS already speaks
+   * chunks via enqueueStreamChunk during the stream, so this must NOT
+   * call speak() again. The isPlaying watcher effect handles restarting
+   * the mic when all TTS chunks finish playing.
    */
   const handleStreamFinish = useCallback(
-    (responseText: string) => {
+    (_responseText: string) => {
       if (!honkActiveRef.current) return;
-
-      const cleaned = responseText.trim();
-      if (!cleaned) {
-        beginListening();
-        return;
-      }
-
-      lastTtsAudioTimeRef.current = Date.now();
-      speak(cleaned);
     },
-    [speak, beginListening]
+    []
   );
 
   // --- Effects ---
@@ -234,6 +229,21 @@ export function useConversationMode({
   useEffect(() => {
     window.electron?.voiceStateChange?.({ phase: state, conversationActive: honkActive });
   }, [state, honkActive]);
+
+  // Restart listening when TTS playback ends (true→false transition)
+  useEffect(() => {
+    const wasPlaying = prevIsPlayingRef.current;
+    prevIsPlayingRef.current = isPlaying;
+
+    if (!wasPlaying || isPlaying || !honkActive || isListening || isSubmitting) return;
+
+    const timerId = setTimeout(() => {
+      if (honkActiveRef.current && !isListeningRef.current) {
+        beginListening();
+      }
+    }, 100);
+    return () => clearTimeout(timerId);
+  }, [isPlaying, honkActive, isListening, isSubmitting, beginListening]);
 
   return {
     // New two-axis API

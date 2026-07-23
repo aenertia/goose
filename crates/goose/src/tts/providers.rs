@@ -6,9 +6,20 @@ use anyhow::Result;
 use base64::{engine::general_purpose::STANDARD as BASE64_STD, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::time::Duration;
+use std::sync::{LazyLock, Mutex};
+use std::time::{Duration, Instant};
 
 const TTS_REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+
+struct CachedVoices {
+    voices: Vec<VoiceInfo>,
+    fetched_at: Instant,
+}
+
+static VOICE_CACHE: LazyLock<Mutex<HashMap<String, CachedVoices>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+const VOICE_CACHE_TTL: Duration = Duration::from_secs(300);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -168,7 +179,34 @@ pub async fn list_voices(provider: TtsProvider) -> Result<Vec<VoiceInfo>> {
 }
 
 async fn list_custom_endpoint_voices(endpoint: &str) -> Result<Vec<VoiceInfo>> {
-    let base = endpoint.trim_end_matches('/');
+    let cache_key = endpoint.trim_end_matches('/').to_string();
+
+    // Check cache
+    if let Ok(cache) = VOICE_CACHE.lock() {
+        if let Some(entry) = cache.get(&cache_key) {
+            if entry.fetched_at.elapsed() < VOICE_CACHE_TTL {
+                return Ok(entry.voices.clone());
+            }
+        }
+    }
+
+    let voices = probe_endpoint_voices(&cache_key).await?;
+
+    // Store in cache (even empty results prevent re-probing)
+    if let Ok(mut cache) = VOICE_CACHE.lock() {
+        cache.insert(
+            cache_key,
+            CachedVoices {
+                voices: voices.clone(),
+                fetched_at: Instant::now(),
+            },
+        );
+    }
+
+    Ok(voices)
+}
+
+async fn probe_endpoint_voices(base: &str) -> Result<Vec<VoiceInfo>> {
     let client = reqwest::Client::builder()
         .timeout(TTS_REQUEST_TIMEOUT)
         .build()?;
