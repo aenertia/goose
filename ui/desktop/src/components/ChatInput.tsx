@@ -1,5 +1,5 @@
 import { AppEvents } from '../constants/events';
-import { HONK_FULL_CONTEXT } from '@aaif/voice-shared/voice/constants.js';
+import { HONK_FULL_CONTEXT, HONK_REINFORCEMENT } from '@aaif/voice-shared/voice/constants.js';
 import { detectSentenceBoundary } from '@aaif/voice-shared/voice/sentenceBoundary.js';
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { ArrowUp, Bug, ScrollText, Volume2 } from 'lucide-react';
@@ -690,7 +690,10 @@ export default function ChatInput({
 
       if (targetMsg) {
         const { textContent } = getTextAndImageContent(targetMsg);
-        const remaining = textContent.slice(streamCursor).trim();
+        // Extract <spoken> content for TTS if present (dual-mode output)
+        const spokenMatch = textContent.match(/<spoken>([\s\S]*?)<\/spoken>/);
+        const speakSource = spokenMatch ? spokenMatch[1].trim() : textContent;
+        const remaining = speakSource.slice(streamCursor).trim();
         if (remaining) {
           void enqueueStreamChunk(remaining);
         }
@@ -1299,6 +1302,8 @@ export default function ChatInput({
         let finalMsg = textToSend;
         if (honkActive && finalMsg && conversationTurnRef.current === 0) {
           finalMsg = `${finalMsg}\n\n<voice-conversation>\n${HONK_FULL_CONTEXT}\n</voice-conversation>`;
+        } else if (honkActive && finalMsg && conversationTurnRef.current > 0) {
+          finalMsg = `${finalMsg}\n\n${HONK_REINFORCEMENT}`;
         }
         if (honkActive) {
           conversationTurnRef.current += 1;

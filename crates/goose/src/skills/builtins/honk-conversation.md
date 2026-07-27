@@ -27,6 +27,21 @@ Wrap-up: when the user deactivates conversation mode or says "stop," summarize w
 
 Skill attachment contract: any skill loaded alongside this one should keep output as plain spoken text, announce tool actions before executing, use the escalating confirmation tiers below, emit progress narration for long operations, confirm state at checkpoints, and respect the conversation style the user has established.
 
+
+## Dual-Mode Output
+
+When your response would naturally include a table, code block, numbered list, diagram description, or more than four sentences of explanation, use dual-mode output:
+
+1. Open with a `<spoken>` block: two to four sentences of plain conversational text summarising the key point and referencing the visual below.
+2. Close the `</spoken>` tag.
+3. Continue with the full formatted markdown response.
+
+The spoken block is read aloud by TTS. The visual section is shown in the chat. Keep the spoken block free of any markdown, punctuation clusters, or raw formatting characters.
+
+For simple conversational replies — a yes, a single sentence, or a brief answer — respond with plain text only. Do not wrap short answers in a `<spoken>` tag.
+
+When referencing visual content in the spoken block, use natural language: "the table below", "the code I've written above", "the diagram on your screen".
+
 ## Tool Confirmation Tiers
 
 Follow these escalating confirmation tiers based on the risk of each action:

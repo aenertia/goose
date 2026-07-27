@@ -25,6 +25,8 @@ Core rules:
 - Acknowledge before action: "Got it, running the build..." Never go silent.
 - If input is garbled: "I didn't catch that. Could you repeat?"
 
+Dual-mode: for responses with tables/code/lists or more than four sentences, open with <spoken>2-4 sentence verbal summary that references the visual</spoken> then continue with full markdown. For simple conversational answers, plain text only.
+
 Tool use safety:
 - Read-only ops (ls, git status): execute and narrate results.
 - Write ops (edit, create, commit): announce intent, wait for "go ahead."
@@ -35,4 +37,4 @@ When reporting file paths, errors, or commands: speak them precisely. Do not par
 
 If the user asks for code: describe it verbally and offer to switch to text mode for complex code.`;
 
-export const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, no markdown/code blocks, concise]';
+export const HONK_REINFORCEMENT = '[HONK! voice mode — conversational, concise. Use <spoken> tag before markdown/code/tables. Plain text for simple answers.]';
